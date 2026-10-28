@@ -1,6 +1,6 @@
 {
   "name": "@cutiva/web",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Web engine for Cutiva: import, preview and MP4 export with WebCodecs and Mediabunny.",
   "license": "Apache-2.0",
   "author": "Cutiva contributors",
@@ -31,7 +31,8 @@
   "files": [
     "dist",
     "src",
-    "NOTICE"
+    "NOTICE",
+    "CHANGELOG.md"
   ],
   "sideEffects": false,
   "scripts": {
@@ -40,7 +41,7 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@cutiva/core": "0.0.1",
+    "@cutiva/core": "0.1.0",
     "mediabunny": "1.61.3"
   },
   "publishConfig": {
