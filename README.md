@@ -9,9 +9,10 @@
 <p align="center">
   <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-ff6a3d"></a>
   <img alt="Status: early development" src="https://img.shields.io/badge/status-early%20development-9ba1ac">
+  <a href="https://github.com/cutiva-dev/cutiva/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/cutiva-dev/cutiva/actions/workflows/ci.yml/badge.svg"></a>
 </p>
 
-> **Status:** early development (v0.0.x). The API will change before v0.1. Nothing below is marked as working unless it is.
+> **Status:** early development. v0.1 is prepared but not on npm yet, and the API may still change before 1.0. Nothing below is marked as working unless it is.
 
 Cutiva lets you add trimming, splitting, audio and MP4 export to your app without building a video editor from scratch. Edits run on the user's device; no render servers required.
 
@@ -19,9 +20,9 @@ Cutiva lets you add trimming, splitting, audio and MP4 export to your app withou
 
 | Package | Status | What it does |
 | --- | --- | --- |
-| [`@cutiva/core`](packages/core) | Working, tested | Project format (CPF), edit commands, undo/redo, timeline resolution. Pure TypeScript, no DOM. |
-| [`@cutiva/web`](packages/web) | Working in Chrome (macOS); other browsers need testing | Import with Mediabunny, real-time preview on a canvas, audio mixing, MP4 (H.264 + AAC) export with WebCodecs. |
-| [`@cutiva/react`](packages/react) | Working in Chrome (macOS); other browsers need testing | `useCutiva`, `useProject`, `usePreview` and a `<Timeline>` with drag to reorder and trim handles. |
+| [`@cutiva/core`](packages/core) | Working, tested (100% coverage, 5 conformance fixtures) | Project format (CPF), edit commands, undo/redo, timeline resolution. Pure TypeScript, no DOM. |
+| [`@cutiva/web`](packages/web) | Working in Chrome (macOS); other browsers need testing | Import with Mediabunny, real-time preview on a canvas with a frame cache, timeline thumbnails, audio mixing, MP4 (H.264 + AAC) export with WebCodecs. Covered by E2E tests in CI. |
+| [`@cutiva/react`](packages/react) | Working in Chrome (macOS); other browsers need testing | `useCutiva`, `useProject`, `usePreview` and a `<Timeline>` with drag to reorder, trim handles and thumbnails. |
 | [`apps/playground`](apps/playground) | Working in Chrome (macOS); other browsers need testing | A small editor built on the three packages. |
 | [`apps/website`](apps/website) | Builds | The cutiva.dev landing, docs (Next.js + Fumadocs) and waitlist endpoint. |
 | React Native, Flutter | Planned | See the [roadmap](ROADMAP.md). |
@@ -55,6 +56,7 @@ All times are **integer microseconds**. Every edit is a serializable command, so
 npm install
 npm run build     # builds core, web and react
 npm test          # unit tests + conformance fixtures
+npm run e2e       # Playwright in Google Chrome: import, edit, export, check the MP4
 npm run dev       # playground at http://localhost:5173
 npm run dev:website  # landing + docs at http://localhost:4321
 ```
@@ -76,8 +78,10 @@ The core answers one question: *what is visible and audible at time t?* The prev
 
 ## Known limits in v0.0.x
 
-- Export runs on the main thread (a Web Worker is planned).
-- Preview decodes each visible frame on demand; long GOP phone videos can scrub slowly.
+- Verified only in Chrome on macOS. Firefox, Safari, and Chrome on Windows and Linux need testing.
+- Export runs on the main thread. In our measurements the UI stays responsive, because WebCodecs works off the main thread; a Web Worker is deferred ([#5](https://github.com/cutiva-dev/cutiva/issues/5)).
+- Jumping to a point the preview hasn't decoded yet costs one keyframe-to-frame decode (about 50 ms on 1080p phone video). Playback and scrubbing over decoded frames are cached.
+- The exported audio track can run up to ~40 ms past the video (AAC frame padding).
 - No text, overlays, transitions or filters yet.
 
 ## Contributing

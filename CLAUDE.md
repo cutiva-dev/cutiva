@@ -15,6 +15,7 @@ npm run e2e          # Playwright in Google Chrome: import, split, export, check
 npm run dev          # playground at http://localhost:5173 (aliases package sources, no rebuild needed)
 npm run build -w @cutiva/playground
 npm run dev:website      # landing + docs at http://localhost:4321
+npm run changeset        # describe a change to a published package (see RELEASING.md)
 npm run build:website    # Next.js build: static pages + /api/waitlist and /api/search
 ```
 
@@ -50,14 +51,16 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 - Preview frames: `FrameServer` (`frames.ts`) keeps one decoder per asset running forward and caches decoded frames within a 192 MB budget shared by all assets. On a 1080p30 clip with 2 s GOPs, playback shows every frame (was ~25 fps) and scrubbing over seen frames is ~instant; a jump to an unseen spot still costs one GOP decode (~50 ms). Timeline thumbnails (`thumbnails.ts`, `engine.thumbnail`, `<Timeline thumbnail>`) show the keyframe at or before each slot.
 - E2E: `apps/playground/e2e/export.spec.ts` imports `e2e/fixtures/clip.mp4` (white flash + 440 Hz beep at x.5–x.6 s each second), splits, deletes the first second and exports; it checks codecs, size, duration, that every flash and beep lands within 5 ms of where it belongs, and that no main-thread task during export exceeds 250 ms. `preview.spec.ts` checks the thumbnail strip draws and that the preview shows the right frame after seeking forward and back. Runs in CI on `macos-latest`, where Chrome has the platform H.264 and AAC encoders; Linux runners are untested.
 - Website: migrated to Next.js 16 + Fumadocs (ADR 0003). Builds; landing, docs, search and the waitlist endpoint respond locally under `next start` (validation, honeypot and the no-database 503 tested). Not yet tested against a real MongoDB or deployed.
+- Release: Changesets is set up (`.changeset/`, three packages share one version) with a pending changeset for 0.1.0. Packed tarballs install in a clean project, core runs in Node, and the README examples type-check (consumers need `skipLibCheck: true` because of Mediabunny's type dependencies). Not published: the `@cutiva` npm org doesn't exist yet.
 - Whole monorepo is on React 19.3 (`@cutiva/react` still accepts `react >=18` as a peer).
 
 ## Next tasks, in order (Phase 0 gate: a trimmed MP4 exports in Chromium)
 
 Each task is a GitHub issue in `cutiva-dev/cutiva`. Close the issue from the PR that finishes it, and remove the line here.
 
-1. (#8) Then update README/ROADMAP status honestly and prepare npm v0.1 with Changesets.
-2. (#9) Deploy both apps on Vercel: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and `apps/playground` → play.cutiva.dev (Root Directory `apps/playground`, framework Vite, output `dist`).
+1. (#9) Deploy both apps on Vercel: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and `apps/playground` → play.cutiva.dev (Root Directory `apps/playground`, framework Vite, output `dist`).
+
+Then: create the `cutiva` npm org and publish v0.1 following RELEASING.md (the maintainer does this).
 
 Deferred: (#5) export in a Web Worker. Measured in Chrome 156 on macOS: export on the main thread keeps the UI at ~60 fps (worst task 50–75 ms on a 4K source, also with 4× CPU throttling), because WebCodecs already runs off the main thread. A worker would add bundler friction for SDK users for little gain. Revisit when export draws heavy canvas work (text, overlays, effects) or low-end devices show jank. The E2E test fails if any main-thread task during export exceeds 250 ms.
 
