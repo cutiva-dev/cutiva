@@ -17,13 +17,21 @@ const PX_PER_SECOND = 60; // <Timeline> default zoom
 
 const clipTitles = (page: Page) => page.locator(".cutiva-clip").evaluateAll((els) => els.map((e) => e.getAttribute("title")));
 
-test("import, split, delete the first part, export: output is trimmed and in sync", async ({ page, browserName }) => {
+test("import, split, delete the first part, export: output is trimmed and in sync", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
   await page.goto("/");
   await page.getByLabel("Import media files").setInputFiles(fixture);
   await expect.poll(() => clipTitles(page)).toEqual(["clip.mp4 · 00:00:00.000 – 00:00:04.000"]);
+
+  // What this browser can export decides what to expect; the app says so in a banner when it can't.
+  const exportButton = page.getByRole("button", { name: "Export MP4" });
+  const noVideoEncoder = page.getByText("can't encode H.264");
+  await expect.poll(async () => (await exportButton.isEnabled()) || (await noVideoEncoder.isVisible())).toBe(true);
+  test.skip(await noVideoEncoder.isVisible(), "This browser can't encode H.264, so the app turns export off.");
+  test.skip(await page.getByText("exports will be silent").isVisible(), "This browser can't encode AAC or Opus, so exports are silent.");
+  const audioCodec = (await page.getByText("exported audio uses Opus").isVisible()) ? "opus" : "aac";
 
   // Seek to 1 s on the ruler, select the clip, split.
   const ruler = page.getByRole("slider", { name: "Playhead" });
@@ -64,8 +72,8 @@ test("import, split, delete the first part, export: output is trimmed and in syn
   const video = (await input.getPrimaryVideoTrack())!;
   const audio = (await input.getPrimaryAudioTrack())!;
   expect(video.codec).toBe("avc");
-  // Firefox can't encode AAC, so export falls back to Opus there.
-  expect(audio?.codec).toBe(browserName === "firefox" ? "opus" : "aac");
+  // AAC where the browser can encode it, Opus otherwise (Firefox); the app's banner told us which.
+  expect(audio?.codec).toBe(audioCodec);
   expect([video.displayWidth, video.displayHeight]).toEqual([1920, 1080]);
   expect(await video.computeDuration()).toBeCloseTo(3, 2);
   // AAC pads its last frame, so audio may run a little past the video, never short of it.

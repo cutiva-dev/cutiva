@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const port = 5174;
+// Which browsers to run, e.g. E2E_BROWSERS=chrome,edge. Playwright's WebKit doesn't run on macOS 14.
+const browsers = (process.env.E2E_BROWSERS ?? "chrome,firefox,webkit").split(",");
 
 export default defineConfig({
   testDir: "e2e",
@@ -20,7 +22,8 @@ export default defineConfig({
     { name: "chrome", use: { ...devices["Desktop Chrome"], channel: "chrome", viewport: { width: 1440, height: 900 } } },
     { name: "firefox", use: { ...devices["Desktop Firefox"], viewport: { width: 1440, height: 900 } } },
     { name: "webkit", use: { ...devices["Desktop Safari"], viewport: { width: 1440, height: 900 } } },
-  ],
+    { name: "edge", use: { ...devices["Desktop Edge"], channel: "msedge", viewport: { width: 1440, height: 900 } } },
+  ].filter((p) => browsers.includes(p.name)),
   webServer: {
     command: `npm run dev -- --port ${port} --strictPort`,
     url: `http://localhost:${port}`,
