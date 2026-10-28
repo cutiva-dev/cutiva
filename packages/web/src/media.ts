@@ -2,11 +2,11 @@ import { CutivaError, type Asset, type Editor, randomId, type IdFactory } from "
 import {
   ALL_FORMATS,
   BlobSource,
-  CanvasSink,
   Input,
   type InputAudioTrack,
   type InputVideoTrack,
 } from "mediabunny";
+import { FrameBudget, FrameServer } from "./frames.js";
 
 export interface MediaEntry {
   asset: Asset;
@@ -15,7 +15,7 @@ export interface MediaEntry {
   video: InputVideoTrack | null;
   audio: InputAudioTrack | null;
   /** Lazily created, one per asset, for preview frames. */
-  previewSink?: CanvasSink;
+  previewFrames?: FrameServer;
   /** Lazily decoded full audio, for preview playback and export mixing. */
   audioBuffer?: Promise<AudioBuffer | null>;
 }
@@ -32,6 +32,8 @@ async function sha256Head(blob: Blob): Promise<string | undefined> {
 /** Keeps the actual media (Blobs) that the project's assets point to. */
 export class MediaRegistry {
   private entries = new Map<string, MediaEntry>();
+  /** Preview frame caches of all assets share this memory. */
+  private frameBudget = new FrameBudget();
   constructor(private ids: IdFactory = randomId) {}
 
   get(assetId: string): MediaEntry | undefined {
@@ -93,13 +95,10 @@ export class MediaRegistry {
     return match.id;
   }
 
-  previewSink(entry: MediaEntry, maxWidth: number): CanvasSink | null {
+  previewFrames(entry: MediaEntry, maxWidth: number): FrameServer | null {
     if (!entry.video) return null;
-    if (!entry.previewSink) {
-      const width = Math.min(maxWidth, entry.video.displayWidth);
-      entry.previewSink = new CanvasSink(entry.video, { width, poolSize: 2 });
-    }
-    return entry.previewSink;
+    entry.previewFrames ??= new FrameServer(entry.video, maxWidth, this.frameBudget);
+    return entry.previewFrames;
   }
 
   /** Decode an asset's whole audio once. Null when it has none or the browser can't decode it. */

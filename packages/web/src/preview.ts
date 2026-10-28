@@ -67,9 +67,9 @@ export function createPreview(
       const frames: (HTMLCanvasElement | OffscreenCanvas)[] = [];
       for (const layer of resolveVideoAt(editor.project, t)) {
         const entry = media.get(layer.asset.id);
-        const sink = entry && media.previewSink(entry, maxWidth);
-        if (!sink) continue;
-        const wrapped = await sink.getCanvas(layer.sourceTimeUs / 1_000_000);
+        const server = entry && media.previewFrames(entry, maxWidth);
+        if (!server) continue;
+        const wrapped = await server.frameAt(layer.sourceTimeUs / 1_000_000);
         if (wrapped) frames.push(wrapped.canvas);
       }
       ctx!.fillStyle = background;
