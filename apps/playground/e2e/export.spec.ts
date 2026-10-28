@@ -20,6 +20,7 @@ const clipTitles = (page: Page) => page.locator(".cutiva-clip").evaluateAll((els
 test("import, split, delete the first part, export: output is trimmed and in sync", async ({ page, browserName }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => m.text().includes("Cutiva") && console.log("PAGE", browserName, m.type(), m.text()));
 
   await page.goto("/");
   await page.getByLabel("Import media files").setInputFiles(fixture);

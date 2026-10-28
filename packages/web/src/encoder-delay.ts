@@ -19,7 +19,10 @@ export function encoderDelay(codec: ExportAudioCodec, sampleRate: number): Promi
   const key = `${codec}@${sampleRate}`;
   let delay = cache.get(key);
   if (!delay) {
-    delay = measure(codec, sampleRate).catch(() => 0);
+    delay = measure(codec, sampleRate).catch((error: unknown) => {
+      console.warn(`Cutiva: could not measure the ${codec} encoder delay; exported audio may start a few tens of ms late.`, error);
+      return 0;
+    });
     cache.set(key, delay);
   }
   return delay;
@@ -42,6 +45,35 @@ function aacDescription(sampleRate: number, channels: number): Uint8Array {
   if (index < 0) throw new Error(`No AAC frequency index for ${sampleRate} Hz.`);
   const bits = (2 << 11) | (index << 7) | (channels << 3);
   return new Uint8Array([bits >> 8, bits & 0xff]);
+}
+
+/**
+ * The first channel of decoded audio as floats. Safari's AudioData.copyTo can't convert between
+ * sample formats, so read the decoder's own format and convert here.
+ */
+function firstChannel(data: AudioData): Float32Array {
+  const frames = data.numberOfFrames;
+  const out = new Float32Array(frames);
+  try {
+    data.copyTo(out, { planeIndex: 0, format: "f32-planar" });
+    return out;
+  } catch {
+    // Fall through to a copy in the native format.
+  }
+  const format = data.format;
+  if (!format) throw new Error("Decoded audio has no sample format.");
+  const stride = format.endsWith("-planar") ? 1 : data.numberOfChannels;
+  const bytes = new ArrayBuffer(data.allocationSize({ planeIndex: 0 }));
+  data.copyTo(bytes, { planeIndex: 0 });
+  const read: (i: number) => number = format.startsWith("f32")
+    ? ((v) => (i) => v[i]!)(new Float32Array(bytes))
+    : format.startsWith("s16")
+      ? ((v) => (i) => v[i]! / 32768)(new Int16Array(bytes))
+      : format.startsWith("s32")
+        ? ((v) => (i) => v[i]! / 2147483648)(new Int32Array(bytes))
+        : ((v) => (i) => (v[i]! - 128) / 128)(new Uint8Array(bytes));
+  for (let i = 0; i < frames; i++) out[i] = read(i * stride);
+  return out;
 }
 
 async function measure(codec: ExportAudioCodec, sampleRate: number): Promise<number> {
@@ -73,9 +105,7 @@ async function measure(codec: ExportAudioCodec, sampleRate: number): Promise<num
   const decoded: Float32Array[] = [];
   const decoder = new AudioDecoder({
     output: (d) => {
-      const ch = new Float32Array(d.numberOfFrames);
-      d.copyTo(ch, { planeIndex: 0, format: "f32-planar" });
-      decoded.push(ch);
+      decoded.push(firstChannel(d));
       d.close();
     },
     error: () => undefined,
