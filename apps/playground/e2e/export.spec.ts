@@ -70,8 +70,20 @@ test("import, split, delete the first part, export: output is trimmed and in syn
   expect(await video.computeDuration()).toBeCloseTo(3, 2);
   // AAC pads its last frame, so audio may run a little past the video, never short of it.
   const audioEnd = await audio.computeDuration();
-  expect(audioEnd).toBeGreaterThanOrEqual(3 - 0.005);
-  expect(audioEnd).toBeLessThan(3 + 0.05);
+  expect.soft(audioEnd).toBeGreaterThanOrEqual(3 - 0.005);
+  expect.soft(audioEnd).toBeLessThan(3 + 0.05);
+  // DIAG (temporary)
+  const delayModule = "/@fs" + join(here, "../../../packages/web/src/encoder-delay.ts");
+  const exportModule = "/@fs" + join(here, "../../../packages/web/src/export.ts");
+  const diag = await page.evaluate(
+    async ([d, e]) => {
+      const { encoderDelay } = await import(/* @vite-ignore */ d!);
+      const { capabilities } = await import(/* @vite-ignore */ e!);
+      return { caps: await capabilities(), aacDelay: await encoderDelay("aac", 48000), opusDelay: await encoderDelay("opus", 48000) };
+    },
+    [delayModule, exportModule],
+  );
+  console.log("DIAG-ENC", browserName, JSON.stringify(diag));
 
   // Decode in the browser (WebCodecs) to check where the markers landed. The source's markers at
   // 1.5, 2.5 and 3.5 s should now be at 0.5, 1.5 and 2.5 s.
@@ -113,6 +125,7 @@ test("import, split, delete the first part, export: output is trimmed and in syn
   });
 
   // Sound: three beeps, each within 5 ms of where it belongs.
+  console.log("DIAG", browserName, JSON.stringify({ audioCodec: audio.codec, audioEnd, firstAudioTs: await audio.getFirstTimestamp(), onsets: markers.onsets, brightness: markers.brightness }));
   expect(markers.onsets).toHaveLength(3);
   markers.onsets.forEach((t, i) => expect(Math.abs(t - (0.5 + i))).toBeLessThan(0.005));
   // Picture: white during the flashes, not just before or after.
