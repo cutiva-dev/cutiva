@@ -21,9 +21,9 @@ Cutiva lets you add trimming, splitting, audio and MP4 export to your app withou
 | Package | Status | What it does |
 | --- | --- | --- |
 | [`@cutiva/core`](packages/core) | Working, tested (100% coverage, 5 conformance fixtures) | Project format (CPF), edit commands, undo/redo, timeline resolution. Pure TypeScript, no DOM. |
-| [`@cutiva/web`](packages/web) | Working in Chrome, Firefox and WebKit (E2E in CI, macOS); real Safari, Windows and Linux need testing | Import with Mediabunny, real-time preview on a canvas with a frame cache, timeline thumbnails, audio mixing, MP4 (H.264 + AAC) export with WebCodecs. Covered by E2E tests in CI. |
-| [`@cutiva/react`](packages/react) | Working in Chrome, Firefox and WebKit (E2E in CI, macOS); real Safari, Windows and Linux need testing | `useCutiva`, `useProject`, `usePreview` and a `<Timeline>` with drag to reorder, trim handles and thumbnails. |
-| [`apps/playground`](apps/playground) | Working in Chrome, Firefox and WebKit (E2E in CI, macOS); real Safari, Windows and Linux need testing | A small editor built on the three packages, served by the website at `/play`. |
+| [`@cutiva/web`](packages/web) | Working in Chrome, Edge, Firefox and WebKit (E2E in CI on macOS, Windows, Linux); real Safari and mobile need testing | Import with Mediabunny, real-time preview on a canvas with a frame cache, timeline thumbnails, audio mixing, MP4 (H.264 + AAC) export with WebCodecs. Covered by E2E tests in CI. |
+| [`@cutiva/react`](packages/react) | Working in Chrome, Edge, Firefox and WebKit (E2E in CI on macOS, Windows, Linux); real Safari and mobile need testing | `useCutiva`, `useProject`, `usePreview` and a `<Timeline>` with drag to reorder, trim handles and thumbnails. |
+| [`apps/playground`](apps/playground) | Working in Chrome, Edge, Firefox and WebKit (E2E in CI on macOS, Windows, Linux); real Safari and mobile need testing | A small editor built on the three packages, served by the website at `/play`. |
 | [`apps/website`](apps/website) | Builds; not deployed yet | The landing at `/`, docs at `/docs` (Next.js + Fumadocs), the playground at `/play`, and the waitlist endpoint. |
 | React Native, Flutter | Planned | See the [roadmap](ROADMAP.md). |
 
@@ -78,8 +78,8 @@ The core answers one question: *what is visible and audible at time t?* The prev
 
 ## Known limits in v0.0.x
 
-- E2E tests run in Chrome, Firefox and Playwright's WebKit build on macOS. Real Safari, iOS, and Windows or Linux browsers need testing.
-- Firefox can't encode AAC, so MP4s exported in Firefox carry Opus audio. Chrome, Firefox and Edge play it; QuickTime and some phones may not. `engine.capabilities().audioCodec` tells your app which one it will get.
+- E2E tests run in Chrome, Edge and Firefox on macOS, Windows and Linux, and in Playwright's WebKit build on macOS. Real Safari, iOS and Android need testing. See [browser support](https://cutiva.ngstudios.co/docs/browser-support).
+- Firefox and Chrome on Linux can't encode AAC, so MP4s exported there carry Opus audio. Chrome, Firefox and Edge play it; QuickTime and some phones may not. `engine.capabilities().audioCodec` tells your app which one it will get.
 - Export runs on the main thread. In our measurements the UI stays responsive, because WebCodecs works off the main thread; a Web Worker is deferred ([#5](https://github.com/cutiva-dev/cutiva/issues/5)).
 - Jumping to a point the preview hasn't decoded yet costs one keyframe-to-frame decode (about 50 ms on 1080p phone video). Playback and scrubbing over decoded frames are cached.
 - The exported audio track can run up to ~40 ms past the video (AAC frame padding).

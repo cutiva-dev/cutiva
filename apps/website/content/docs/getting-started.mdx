@@ -29,7 +29,7 @@ const job = engine.export({ resolution: "1080p" });
 const mp4 = await job.done;
 ```
 
-Export needs a browser that can encode H.264 with WebCodecs. Call `engine.capabilities()` first to check. Its `audioCodec` is `"aac"` in Chrome, Edge and Safari and `"opus"` in Firefox, which can't encode AAC; QuickTime and some phones can't play Opus in MP4.
+Export needs a browser that can encode H.264 with WebCodecs. Call `engine.capabilities()` first to check. Its `audioCodec` is `"aac"` in Chrome, Edge and Safari and `"opus"` where AAC can't be encoded (Firefox, Chrome on Linux); QuickTime and some phones can't play Opus in MP4.
 
 ## In React
 

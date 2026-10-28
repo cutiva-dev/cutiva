@@ -26,6 +26,6 @@ if ((await engine.capabilities()).exportMp4) {
 }
 ```
 
-E2E-tested in Chrome, Firefox and WebKit on macOS; real Safari, Windows and Linux need testing. Export needs H.264 encoding in WebCodecs. Audio is AAC, or Opus where the browser can't encode AAC (Firefox); `capabilities().audioCodec` says which.
+E2E-tested in Chrome, Edge and Firefox on macOS, Windows and Linux, and in WebKit on macOS; real Safari and mobile need testing. Export needs H.264 encoding in WebCodecs. Audio is AAC, or Opus where the browser can't encode AAC (Firefox, Chrome on Linux); `capabilities().audioCodec` says which.
 
 Docs: [cutiva.dev/docs](https://cutiva.dev/docs). License: Apache-2.0. Mediabunny is MPL-2.0.
