@@ -162,6 +162,10 @@ export function App() {
       {caps && !caps.exportMp4 && (
         <p className="banner">This browser can't encode H.264 yet, so export is off. Preview still works. Use Chrome or Edge to export.</p>
       )}
+      {caps?.exportMp4 && caps.audioCodec === "opus" && (
+        <p className="banner">This browser can't encode AAC, so exported audio uses Opus. Chrome, Firefox and Edge play it; QuickTime and some phones may not.</p>
+      )}
+      {caps?.exportMp4 && !caps.audioCodec && <p className="banner">This browser can't encode audio, so exports will be silent.</p>}
       {missing.length > 0 && (
         <p className="banner">
           {missing.length} media file(s) need linking: {missing.map((a) => a.name).join(", ")}.{" "}

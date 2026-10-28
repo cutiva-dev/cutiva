@@ -1,22 +1,26 @@
-const AAC_CODEC = "mp4a.40.2";
+/** Audio codecs export can use, with their WebCodecs codec strings. */
+export type ExportAudioCodec = "aac" | "opus";
+const CODEC_STRINGS: Record<ExportAudioCodec, string> = { aac: "mp4a.40.2", opus: "opus" };
 const PROBE_FRAMES = 8192;
 const MAX_LAG = 4096;
 const WINDOW = 2048;
 
-const cache = new Map<number, Promise<number>>();
+const cache = new Map<string, Promise<number>>();
 
 /**
- * AAC encoders prepend "priming" samples (2112 with Apple's encoder) and WebCodecs passes them
- * through, so encoded audio plays late unless the muxer is told to skip them with an edit list.
- * The amount depends on the platform encoder, so measure it once per sample rate: encode a known
- * noise burst, decode it, and find where it lands in presentation time.
+ * Audio encoders prepend "priming" samples (2112 with Apple's AAC encoder) and WebCodecs passes
+ * them through, so encoded audio plays late unless the muxer is told to skip them with an edit
+ * list. The amount depends on the codec and the platform encoder, so measure it once per codec and
+ * sample rate: encode a known noise burst, decode it the way a player would (Opus pre-skip
+ * included), and find where it lands in presentation time.
  * Returns the delay in samples, or 0 when it can't be measured.
  */
-export function aacEncoderDelay(sampleRate: number): Promise<number> {
-  let delay = cache.get(sampleRate);
+export function encoderDelay(codec: ExportAudioCodec, sampleRate: number): Promise<number> {
+  const key = `${codec}@${sampleRate}`;
+  let delay = cache.get(key);
   if (!delay) {
-    delay = measure(sampleRate).catch(() => 0);
-    cache.set(sampleRate, delay);
+    delay = measure(codec, sampleRate).catch(() => 0);
+    cache.set(key, delay);
   }
   return delay;
 }
@@ -40,10 +44,10 @@ function aacDescription(sampleRate: number, channels: number): Uint8Array {
   return new Uint8Array([bits >> 8, bits & 0xff]);
 }
 
-async function measure(sampleRate: number): Promise<number> {
+async function measure(codec: ExportAudioCodec, sampleRate: number): Promise<number> {
   if (typeof AudioEncoder === "undefined" || typeof AudioDecoder === "undefined") return 0;
   const channels = 2;
-  const config = { codec: AAC_CODEC, sampleRate, numberOfChannels: channels, bitrate: 128_000 };
+  const config = { codec: CODEC_STRINGS[codec], sampleRate, numberOfChannels: channels, bitrate: 128_000 };
   if (!(await AudioEncoder.isConfigSupported(config)).supported) return 0;
 
   const input = noise(PROBE_FRAMES);
@@ -76,7 +80,12 @@ async function measure(sampleRate: number): Promise<number> {
     },
     error: () => undefined,
   });
-  decoder.configure({ codec: AAC_CODEC, sampleRate, numberOfChannels: channels, description: description ?? aacDescription(sampleRate, channels) });
+  decoder.configure({
+    codec: CODEC_STRINGS[codec],
+    sampleRate,
+    numberOfChannels: channels,
+    ...(description ? { description } : codec === "aac" ? { description: aacDescription(sampleRate, channels) } : {}),
+  });
   for (const c of chunks) decoder.decode(c);
   await decoder.flush();
   decoder.close();

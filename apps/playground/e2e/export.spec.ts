@@ -17,7 +17,7 @@ const PX_PER_SECOND = 60; // <Timeline> default zoom
 
 const clipTitles = (page: Page) => page.locator(".cutiva-clip").evaluateAll((els) => els.map((e) => e.getAttribute("title")));
 
-test("import, split, delete the first part, export: output is trimmed and in sync", async ({ page }) => {
+test("import, split, delete the first part, export: output is trimmed and in sync", async ({ page, browserName }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
@@ -64,7 +64,8 @@ test("import, split, delete the first part, export: output is trimmed and in syn
   const video = (await input.getPrimaryVideoTrack())!;
   const audio = (await input.getPrimaryAudioTrack())!;
   expect(video.codec).toBe("avc");
-  expect(audio?.codec).toBe("aac");
+  // Firefox can't encode AAC, so export falls back to Opus there.
+  expect(audio?.codec).toBe(browserName === "firefox" ? "opus" : "aac");
   expect([video.displayWidth, video.displayHeight]).toEqual([1920, 1080]);
   expect(await video.computeDuration()).toBeCloseTo(3, 2);
   // AAC pads its last frame, so audio may run a little past the video, never short of it.
