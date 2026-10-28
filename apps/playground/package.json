@@ -10,9 +10,9 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@cutiva/core": "0.0.1",
-    "@cutiva/react": "0.0.1",
-    "@cutiva/web": "0.0.1",
+    "@cutiva/core": "0.1.0",
+    "@cutiva/react": "0.1.0",
+    "@cutiva/web": "0.1.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

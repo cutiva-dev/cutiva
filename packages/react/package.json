@@ -1,6 +1,6 @@
 {
   "name": "@cutiva/react",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "React hooks and components for Cutiva.",
   "license": "Apache-2.0",
   "author": "Cutiva contributors",
@@ -32,7 +32,8 @@
     "dist",
     "styles.css",
     "src",
-    "NOTICE"
+    "NOTICE",
+    "CHANGELOG.md"
   ],
   "sideEffects": [
     "*.css"
@@ -43,8 +44,8 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "@cutiva/core": "0.0.1",
-    "@cutiva/web": "0.0.1"
+    "@cutiva/core": "0.1.0",
+    "@cutiva/web": "0.1.0"
   },
   "peerDependencies": {
     "react": ">=18"
