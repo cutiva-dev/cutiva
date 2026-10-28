@@ -58,7 +58,7 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 
 Each task is a GitHub issue in `cutiva-dev/cutiva`. Close the issue from the PR that finishes it, and remove the line here.
 
-1. (#9) Deploy on Vercel as one project: Root Directory `apps/website`, framework Next.js, env `MONGODB_URI` (without it the waitlist answers 503). It serves the landing at `/`, docs at `/docs` and the playground at `/play`, on the `*.vercel.app` URL until cutiva.dev is bought.
+1. (#9) Deploy on Vercel as one project: Root Directory `apps/website`, framework Next.js, env `MONGODB_URI` (without it the waitlist answers 503). `apps/website/vercel.json` installs from the monorepo root (`npm ci`), because an install inside the workspace skips the playground's dependencies. It serves the landing at `/`, docs at `/docs` and the playground at `/play`, on the `*.vercel.app` URL until cutiva.dev is bought.
 
 Then: create the `cutiva` npm org and publish v0.1 following RELEASING.md (the maintainer does this).
 
