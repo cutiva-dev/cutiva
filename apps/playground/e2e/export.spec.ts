@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ALL_FORMATS, BufferSource, Input } from "mediabunny";
+import { ALL_FORMATS, BufferSource, EncodedPacketSink, Input } from "mediabunny";
 
 // fixtures/clip.mp4: 4 s, 640x360, H.264 + AAC. Every second, from x.5 to x.6, the frame flashes
 // white and a 440 Hz beep plays; the rest is a test pattern and silence. The markers let us check
@@ -11,7 +11,8 @@ import { ALL_FORMATS, BufferSource, Input } from "mediabunny";
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = join(here, "fixtures/clip.mp4");
 const mediabunnyEntry = createRequire(import.meta.url).resolve("mediabunny");
-const mediabunnyBundle = join(mediabunnyEntry.slice(0, mediabunnyEntry.lastIndexOf("/dist/")), "dist/bundles/mediabunny.min.mjs");
+// The package root, whichever build Node resolved and whatever the path separator (Windows).
+const mediabunnyBundle = join(mediabunnyEntry.slice(0, mediabunnyEntry.search(/[\\/]dist[\\/]/)), "dist", "bundles", "mediabunny.min.mjs");
 
 const PX_PER_SECOND = 60; // <Timeline> default zoom
 
@@ -75,7 +76,13 @@ test("import, split, delete the first part, export: output is trimmed and in syn
   // AAC where the browser can encode it, Opus otherwise (Firefox); the app's banner told us which.
   expect(audio?.codec).toBe(audioCodec);
   expect([video.displayWidth, video.displayHeight]).toEqual([1920, 1080]);
-  expect(await video.computeDuration()).toBeCloseTo(3, 2);
+  const packets = new EncodedPacketSink(video);
+  const timestamps: number[] = [];
+  for await (const packet of packets.packets(undefined, undefined, { metadataOnly: true })) timestamps.push(packet.timestamp);
+  timestamps.sort((a, b) => a - b);
+  const frames = `${timestamps.length} frames from ${timestamps[0]} to ${timestamps[timestamps.length - 1]} s`;
+  expect(await video.computeDuration(), frames).toBeCloseTo(3, 2);
+  expect(timestamps.length, frames).toBe(90);
   // AAC pads its last frame, so audio may run a little past the video, never short of it.
   const audioEnd = await audio.computeDuration();
   expect(audioEnd).toBeGreaterThanOrEqual(3 - 0.005);
