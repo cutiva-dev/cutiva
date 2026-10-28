@@ -23,8 +23,8 @@ Cutiva lets you add trimming, splitting, audio and MP4 export to your app withou
 | [`@cutiva/core`](packages/core) | Working, tested (100% coverage, 5 conformance fixtures) | Project format (CPF), edit commands, undo/redo, timeline resolution. Pure TypeScript, no DOM. |
 | [`@cutiva/web`](packages/web) | Working in Chrome (macOS); other browsers need testing | Import with Mediabunny, real-time preview on a canvas with a frame cache, timeline thumbnails, audio mixing, MP4 (H.264 + AAC) export with WebCodecs. Covered by E2E tests in CI. |
 | [`@cutiva/react`](packages/react) | Working in Chrome (macOS); other browsers need testing | `useCutiva`, `useProject`, `usePreview` and a `<Timeline>` with drag to reorder, trim handles and thumbnails. |
-| [`apps/playground`](apps/playground) | Working in Chrome (macOS); other browsers need testing | A small editor built on the three packages. |
-| [`apps/website`](apps/website) | Builds | The cutiva.dev landing, docs (Next.js + Fumadocs) and waitlist endpoint. |
+| [`apps/playground`](apps/playground) | Working in Chrome (macOS); other browsers need testing | A small editor built on the three packages, served by the website at `/play`. |
+| [`apps/website`](apps/website) | Builds; not deployed yet | The landing at `/`, docs at `/docs` (Next.js + Fumadocs), the playground at `/play`, and the waitlist endpoint. |
 | React Native, Flutter | Planned | See the [roadmap](ROADMAP.md). |
 
 ## Quick look

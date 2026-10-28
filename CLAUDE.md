@@ -16,7 +16,7 @@ npm run dev          # playground at http://localhost:5173 (aliases package sour
 npm run build -w @cutiva/playground
 npm run dev:website      # landing + docs at http://localhost:4321
 npm run changeset        # describe a change to a published package (see RELEASING.md)
-npm run build:website    # Next.js build: static pages + /api/waitlist and /api/search
+npm run build:website    # builds the playground into public/play, then Next.js: static pages, /play, /api/waitlist, /api/search
 ```
 
 Always finish a task with `npm run build && npm run typecheck && npm test` green.
@@ -26,8 +26,8 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 - `packages/core` — `@cutiva/core`. Pure TypeScript, no DOM, no dependencies. CPF project format (`types.ts`, `project.ts`), commands (`commands.ts`), editor with undo/redo (`editor.ts`), timeline resolver (`resolve.ts`).
 - `packages/web` — `@cutiva/web`. Mediabunny + WebCodecs + Web Audio: import (`media.ts`), preview (`preview.ts`), audio scheduling shared by preview and export (`audio.ts`), MP4 export (`export.ts`).
 - `packages/react` — `@cutiva/react`. Hooks (`useCutiva`, `useProject`, `usePreview`) and `<Timeline>`; default theme in `styles.css`.
-- `apps/playground` — Vite + React editor built on the three packages.
-- `apps/website` — Next.js (App Router) site for cutiva.dev, deployed on Vercel. Two root layouts: `app/(home)` is the landing (`page.tsx`, plain CSS in `landing.css`, no Tailwind) and `app/(docs)` is the docs with Fumadocs (`content/docs/*.mdx` → `/docs/...`, sidebar order in `content/docs/meta.json`, theme in `docs.css`). `app/api/waitlist/route.ts` stores emails in MongoDB (needs `MONGODB_URI`, see `.env.example`); `app/api/search/route.ts` serves docs search. Keep the docs in sync with the real API in the same PR that changes it.
+- `apps/playground` — Vite + React editor built on the three packages. Dev runs at `/`; the production build uses base `/play/` and is served by the website.
+- `apps/website` — Next.js (App Router) site for cutiva.dev, deployed on Vercel. Two root layouts: `app/(home)` is the landing (`page.tsx`, plain CSS in `landing.css`, no Tailwind) and `app/(docs)` is the docs with Fumadocs (`content/docs/*.mdx` → `/docs/...`, sidebar order in `content/docs/meta.json`, theme in `docs.css`). The playground is copied into `public/play` at build time (`scripts/copy-playground.mjs`, gitignored) and `/play` is rewritten to its `index.html` in `next.config.mjs`. `app/api/waitlist/route.ts` stores emails in MongoDB (needs `MONGODB_URI`, see `.env.example`); `app/api/search/route.ts` serves docs search. Keep the docs in sync with the real API in the same PR that changes it.
 - `conformance/fixtures` — `*.cpf.json` + `*.expected.json`. Every SDK on every platform must produce the expected values.
 - `docs/adr` — architecture decisions. Add one for any decision that is hard to reverse.
 
@@ -58,7 +58,7 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 
 Each task is a GitHub issue in `cutiva-dev/cutiva`. Close the issue from the PR that finishes it, and remove the line here.
 
-1. (#9) Deploy both apps on Vercel. Playground first, at play-cutiva.ngstudio.com until cutiva.dev is bought: Root Directory `apps/playground`; build settings live in `apps/playground/vercel.json`. DNS for ngstudio.com is at GoDaddy (CNAME `play-cutiva` to the value Vercel shows). Later: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and move the playground to play.cutiva.dev.
+1. (#9) Deploy on Vercel as one project: Root Directory `apps/website`, framework Next.js, env `MONGODB_URI` (without it the waitlist answers 503). It serves the landing at `/`, docs at `/docs` and the playground at `/play`, on the `*.vercel.app` URL until cutiva.dev is bought.
 
 Then: create the `cutiva` npm org and publish v0.1 following RELEASING.md (the maintainer does this).
 

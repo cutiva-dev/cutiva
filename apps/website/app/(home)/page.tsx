@@ -25,6 +25,7 @@ export default function Home() {
             <a href="#how">How it works</a>
             <a href="#roadmap">Roadmap</a>
             <a href="#faq">FAQ</a>
+            <a href="/play">Playground</a>
             <a href="/docs">Docs</a>
           </div>
           <div className="nav__cta">
@@ -42,7 +43,7 @@ export default function Home() {
             <p className="lead">The open-source video editing SDK for React, React Native and Flutter. Trim, split, add audio and export MP4 right on the device.</p>
             <div className="row">
               <a className="btn btn--primary" href="#waitlist">Get early access</a>
-              <a className="btn" href={repo}>Follow on GitHub</a>
+              <a className="btn" href="/play">Try the playground</a>
             </div>
             <div className="window" role="img" aria-label="Cutiva code beside a video preview and a timeline with video and audio clips">
               <div className="window__bar"><i></i><i></i><i></i><span>editor.ts</span></div>
@@ -197,7 +198,7 @@ editor.undo();
             <p className="muted" style={{ margin: 0 }}>The open-source video editing SDK for every platform.</p>
           </div>
           <div><strong>Product</strong><a href="#platforms">Platforms</a><a href="#roadmap">Roadmap</a><a href="#waitlist">Cutiva Cloud</a></div>
-          <div><strong>Resources</strong><a href="/docs">Docs</a><a href="/docs/getting-started">Getting started</a><a href={`${repo}/blob/main/CONTRIBUTING.md`}>Contributing</a></div>
+          <div><strong>Resources</strong><a href="/play">Playground</a><a href="/docs">Docs</a><a href="/docs/getting-started">Getting started</a><a href={`${repo}/blob/main/CONTRIBUTING.md`}>Contributing</a></div>
           <div><strong>Community</strong><a href={repo}>GitHub</a></div>
         </div>
         <div className="wrap footer__bottom"><span>© 2026 Cutiva · Apache-2.0</span><span className="mono">cutiva.dev</span></div>

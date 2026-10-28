@@ -137,7 +137,7 @@ export function App() {
     <div className="app">
       <header className="bar">
         <div className="brand">
-          <img src="/cutiva-mark.svg" alt="" width={28} height={28} />
+          <img src={`${import.meta.env.BASE_URL}cutiva-mark.svg`} alt="" width={28} height={28} />
           <span>cutiva</span>
           <span className="tag">playground</span>
         </div>
