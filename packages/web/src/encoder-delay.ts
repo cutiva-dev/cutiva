@@ -38,7 +38,7 @@ function noise(frames: number): Float32Array {
   return out;
 }
 
-/** Minimal AudioSpecificConfig for AAC-LC, for encoders that don't provide one. */
+/** AudioSpecificConfig for AAC-LC. */
 function aacDescription(sampleRate: number, channels: number): Uint8Array {
   const rates = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
   const index = rates.indexOf(sampleRate);
@@ -114,7 +114,9 @@ async function measure(codec: ExportAudioCodec, sampleRate: number): Promise<num
     codec: CODEC_STRINGS[codec],
     sampleRate,
     numberOfChannels: channels,
-    ...(description ? { description } : codec === "aac" ? { description: aacDescription(sampleRate, channels) } : {}),
+    // For AAC, describe the stream ourselves: the encoder was set to AAC-LC, and Safari's encoder
+    // reports a description its own decoder rejects ("InternalAudioDecoderCocoa decoding failed").
+    ...(codec === "aac" ? { description: aacDescription(sampleRate, channels) } : description ? { description } : {}),
   });
   for (const c of chunks) decoder.decode(c);
   await decoder.flush();
