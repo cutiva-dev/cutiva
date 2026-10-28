@@ -8,4 +8,4 @@ Thanks for helping. A few rules keep the project healthy:
 4. **Times are integer microseconds.** Never store seconds as floats.
 5. **Sign off your commits** (`git commit -s`) to certify the [Developer Certificate of Origin](https://developercertificate.org/).
 
-Before opening a PR: `npm run build && npm run typecheck && npm test`.
+Before opening a PR: `npm run build && npm run typecheck && npm test`. If you touched `@cutiva/web`, `@cutiva/react` or the playground, also run `npm run e2e` (needs Google Chrome installed).
