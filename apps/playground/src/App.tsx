@@ -260,6 +260,7 @@ export function App() {
         selectedClipId={selected}
         onSelect={setSelected}
         onError={(e) => setMessage({ tone: "error", text: e.message })}
+        thumbnail={engine.thumbnail}
       />
 
       {job && (

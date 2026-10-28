@@ -5,6 +5,8 @@ const port = 5174;
 export default defineConfig({
   testDir: "e2e",
   timeout: 120_000,
+  // One browser at a time: parallel runs compete for the hardware codecs and skew timing checks.
+  workers: 1,
   forbidOnly: !!process.env.CI,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
