@@ -22,7 +22,7 @@ import {
 } from "mediabunny";
 import { scheduleSegments } from "./audio.js";
 import { drawContain } from "./draw.js";
-import { aacEncoderDelay } from "./encoder-delay.js";
+import { encoderDelay, type ExportAudioCodec } from "./encoder-delay.js";
 import type { MediaRegistry } from "./media.js";
 
 export type Resolution = "480p" | "720p" | "1080p" | "source";
@@ -67,14 +67,29 @@ export interface Capabilities {
   exportMp4: boolean;
   h264: boolean;
   aac: boolean;
+  /**
+   * The audio codec exported MP4s use: AAC where the browser can encode it (Chrome, Edge, Safari),
+   * otherwise Opus (Firefox), which some players such as QuickTime can't play. Null means exports
+   * have no audio.
+   */
+  audioCodec: ExportAudioCodec | null;
+}
+
+/** Opus only encodes at 48 kHz (among common rates), so its mix is rendered at that rate. */
+const OPUS_SAMPLE_RATE = 48_000;
+
+async function exportAudioCodec(sampleRate: number): Promise<ExportAudioCodec | null> {
+  if (await canEncodeAudio("aac", { numberOfChannels: 2, sampleRate }).catch(() => false)) return "aac";
+  if (await canEncodeAudio("opus", { numberOfChannels: 2, sampleRate: OPUS_SAMPLE_RATE }).catch(() => false)) return "opus";
+  return null;
 }
 
 /** What this browser can actually do, so the app can decide before failing. */
 export async function capabilities(): Promise<Capabilities> {
   const webCodecs = typeof VideoEncoder !== "undefined" && typeof VideoDecoder !== "undefined";
-  if (!webCodecs) return { webCodecs, exportMp4: false, h264: false, aac: false };
-  const [h264, aac] = await Promise.all([canEncodeVideo("avc").catch(() => false), canEncodeAudio("aac").catch(() => false)]);
-  return { webCodecs, exportMp4: h264, h264, aac };
+  if (!webCodecs) return { webCodecs, exportMp4: false, h264: false, aac: false, audioCodec: null };
+  const [h264, audioCodec] = await Promise.all([canEncodeVideo("avc").catch(() => false), exportAudioCodec(48_000)]);
+  return { webCodecs, exportMp4: h264, h264, aac: audioCodec === "aac", audioCodec };
 }
 
 /** Render the whole project to an MP4 Blob on this device. */
@@ -102,11 +117,11 @@ export function exportProject(project: Project, media: MediaRegistry, options: E
 
     // ---- Audio: mix the whole timeline offline with the same scheduler the preview uses.
     emit({ ratio: 0, frame: 0, totalFrames, phase: "audio" });
-    const sampleRate = project.settings.sampleRate;
+    const audioCodec = await exportAudioCodec(project.settings.sampleRate);
+    const sampleRate = audioCodec === "opus" ? OPUS_SAMPLE_RATE : project.settings.sampleRate;
     const segments = audioSegments(project);
     let mixed: AudioBuffer | null = null;
-    const canAac = await canEncodeAudio("aac").catch(() => false);
-    if (segments.length && canAac) {
+    if (segments.length && audioCodec) {
       const offline = new OfflineAudioContext(2, Math.ceil((durationUs / 1e6) * sampleRate), sampleRate);
       const buffers = new Map<string, AudioBuffer>();
       for (const s of segments) {
@@ -137,12 +152,13 @@ export function exportProject(project: Project, media: MediaRegistry, options: E
     const videoSource = new CanvasSource(canvas, { codec: "avc", bitrate });
     output.addVideoTrack(videoSource, { frameRate: fps });
     // Start the audio early by the encoder's priming so the edit list trims it and sound lines up with video.
-    const audioSource = mixed
-      ? new AudioBufferSource(
-          { codec: "aac", bitrate: new Quality("high") },
-          { startTimestamp: -(await aacEncoderDelay(sampleRate)) / sampleRate },
-        )
-      : null;
+    const audioSource =
+      mixed && audioCodec
+        ? new AudioBufferSource(
+            { codec: audioCodec, bitrate: new Quality("high") },
+            { startTimestamp: -(await encoderDelay(audioCodec, sampleRate)) / sampleRate },
+          )
+        : null;
     if (audioSource) output.addAudioTrack(audioSource);
     await output.start();
 

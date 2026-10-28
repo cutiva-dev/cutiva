@@ -30,6 +30,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Chrome is preinstalled on the runner; Firefox and WebKit come from Playwright.
+      - run: npx -w @cutiva/playground playwright install firefox webkit
       - run: npm run e2e
       - uses: actions/upload-artifact@v4
         if: failure()
