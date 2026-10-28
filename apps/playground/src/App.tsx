@@ -270,9 +270,9 @@ export function App() {
         </div>
       )}
 
-      <input ref={mediaInput} type="file" accept={MEDIA_ACCEPT} multiple hidden onChange={(e) => { void importFiles(e.target.files); e.target.value = ""; }} />
-      <input ref={projectInput} type="file" accept=".json,application/json" hidden onChange={(e) => { void openProject(e.target.files); e.target.value = ""; }} />
-      <input ref={relinkInput} type="file" accept={MEDIA_ACCEPT} multiple hidden onChange={(e) => { void relinkFiles(e.target.files); e.target.value = ""; }} />
+      <input ref={mediaInput} aria-label="Import media files" type="file" accept={MEDIA_ACCEPT} multiple hidden onChange={(e) => { void importFiles(e.target.files); e.target.value = ""; }} />
+      <input ref={projectInput} aria-label="Open project file" type="file" accept=".json,application/json" hidden onChange={(e) => { void openProject(e.target.files); e.target.value = ""; }} />
+      <input ref={relinkInput} aria-label="Link media files" type="file" accept={MEDIA_ACCEPT} multiple hidden onChange={(e) => { void relinkFiles(e.target.files); e.target.value = ""; }} />
     </div>
   );
 }

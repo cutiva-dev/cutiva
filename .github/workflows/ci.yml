@@ -19,3 +19,22 @@ jobs:
       - run: npm test
       - run: npm run build -w @cutiva/playground
       - run: npm run build:website
+
+  e2e:
+    # macOS: Google Chrome there has the platform H.264 and AAC encoders that export needs.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            apps/playground/playwright-report
+            apps/playground/test-results
