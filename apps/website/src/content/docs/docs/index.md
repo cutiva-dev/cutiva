@@ -1,0 +1,20 @@
+---
+title: Introduction
+description: Cutiva is the open-source video editing SDK for every platform.
+---
+
+Cutiva lets you add trimming, splitting, audio and MP4 export to your app without building a video editor from scratch. Edits run on the user's device; no render servers required.
+
+:::caution[Early development]
+Cutiva is at v0.0.x. The API will change before v0.1, and the browser engine still needs real-browser testing. Follow the [roadmap](https://github.com/cutiva-dev/cutiva/blob/main/ROADMAP.md) for status.
+:::
+
+## Packages
+
+| Package | Purpose |
+| --- | --- |
+| `@cutiva/core` | Project format, commands, undo/redo, timeline resolution. Pure TypeScript. |
+| `@cutiva/web` | Import, preview and MP4 export in the browser with WebCodecs and Mediabunny. |
+| `@cutiva/react` | Hooks and a `<Timeline>` component. |
+
+React Native and Flutter SDKs are planned for the mobile pilot.

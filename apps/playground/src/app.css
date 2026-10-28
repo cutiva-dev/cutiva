@@ -1,0 +1,49 @@
+:root {
+  --surface: #0e0f12; --raised: #17191e; --line: #2a2d33; --ink: #edeef0; --muted: #9ba1ac;
+  --cut: #ff6a3d; --cut-strong: #ff8f6b; --on-accent: #14161a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--surface); color: var(--ink); font: 14px/1.5 Geist, "Helvetica Neue", Arial, sans-serif; }
+button, select, input { font: inherit; color: inherit; }
+button { background: var(--raised); border: 1px solid var(--line); border-radius: 8px; min-height: 36px; padding: 0 12px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--muted); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--cut); outline-offset: 2px; }
+button.primary { background: var(--cut); border-color: var(--cut); color: var(--on-accent); font-weight: 600; }
+button.link { background: none; border: 0; padding: 0; min-height: 0; color: var(--cut-strong); text-decoration: underline; }
+.muted { color: var(--muted); }
+.app { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px 16px; min-height: 100vh; }
+.bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 600; letter-spacing: -.3px; }
+.tag { font: 12px "Geist Mono", ui-monospace, monospace; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sep { width: 1px; height: 24px; background: var(--line); }
+.banner { margin: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); }
+.banner--error { border-color: var(--cut); }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 12px; }
+@media (max-width: 860px) { .stage { grid-template-columns: 1fr; } }
+.viewer { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.screen { position: relative; width: 100%; max-height: 58vh; margin: 0 auto; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+.screen canvas { width: 100%; height: 100%; display: block; object-fit: contain; }
+.empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; background: var(--surface); }
+.empty p { margin: 0; font-size: 16px; }
+.empty .hint { font-size: 13px; color: var(--muted); }
+.transport { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.play { width: 44px; min-height: 44px; display: grid; place-items: center; padding: 0; border-radius: 22px; background: var(--ink); color: var(--on-accent); border: 0; }
+.tc { font: 14px "Geist Mono", ui-monospace, monospace; }
+.grow { flex: 1; }
+.inspector { background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.inspector h2 { margin: 0; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.inspector dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13px; }
+.inspector dt { color: var(--muted); }
+.inspector dd { margin: 0; font-family: "Geist Mono", ui-monospace, monospace; }
+.inspector label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.inspector select, .inspector input[type=number] { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-height: 36px; padding: 0 8px; }
+.inspector input[type=range] { accent-color: var(--cut); }
+fieldset { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; margin: 0; }
+legend { font-size: 13px; color: var(--muted); padding: 0 4px; }
+.shortcuts { margin: auto 0 0; font-size: 12px; }
+.export { position: fixed; right: 16px; bottom: 16px; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; width: 280px; }
+.export p { margin: 0; }
+.export progress { width: 100%; accent-color: var(--cut); }

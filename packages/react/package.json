@@ -1,0 +1,19 @@
+{
+  "name": "@cutiva/react",
+  "version": "0.0.1",
+  "description": "React hooks and components for Cutiva.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./styles.css": "./styles.css"
+  },
+  "files": ["dist", "styles.css"],
+  "sideEffects": ["*.css"],
+  "scripts": { "build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit" },
+  "dependencies": { "@cutiva/core": "0.0.1", "@cutiva/web": "0.0.1" },
+  "peerDependencies": { "react": ">=18" },
+  "devDependencies": { "react": "18.3.1", "@types/react": "18.3.12" }
+}

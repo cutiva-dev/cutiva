@@ -1,0 +1,20 @@
+{
+  "$schema": "https://cutiva.dev/schema/0.1.json",
+  "version": "0.1.0",
+  "id": "prj_fixture_1",
+  "settings": { "width": 1080, "height": 1920, "fps": { "num": 30, "den": 1 }, "sampleRate": 48000 },
+  "assets": [
+    { "id": "ast_v1", "kind": "video", "name": "intro.mp4", "uri": "file://intro.mp4", "durationUs": 42000000, "hasAudio": true, "fingerprint": { "size": 18350211 } },
+    { "id": "ast_a1", "kind": "audio", "name": "music.mp3", "uri": "file://music.mp3", "durationUs": 180000000 }
+  ],
+  "tracks": [
+    { "id": "trk_v1", "kind": "video", "muted": false, "clips": [
+      { "id": "clip_1", "assetId": "ast_v1", "startUs": 0, "sourceInUs": 2000000, "sourceOutUs": 12000000, "speed": 1, "volume": 1, "effects": [] },
+      { "id": "clip_2", "assetId": "ast_v1", "startUs": 10000000, "sourceInUs": 20000000, "sourceOutUs": 30000000, "speed": 2, "volume": 1, "effects": [] }
+    ]},
+    { "id": "trk_a1", "kind": "audio", "muted": false, "clips": [
+      { "id": "clip_3", "assetId": "ast_a1", "startUs": 0, "sourceInUs": 0, "sourceOutUs": 15000000, "speed": 1, "volume": 0.4,
+        "effects": [ { "type": "core/fade", "params": { "inUs": 500000, "outUs": 1000000 } } ] }
+    ]}
+  ]
+}

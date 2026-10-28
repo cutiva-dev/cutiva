@@ -1,0 +1,11 @@
+{
+  "durationUs": 15000000,
+  "videoAt": [
+    { "tUs": 0, "layers": [{ "clipId": "clip_1", "sourceTimeUs": 2000000 }] },
+    { "tUs": 9999999, "layers": [{ "clipId": "clip_1", "sourceTimeUs": 11999999 }] },
+    { "tUs": 10000000, "layers": [{ "clipId": "clip_2", "sourceTimeUs": 20000000 }] },
+    { "tUs": 12500000, "layers": [{ "clipId": "clip_2", "sourceTimeUs": 25000000 }] },
+    { "tUs": 15000000, "layers": [] }
+  ],
+  "audioSegments": 3
+}

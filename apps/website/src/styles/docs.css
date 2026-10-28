@@ -1,0 +1,18 @@
+/* Cutiva brand on Starlight. */
+:root {
+  --sl-font: "Geist", "Helvetica Neue", Arial, sans-serif;
+  --sl-font-mono: "Geist Mono", ui-monospace, Menlo, monospace;
+}
+:root[data-theme="dark"], :root:not([data-theme]) {
+  --sl-color-accent-low: #3a1d13;
+  --sl-color-accent: #ff6a3d;
+  --sl-color-accent-high: #ff8f6b;
+  --sl-color-black: #0e0f12;
+  --sl-color-gray-6: #17191e;
+  --sl-color-gray-5: #2a2d33;
+}
+:root[data-theme="light"] {
+  --sl-color-accent-low: #ffe2d7;
+  --sl-color-accent: #b8380f;
+  --sl-color-accent-high: #7a2408;
+}

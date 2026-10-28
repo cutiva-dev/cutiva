@@ -1,0 +1,32 @@
+---
+title: Getting started
+description: Run Cutiva from source and make your first edit.
+---
+
+Cutiva is not on npm yet. Until v0.1, run it from the repository:
+
+```bash
+git clone https://github.com/cutiva-dev/cutiva
+cd cutiva
+npm install
+npm run build
+npm run dev   # playground at http://localhost:5173
+```
+
+## Your first edit
+
+```ts
+import { createEditor } from "@cutiva/core";
+import { createWebEngine } from "@cutiva/web";
+
+const editor = createEditor({ settings: { width: 1920, height: 1080 } });
+const engine = createWebEngine(editor);
+
+const { clipId } = await engine.importFile(file);
+editor.dispatch({ type: "clip.split", clipId: clipId!, atUs: 12_000_000 });
+
+const job = engine.export({ resolution: "1080p" });
+const mp4 = await job.done;
+```
+
+Export needs a browser that can encode H.264 with WebCodecs. Call `engine.capabilities()` first to check.

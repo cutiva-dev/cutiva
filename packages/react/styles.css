@@ -1,0 +1,39 @@
+/* Cutiva timeline, default theme. Override any custom property. */
+.cutiva-timeline {
+  --cutiva-cut: #ff6a3d;
+  --cutiva-track: #34d399;
+  --cutiva-surface: #0e0f12;
+  --cutiva-raised: #17191e;
+  --cutiva-line: #2a2d33;
+  --cutiva-ink: #edeef0;
+  --cutiva-muted: #9ba1ac;
+  --cutiva-on-accent: #14161a;
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  background: var(--cutiva-surface);
+  color: var(--cutiva-ink);
+  border: 1px solid var(--cutiva-line);
+  border-radius: 12px;
+  overflow: hidden;
+  user-select: none;
+  font: 13px/1.3 Geist, system-ui, sans-serif;
+}
+.cutiva-timeline__labels { border-right: 1px solid var(--cutiva-line); background: var(--cutiva-raised); }
+.cutiva-timeline__ruler-spacer { height: 28px; border-bottom: 1px solid var(--cutiva-line); }
+.cutiva-timeline__label { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid var(--cutiva-line); color: var(--cutiva-muted); }
+.cutiva-timeline__mute { background: none; border: 1px solid var(--cutiva-line); color: var(--cutiva-muted); border-radius: 4px; padding: 2px 6px; font: inherit; font-size: 11px; cursor: pointer; }
+.cutiva-timeline__mute[aria-pressed="true"] { color: var(--cutiva-ink); border-color: var(--cutiva-muted); }
+.cutiva-timeline__area { overflow-x: auto; position: relative; }
+.cutiva-timeline__ruler { height: 28px; position: relative; border-bottom: 1px solid var(--cutiva-line); cursor: pointer; }
+.cutiva-timeline__ruler:focus-visible { outline: 2px solid var(--cutiva-cut); outline-offset: -2px; }
+.cutiva-timeline__tick { position: absolute; top: 6px; transform: translateX(4px); font: 11px/1 "Geist Mono", ui-monospace, monospace; color: var(--cutiva-muted); border-left: 1px solid var(--cutiva-line); padding-left: 4px; height: 16px; }
+.cutiva-timeline__track { position: relative; height: 56px; border-bottom: 1px solid var(--cutiva-line); }
+.cutiva-timeline__track.is-muted .cutiva-clip { opacity: .45; }
+.cutiva-clip { position: absolute; top: 8px; height: 40px; border-radius: 8px; display: flex; align-items: center; overflow: hidden; cursor: grab; color: var(--cutiva-on-accent); font-weight: 500; touch-action: none; }
+.cutiva-clip--video { background: var(--cutiva-cut); }
+.cutiva-clip--audio { background: var(--cutiva-track); }
+.cutiva-clip.is-selected { box-shadow: 0 0 0 2px var(--cutiva-ink) inset; }
+.cutiva-clip.is-dragging { cursor: grabbing; opacity: .9; z-index: 2; }
+.cutiva-clip__name { flex: 1; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.cutiva-clip__handle { width: 8px; align-self: stretch; cursor: ew-resize; background: rgba(20, 22, 26, .25); }
+.cutiva-timeline__playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--cutiva-ink); pointer-events: none; }
