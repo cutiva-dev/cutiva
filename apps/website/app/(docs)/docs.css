@@ -1,0 +1,27 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+/* Cutiva brand on Fumadocs. */
+:root {
+  --font-sans: "Geist", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, Menlo, monospace;
+}
+.dark {
+  --color-fd-background: #0e0f12;
+  --color-fd-card: #17191e;
+  --color-fd-popover: #17191e;
+  --color-fd-secondary: #17191e;
+  --color-fd-muted: #17191e;
+  --color-fd-border: #2a2d33;
+  --color-fd-foreground: #edeef0;
+  --color-fd-muted-foreground: #9ba1ac;
+  --color-fd-primary: #ff6a3d;
+  --color-fd-primary-foreground: #14161a;
+  --color-fd-ring: #ff6a3d;
+}
+:root:not(.dark) {
+  --color-fd-primary: #b8380f;
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-ring: #b8380f;
+}

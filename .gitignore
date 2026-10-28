@@ -4,4 +4,7 @@ dist/
 .DS_Store
 coverage/
 .env
-.astro/
+.next/
+.source/
+.vercel
+next-env.d.ts

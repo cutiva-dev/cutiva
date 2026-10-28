@@ -14,7 +14,7 @@ npm test             # vitest: core unit tests + conformance fixtures
 npm run dev          # playground at http://localhost:5173 (aliases package sources, no rebuild needed)
 npm run build -w @cutiva/playground
 npm run dev:website      # landing + docs at http://localhost:4321
-npm run build:website    # static pages + Node server for /api/waitlist
+npm run build:website    # Next.js build: static pages + /api/waitlist and /api/search
 ```
 
 Always finish a task with `npm run build && npm run typecheck && npm test` green.
@@ -25,7 +25,7 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 - `packages/web` — `@cutiva/web`. Mediabunny + WebCodecs + Web Audio: import (`media.ts`), preview (`preview.ts`), audio scheduling shared by preview and export (`audio.ts`), MP4 export (`export.ts`).
 - `packages/react` — `@cutiva/react`. Hooks (`useCutiva`, `useProject`, `usePreview`) and `<Timeline>`; default theme in `styles.css`.
 - `apps/playground` — Vite + React editor built on the three packages.
-- `apps/website` — Astro site for cutiva.dev: the landing (`src/pages/index.astro`, styles in `src/styles/landing.css`), the docs with Starlight (`src/content/docs/docs/*.md` → `/docs/...`), and `src/pages/api/waitlist.ts`, the only server route (stores emails in MongoDB; needs `MONGODB_URI`, see `.env.example`). Keep the docs in sync with the real API in the same PR that changes it.
+- `apps/website` — Next.js (App Router) site for cutiva.dev, deployed on Vercel. Two root layouts: `app/(home)` is the landing (`page.tsx`, plain CSS in `landing.css`, no Tailwind) and `app/(docs)` is the docs with Fumadocs (`content/docs/*.mdx` → `/docs/...`, sidebar order in `content/docs/meta.json`, theme in `docs.css`). `app/api/waitlist/route.ts` stores emails in MongoDB (needs `MONGODB_URI`, see `.env.example`); `app/api/search/route.ts` serves docs search. Keep the docs in sync with the real API in the same PR that changes it.
 - `conformance/fixtures` — `*.cpf.json` + `*.expected.json`. Every SDK on every platform must produce the expected values.
 - `docs/adr` — architecture decisions. Add one for any decision that is hard to reverse.
 
@@ -46,7 +46,8 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 
 - Core: implemented, 22 tests passing.
 - Web engine, React package, playground: implemented and type-checked against Mediabunny 1.61.3, **not yet run in a real browser**.
-- Website: builds; landing, docs and the waitlist endpoint respond locally (validation, honeypot and the no-database 503 tested). Not yet tested against a real MongoDB or deployed.
+- Website: migrated to Next.js 16 + Fumadocs (ADR 0003). Builds; landing, docs, search and the waitlist endpoint respond locally under `next start` (validation, honeypot and the no-database 503 tested). Not yet tested against a real MongoDB or deployed.
+- Whole monorepo is on React 19.3 (`@cutiva/react` still accepts `react >=18` as a peer).
 
 ## Next tasks, in order (Phase 0 gate: a trimmed MP4 exports in Chromium)
 
@@ -56,6 +57,6 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 4. Timeline thumbnails and a frame cache so scrubbing phone videos (long GOP) stays fast.
 5. Raise core coverage to ≥ 90% and add more conformance fixtures (speed, gaps, multiple video tracks, muted tracks).
 6. Then update README/ROADMAP status honestly and prepare npm v0.1 with Changesets.
-7. Deploy `apps/website` to cutiva.dev (Coolify on the DigitalOcean droplet runs `node dist/server/entry.mjs`; set `MONGODB_URI`) and `apps/playground` to play.cutiva.dev.
+7. Deploy both apps on Vercel: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and `apps/playground` → play.cutiva.dev (Root Directory `apps/playground`, framework Vite, output `dist`).
 
 Brand, if UI work is needed: background `#0E0F12`, raised `#17191E`, lines `#2A2D33`, text `#EDEEF0`, muted `#9BA1AC`, accent `#FF6A3D` (text on it `#14161A`), audio green `#34D399`. Fonts: Geist and Geist Mono. Borders instead of shadows, no gradients.
