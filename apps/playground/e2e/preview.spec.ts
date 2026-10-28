@@ -11,6 +11,18 @@ test("preview shows the right frame after seeking forward and back", async ({ pa
   await page.getByLabel("Import media files").setInputFiles(fixture);
   await expect(page.locator(".cutiva-clip--video")).toHaveCount(1);
 
+  // The clip shows a thumbnail strip (the fixture's test pattern, so not blank).
+  await expect
+    .poll(() =>
+      page.locator(".cutiva-clip__thumbs").evaluate((c: HTMLCanvasElement) => {
+        const d = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+        let drawn = 0;
+        for (let i = 3; i < d.length; i += 4) if (d[i]! > 0) drawn++;
+        return drawn / (d.length / 4);
+      }),
+    )
+    .toBeGreaterThan(0.9);
+
   const ruler = page.getByRole("slider", { name: "Playhead" });
   const box = (await ruler.boundingBox())!;
   const brightness = () =>

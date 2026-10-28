@@ -1,6 +1,9 @@
 import { clipDurationUs, clipEndUs, CutivaError, formatTimecode, type Editor, type Us } from "@cutiva/core";
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useProject } from "./hooks.js";
+
+/** An image the timeline can draw, such as a canvas or ImageBitmap. */
+export type ThumbnailSource = CanvasImageSource & { width: number; height: number };
 
 export interface TimelineProps {
   editor: Editor;
@@ -12,6 +15,11 @@ export interface TimelineProps {
   pxPerSecond?: number;
   /** Called when an edit is refused (overlap, invalid range). */
   onError?: (error: CutivaError) => void;
+  /**
+   * Frame of a video asset near a source time. When set, video clips show a strip of thumbnails.
+   * With `@cutiva/web`, pass `engine.thumbnail`.
+   */
+  thumbnail?: (assetId: string, sourceUs: Us) => Promise<ThumbnailSource | null>;
 }
 
 type Drag =
@@ -21,7 +29,7 @@ type Drag =
 
 const TRACK_LABEL = { video: "Video", audio: "Audio" } as const;
 
-export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxPerSecond = 60, onError }: TimelineProps) {
+export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxPerSecond = 60, onError, thumbnail }: TimelineProps) {
   const project = useProject(editor);
   const [drag, setDrag] = useState<Drag | null>(null);
   const areaRef = useRef<HTMLDivElement>(null);
@@ -142,10 +150,13 @@ export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxP
                 }
                 if (active?.kind === "trim-out") width += active.dx;
                 const selected = selectedClipId === clip.id;
+                const thumbs = thumbnail && track.kind === "video" && asset?.kind === "video";
+                // While trimming the start, the strip should show the source the new start would reveal.
+                const shownSourceInUs = clip.sourceInUs + (active?.kind === "trim-in" ? Math.round((active.dx / pxPerUs) * clip.speed) : 0);
                 return (
                   <div
                     key={clip.id}
-                    className={`cutiva-clip cutiva-clip--${track.kind}${selected ? " is-selected" : ""}${active ? " is-dragging" : ""}`}
+                    className={`cutiva-clip cutiva-clip--${track.kind}${thumbs ? " cutiva-clip--thumbs" : ""}${selected ? " is-selected" : ""}${active ? " is-dragging" : ""}`}
                     style={{ left, width: Math.max(4, width) }}
                     onPointerDown={(e) => {
                       e.stopPropagation();
@@ -155,6 +166,17 @@ export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxP
                     }}
                     title={`${asset?.name ?? clip.assetId} · ${formatTimecode(clip.startUs)} – ${formatTimecode(clipEndUs(clip))}`}
                   >
+                    {thumbs && (
+                      <ClipThumbnails
+                        assetId={clip.assetId}
+                        aspect={asset.width && asset.height ? asset.width / asset.height : 16 / 9}
+                        sourceInUs={shownSourceInUs}
+                        speed={clip.speed}
+                        widthPx={Math.max(4, width)}
+                        pxPerUs={pxPerUs}
+                        thumbnail={thumbnail}
+                      />
+                    )}
                     <span
                       className="cutiva-clip__handle cutiva-clip__handle--in"
                       onPointerDown={(e) => {
@@ -182,4 +204,51 @@ export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxP
       </div>
     </div>
   );
+}
+
+interface ClipThumbnailsProps {
+  assetId: string;
+  /** Width / height of the video. */
+  aspect: number;
+  sourceInUs: Us;
+  speed: number;
+  widthPx: number;
+  pxPerUs: number;
+  thumbnail: NonNullable<TimelineProps["thumbnail"]>;
+}
+
+/** A strip of thumbnails behind a clip, one tile per video-aspect slot. */
+function ClipThumbnails({ assetId, aspect, sourceInUs, speed, widthPx, pxPerUs, thumbnail }: ClipThumbnailsProps) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  // Keep the latest callback without redrawing when only its identity changes.
+  const thumbnailRef = useRef(thumbnail);
+  thumbnailRef.current = thumbnail;
+
+  useEffect(() => {
+    const canvas = ref.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    const height = canvas.clientHeight;
+    const width = Math.ceil(widthPx);
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const tileWidth = Math.max(16, height * aspect);
+    let live = true;
+    for (let x = 0; x < width; x += tileWidth) {
+      const sourceUs = Math.round(sourceInUs + (x / pxPerUs) * speed);
+      thumbnailRef
+        .current(assetId, sourceUs)
+        .then((image) => {
+          if (live && image) ctx.drawImage(image, x, 0, tileWidth, height);
+        })
+        .catch(() => undefined);
+    }
+    return () => {
+      live = false;
+    };
+  }, [assetId, aspect, sourceInUs, speed, widthPx, pxPerUs]);
+
+  return <canvas ref={ref} className="cutiva-clip__thumbs" aria-hidden="true" />;
 }

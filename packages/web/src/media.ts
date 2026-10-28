@@ -7,6 +7,7 @@ import {
   type InputVideoTrack,
 } from "mediabunny";
 import { FrameBudget, FrameServer } from "./frames.js";
+import { ThumbnailServer } from "./thumbnails.js";
 
 export interface MediaEntry {
   asset: Asset;
@@ -16,6 +17,8 @@ export interface MediaEntry {
   audio: InputAudioTrack | null;
   /** Lazily created, one per asset, for preview frames. */
   previewFrames?: FrameServer;
+  /** Lazily created, one per asset, for timeline thumbnails. */
+  thumbnails?: ThumbnailServer;
   /** Lazily decoded full audio, for preview playback and export mixing. */
   audioBuffer?: Promise<AudioBuffer | null>;
 }
@@ -99,6 +102,12 @@ export class MediaRegistry {
     if (!entry.video) return null;
     entry.previewFrames ??= new FrameServer(entry.video, maxWidth, this.frameBudget);
     return entry.previewFrames;
+  }
+
+  thumbnails(entry: MediaEntry): ThumbnailServer | null {
+    if (!entry.video) return null;
+    entry.thumbnails ??= new ThumbnailServer(entry.video);
+    return entry.thumbnails;
   }
 
   /** Decode an asset's whole audio once. Null when it has none or the browser can't decode it. */

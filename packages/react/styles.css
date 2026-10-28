@@ -32,8 +32,10 @@
 .cutiva-clip { position: absolute; top: 8px; height: 40px; border-radius: 8px; display: flex; align-items: center; overflow: hidden; cursor: grab; color: var(--cutiva-on-accent); font-weight: 500; touch-action: none; }
 .cutiva-clip--video { background: var(--cutiva-cut); }
 .cutiva-clip--audio { background: var(--cutiva-track); }
-.cutiva-clip.is-selected { box-shadow: 0 0 0 2px var(--cutiva-ink) inset; }
+.cutiva-clip.is-selected::after { content: ""; position: absolute; inset: 0; border: 2px solid var(--cutiva-ink); border-radius: inherit; pointer-events: none; z-index: 2; }
 .cutiva-clip.is-dragging { cursor: grabbing; opacity: .9; z-index: 2; }
 .cutiva-clip__name { flex: 1; padding: 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
-.cutiva-clip__handle { width: 8px; align-self: stretch; cursor: ew-resize; background: rgba(20, 22, 26, .25); }
+.cutiva-clip__handle { position: relative; z-index: 1; width: 8px; align-self: stretch; cursor: ew-resize; background: rgba(20, 22, 26, .25); }
+.cutiva-clip__thumbs { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.cutiva-clip--thumbs .cutiva-clip__name { position: relative; z-index: 1; flex: 0 1 auto; margin: 0 auto 0 6px; padding: 2px 6px; border-radius: 4px; background: var(--cutiva-cut); font-size: 12px; }
 .cutiva-timeline__playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--cutiva-ink); pointer-events: none; }
