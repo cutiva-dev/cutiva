@@ -45,18 +45,19 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 ## Current status (update this section as work lands)
 
 - Core: implemented, 22 tests passing.
-- Web engine, React package, playground: implemented and type-checked against Mediabunny 1.61.3, **not yet run in a real browser**.
+- Web engine, React package, playground: verified in Chrome 156 on macOS with a scripted run (Playwright driving the playground): import MP4, preview frames, playback advances on the audio clock, split, trim, reorder, add MP3, export. The exported MP4 has the right frames in the right order, both audio sources mixed, and audio aligned to video (AAC priming is measured and trimmed with an edit list, `encoder-delay.ts`). Preview sound was not checked by ear. Firefox, Safari and Chrome on Windows/Linux not tested. Known: exported audio track runs ~33 ms past the video (AAC frame padding; Mediabunny can't trim it).
 - Website: migrated to Next.js 16 + Fumadocs (ADR 0003). Builds; landing, docs, search and the waitlist endpoint respond locally under `next start` (validation, honeypot and the no-database 503 tested). Not yet tested against a real MongoDB or deployed.
 - Whole monorepo is on React 19.3 (`@cutiva/react` still accepts `react >=18` as a peer).
 
 ## Next tasks, in order (Phase 0 gate: a trimmed MP4 exports in Chromium)
 
-1. Run the playground in Chromium and verify by hand: import an MP4, preview plays with sound, split, trim, reorder, add an MP3, export, and the downloaded MP4 plays with correct duration and audio. Fix whatever breaks.
-2. Add a Playwright E2E test (Chromium) that imports a small committed test video (generate one with ffmpeg, a few seconds, H.264 + AAC, under 500 KB), splits, exports, and checks the output duration and tracks with Mediabunny. Add it to CI.
-3. Move export into a Web Worker (OffscreenCanvas) so the UI never freezes.
-4. Timeline thumbnails and a frame cache so scrubbing phone videos (long GOP) stays fast.
-5. Raise core coverage to ≥ 90% and add more conformance fixtures (speed, gaps, multiple video tracks, muted tracks).
-6. Then update README/ROADMAP status honestly and prepare npm v0.1 with Changesets.
-7. Deploy both apps on Vercel: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and `apps/playground` → play.cutiva.dev (Root Directory `apps/playground`, framework Vite, output `dist`).
+Each task is a GitHub issue in `cutiva-dev/cutiva`. Close the issue from the PR that finishes it, and remove the line here.
+
+1. (#4) Add a Playwright E2E test (Chromium) that imports a small committed test video (generate one with ffmpeg, a few seconds, H.264 + AAC, under 500 KB), splits, exports, and checks the output duration and tracks with Mediabunny. Add it to CI.
+2. (#5) Move export into a Web Worker (OffscreenCanvas) so the UI never freezes.
+3. (#6) Timeline thumbnails and a frame cache so scrubbing phone videos (long GOP) stays fast.
+4. (#7) Raise core coverage to ≥ 90% and add more conformance fixtures (speed, gaps, multiple video tracks, muted tracks).
+5. (#8) Then update README/ROADMAP status honestly and prepare npm v0.1 with Changesets.
+6. (#9) Deploy both apps on Vercel: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and `apps/playground` → play.cutiva.dev (Root Directory `apps/playground`, framework Vite, output `dist`).
 
 Brand, if UI work is needed: background `#0E0F12`, raised `#17191E`, lines `#2A2D33`, text `#EDEEF0`, muted `#9BA1AC`, accent `#FF6A3D` (text on it `#14161A`), audio green `#34D399`. Fonts: Geist and Geist Mono. Borders instead of shadows, no gradients.
