@@ -1,22 +1,29 @@
-const AAC_CODEC = "mp4a.40.2";
+/** Audio codecs export can use, with their WebCodecs codec strings. */
+export type ExportAudioCodec = "aac" | "opus";
+const CODEC_STRINGS: Record<ExportAudioCodec, string> = { aac: "mp4a.40.2", opus: "opus" };
 const PROBE_FRAMES = 8192;
 const MAX_LAG = 4096;
 const WINDOW = 2048;
 
-const cache = new Map<number, Promise<number>>();
+const cache = new Map<string, Promise<number>>();
 
 /**
- * AAC encoders prepend "priming" samples (2112 with Apple's encoder) and WebCodecs passes them
- * through, so encoded audio plays late unless the muxer is told to skip them with an edit list.
- * The amount depends on the platform encoder, so measure it once per sample rate: encode a known
- * noise burst, decode it, and find where it lands in presentation time.
+ * Audio encoders prepend "priming" samples (2112 with Apple's AAC encoder) and WebCodecs passes
+ * them through, so encoded audio plays late unless the muxer is told to skip them with an edit
+ * list. The amount depends on the codec and the platform encoder, so measure it once per codec and
+ * sample rate: encode a known noise burst, decode it the way a player would (Opus pre-skip
+ * included), and find where it lands in presentation time.
  * Returns the delay in samples, or 0 when it can't be measured.
  */
-export function aacEncoderDelay(sampleRate: number): Promise<number> {
-  let delay = cache.get(sampleRate);
+export function encoderDelay(codec: ExportAudioCodec, sampleRate: number): Promise<number> {
+  const key = `${codec}@${sampleRate}`;
+  let delay = cache.get(key);
   if (!delay) {
-    delay = measure(sampleRate).catch(() => 0);
-    cache.set(sampleRate, delay);
+    delay = measure(codec, sampleRate).catch((error: unknown) => {
+      console.warn(`Cutiva: could not measure the ${codec} encoder delay; exported audio may start a few tens of ms late.`, error);
+      return 0;
+    });
+    cache.set(key, delay);
   }
   return delay;
 }
@@ -31,7 +38,7 @@ function noise(frames: number): Float32Array {
   return out;
 }
 
-/** Minimal AudioSpecificConfig for AAC-LC, for encoders that don't provide one. */
+/** AudioSpecificConfig for AAC-LC. */
 function aacDescription(sampleRate: number, channels: number): Uint8Array {
   const rates = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
   const index = rates.indexOf(sampleRate);
@@ -40,10 +47,39 @@ function aacDescription(sampleRate: number, channels: number): Uint8Array {
   return new Uint8Array([bits >> 8, bits & 0xff]);
 }
 
-async function measure(sampleRate: number): Promise<number> {
+/**
+ * The first channel of decoded audio as floats. Safari's AudioData.copyTo can't convert between
+ * sample formats, so read the decoder's own format and convert here.
+ */
+function firstChannel(data: AudioData): Float32Array {
+  const frames = data.numberOfFrames;
+  const out = new Float32Array(frames);
+  try {
+    data.copyTo(out, { planeIndex: 0, format: "f32-planar" });
+    return out;
+  } catch {
+    // Fall through to a copy in the native format.
+  }
+  const format = data.format;
+  if (!format) throw new Error("Decoded audio has no sample format.");
+  const stride = format.endsWith("-planar") ? 1 : data.numberOfChannels;
+  const bytes = new ArrayBuffer(data.allocationSize({ planeIndex: 0 }));
+  data.copyTo(bytes, { planeIndex: 0 });
+  const read: (i: number) => number = format.startsWith("f32")
+    ? ((v) => (i) => v[i]!)(new Float32Array(bytes))
+    : format.startsWith("s16")
+      ? ((v) => (i) => v[i]! / 32768)(new Int16Array(bytes))
+      : format.startsWith("s32")
+        ? ((v) => (i) => v[i]! / 2147483648)(new Int32Array(bytes))
+        : ((v) => (i) => (v[i]! - 128) / 128)(new Uint8Array(bytes));
+  for (let i = 0; i < frames; i++) out[i] = read(i * stride);
+  return out;
+}
+
+async function measure(codec: ExportAudioCodec, sampleRate: number): Promise<number> {
   if (typeof AudioEncoder === "undefined" || typeof AudioDecoder === "undefined") return 0;
   const channels = 2;
-  const config = { codec: AAC_CODEC, sampleRate, numberOfChannels: channels, bitrate: 128_000 };
+  const config = { codec: CODEC_STRINGS[codec], sampleRate, numberOfChannels: channels, bitrate: 128_000 };
   if (!(await AudioEncoder.isConfigSupported(config)).supported) return 0;
 
   const input = noise(PROBE_FRAMES);
@@ -69,14 +105,19 @@ async function measure(sampleRate: number): Promise<number> {
   const decoded: Float32Array[] = [];
   const decoder = new AudioDecoder({
     output: (d) => {
-      const ch = new Float32Array(d.numberOfFrames);
-      d.copyTo(ch, { planeIndex: 0, format: "f32-planar" });
-      decoded.push(ch);
+      decoded.push(firstChannel(d));
       d.close();
     },
     error: () => undefined,
   });
-  decoder.configure({ codec: AAC_CODEC, sampleRate, numberOfChannels: channels, description: description ?? aacDescription(sampleRate, channels) });
+  decoder.configure({
+    codec: CODEC_STRINGS[codec],
+    sampleRate,
+    numberOfChannels: channels,
+    // For AAC, describe the stream ourselves: the encoder was set to AAC-LC, and Safari's encoder
+    // reports a description its own decoder rejects ("InternalAudioDecoderCocoa decoding failed").
+    ...(codec === "aac" ? { description: aacDescription(sampleRate, channels) } : description ? { description } : {}),
+  });
   for (const c of chunks) decoder.decode(c);
   await decoder.flush();
   decoder.close();

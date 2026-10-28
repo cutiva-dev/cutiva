@@ -12,3 +12,4 @@ export {
   type Capabilities,
   type Resolution,
 } from "./export.js";
+export type { ExportAudioCodec } from "./encoder-delay.js";
