@@ -7,27 +7,28 @@ Cutiva runs in the browser with WebCodecs and Web Audio, so what it can do depen
 
 ## Tested
 
-The end-to-end tests run on every pull request, in CI on macOS. They import a video, edit it, export an MP4, and decode the result to check that every frame and every sound lands within 5 ms of where it belongs. They also check that the preview shows the right frame after seeking and that timeline thumbnails draw.
+End-to-end tests run on every pull request in GitHub's CI. They import a video, edit it, export an MP4, and decode the result to check that every frame and every sound lands within 5 ms of where it belongs. They also check that the preview shows the right frame after seeking and that timeline thumbnails draw.
 
-| Browser | Preview | Export video | Export audio | How it's tested |
-| --- | --- | --- | --- | --- |
-| Chrome (macOS) | Works | H.264 | AAC | E2E in CI, and by hand |
-| Firefox (macOS) | Works | H.264 | Opus | E2E in CI |
-| Safari engine, WebKit (macOS) | Works | H.264 | AAC | E2E in CI with Playwright's WebKit build |
+| Browser | macOS | Windows | Linux |
+| --- | --- | --- | --- |
+| Chrome | Works · AAC | Works · AAC | Works · **Opus** |
+| Edge | Works · AAC | Works · AAC | — |
+| Firefox | Works · **Opus** | Works · **Opus**, but video starts one frame (33 ms) late ([#21](https://github.com/cutiva-dev/cutiva/issues/21)) | Works · **Opus** |
+| Safari engine (WebKit) | Works · AAC | — | — |
+
+"Works" means preview and export both pass, with H.264 video. The codec after it is the exported audio. Chrome, Firefox and WebKit on macOS must pass before any change merges; the other combinations run on every pull request too.
 
 ## Not tested yet
 
 | Browser | Status |
 | --- | --- |
 | Safari itself (macOS) | Needs testing. The tests use Playwright's WebKit build, which shares Safari's engine but isn't the Safari app. |
-| Edge | Needs testing. It's built on Chromium, so we expect it to match Chrome. |
 | Safari on iPhone and iPad | Needs testing. |
 | Chrome on Android | Needs testing. |
-| Any browser on Windows or Linux | Needs testing. Codecs come from the operating system, so results can differ from macOS. |
 
 ## Audio in exported MP4s
 
-Exports use AAC audio where the browser can encode it. Firefox can't, so exports made in Firefox use **Opus**. Chrome, Firefox and Edge play Opus in MP4. QuickTime and some phones may not. If a browser can encode neither codec, the export has no audio.
+Exports use AAC audio where the browser can encode it. Firefox (everywhere) and Chrome on Linux can't, so exports made there use **Opus**. Chrome, Firefox and Edge play Opus in MP4. QuickTime and some phones may not. If a browser can encode neither codec, the export has no audio.
 
 ## Check before you export
 

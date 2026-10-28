@@ -8,4 +8,4 @@ Thanks for helping. A few rules keep the project healthy:
 4. **Times are integer microseconds.** Never store seconds as floats.
 5. **Sign off your commits** (`git commit -s`) to certify the [Developer Certificate of Origin](https://developercertificate.org/).
 
-Before opening a PR: `npm run build && npm run typecheck && npm test`. If you touched `@cutiva/web`, `@cutiva/react` or the playground, also run `npm run e2e` (needs Google Chrome installed). If you changed a published package, add a changeset with `npm run changeset` (see [RELEASING.md](RELEASING.md)).
+Before opening a PR: `npm run build && npm run typecheck && npm test`. If you touched `@cutiva/web`, `@cutiva/react` or the playground, also run `npm run e2e` (needs Google Chrome; Firefox and WebKit come from `npx -w @cutiva/playground playwright install firefox webkit`). Pick browsers with `E2E_BROWSERS=chrome,firefox`; Playwright's WebKit doesn't run on macOS 14. If you changed a published package, add a changeset with `npm run changeset` (see [RELEASING.md](RELEASING.md)).

@@ -17,7 +17,8 @@ If a PR changes a published package, run `npm run changeset`, choose the bump (p
 ## Before the first release
 
 - Create the `cutiva` organization on npm, so the `@cutiva` scope exists, and add the maintainers.
-- Turn on two-factor authentication for publishing.
+- Turn on two-factor authentication with an authenticator you keep at hand (for example the iPhone Passwords app). Publishing asks for a fresh code each time.
+- **Never publish with a 2FA recovery code.** npm treats using one as a possible takeover and suspends the account for 72 hours (read-only). Keep recovery codes for getting back into the account, and only when the authenticator is truly lost.
 
 ## What consumers need
 

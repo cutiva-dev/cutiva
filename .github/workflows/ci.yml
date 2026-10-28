@@ -40,3 +40,33 @@ jobs:
           path: |
             apps/playground/playwright-report
             apps/playground/test-results
+
+  e2e-platforms:
+    # Discovery across operating systems and browsers. Not a required check yet: results feed
+    # the browser support page.
+    name: e2e (${{ matrix.os }}, ${{ matrix.project }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, project: chrome }
+          - { os: windows-latest, project: edge }
+          - { os: windows-latest, project: firefox }
+          - { os: ubuntu-latest, project: chrome }
+          - { os: ubuntu-latest, project: firefox }
+          - { os: macos-latest, project: edge }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - if: matrix.project == 'firefox'
+        run: npx -w @cutiva/playground playwright install --with-deps firefox
+      - if: matrix.os == 'macos-latest' && matrix.project == 'edge'
+        run: npx -w @cutiva/playground playwright install msedge
+      - run: npm run e2e
+        env:
+          E2E_BROWSERS: ${{ matrix.project }}
