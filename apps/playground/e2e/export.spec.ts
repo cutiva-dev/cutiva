@@ -42,10 +42,18 @@ test("import, split, delete the first part, export: output is trimmed and in syn
   await page.getByRole("button", { name: "Delete clip" }).click();
   await expect.poll(() => clipTitles(page)).toEqual(["clip.mp4 · 00:00:00.000 – 00:00:03.000"]);
 
+  // Watch the main thread while exporting: the UI must stay responsive.
+  await page.evaluate(() => {
+    const w = window as unknown as { longTasks: number[] };
+    w.longTasks = [];
+    new PerformanceObserver((list) => list.getEntries().forEach((e) => w.longTasks.push(e.duration))).observe({ type: "longtask" });
+  });
   const downloading = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export MP4" }).click();
   const download = await downloading;
   await expect(page.getByRole("status")).toHaveText("Export finished.");
+  const longTasks = await page.evaluate(() => (window as unknown as { longTasks: number[] }).longTasks);
+  expect(Math.max(0, ...longTasks), `main-thread tasks during export: ${longTasks.map(Math.round).join(", ")} ms`).toBeLessThan(250);
   const bytes = await readFile((await download.path())!);
 
   // Container: one H.264 track and one AAC track, 3 s long.

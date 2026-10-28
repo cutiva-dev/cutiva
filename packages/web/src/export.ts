@@ -17,7 +17,7 @@ import {
   canEncodeVideo,
   Mp4OutputFormat,
   Output,
-  QUALITY_HIGH,
+  Quality,
   type WrappedCanvas,
 } from "mediabunny";
 import { scheduleSegments } from "./audio.js";
@@ -32,7 +32,7 @@ export interface ExportOptions {
   resolution?: Resolution;
   /** Frames per second. Defaults to the project's fps. */
   fps?: number;
-  /** Video bitrate in bits per second. Defaults to Mediabunny's QUALITY_HIGH. */
+  /** Video bitrate in bits per second. Defaults to a "high" quality bitrate for the output size. */
   videoBitrate?: number;
 }
 
@@ -132,12 +132,14 @@ export function exportProject(project: Project, media: MediaRegistry, options: E
 
     const target = new BufferTarget();
     output = new Output({ format: new Mp4OutputFormat({ fastStart: "in-memory" }), target });
-    const videoSource = new CanvasSource(canvas, { codec: "avc", bitrate: options.videoBitrate ?? QUALITY_HIGH });
+    // A bitrate, not a quantizer: Chrome on macOS stalls ~4 s on the first quantizer-mode H.264 encode of a session.
+    const bitrate = options.videoBitrate ?? new Quality({ quality: "high", preferBitrate: true });
+    const videoSource = new CanvasSource(canvas, { codec: "avc", bitrate });
     output.addVideoTrack(videoSource, { frameRate: fps });
     // Start the audio early by the encoder's priming so the edit list trims it and sound lines up with video.
     const audioSource = mixed
       ? new AudioBufferSource(
-          { codec: "aac", bitrate: QUALITY_HIGH },
+          { codec: "aac", bitrate: new Quality("high") },
           { startTimestamp: -(await aacEncoderDelay(sampleRate)) / sampleRate },
         )
       : null;
