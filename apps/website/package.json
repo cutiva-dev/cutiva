@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "next dev -p 4321",
-    "build": "next build",
+    "build": "npm run build:play && next build",
     "start": "next start -p 4321",
     "postinstall": "fumadocs-mdx",
-    "typecheck": "fumadocs-mdx && tsc --noEmit -p tsconfig.json"
+    "typecheck": "fumadocs-mdx && tsc --noEmit -p tsconfig.json",
+    "build:play": "npm run build -w @cutiva/playground && node scripts/copy-playground.mjs"
   },
   "dependencies": {
     "fumadocs-core": "16.17.2",

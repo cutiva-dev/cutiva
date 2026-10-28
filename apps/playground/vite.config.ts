@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 const pkg = (p: string) => fileURLToPath(new URL(`../../packages/${p}`, import.meta.url));
 
 // Work against package sources so edits show up without a rebuild.
-export default defineConfig({
+// The production build is served by the website under /play.
+export default defineConfig(({ command }) => ({
+  base: command === "build" ? "/play/" : "/",
   plugins: [react()],
   resolve: {
     alias: [
@@ -15,4 +17,4 @@ export default defineConfig({
       { find: "@cutiva/react", replacement: pkg("react/src/index.ts") },
     ],
   },
-});
+}));
