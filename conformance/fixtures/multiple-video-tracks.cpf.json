@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "id": "prj_layers",
+  "settings": { "width": 1080, "height": 1920, "fps": { "num": 30000, "den": 1001 }, "sampleRate": 48000 },
+  "assets": [
+    { "id": "ast_bg", "kind": "video", "name": "background.mp4", "uri": "file://background.mp4", "durationUs": 30000000, "hasAudio": true },
+    { "id": "ast_logo", "kind": "video", "name": "logo.mov", "uri": "file://logo.mov", "durationUs": 5000000, "hasAudio": false },
+    { "id": "ast_pip", "kind": "video", "name": "selfie.mp4", "uri": "file://selfie.mp4", "durationUs": 20000000, "hasAudio": true }
+  ],
+  "tracks": [
+    { "id": "trk_bottom", "kind": "video", "muted": false, "clips": [
+      { "id": "bg", "assetId": "ast_bg", "startUs": 0, "sourceInUs": 0, "sourceOutUs": 10000000, "speed": 1, "volume": 1, "effects": [] }
+    ]},
+    { "id": "trk_middle", "kind": "video", "muted": false, "clips": [
+      { "id": "logo", "assetId": "ast_logo", "startUs": 1000000, "sourceInUs": 0, "sourceOutUs": 2000000, "speed": 1, "volume": 1, "effects": [] },
+      { "id": "pip", "assetId": "ast_pip", "startUs": 6000000, "sourceInUs": 4000000, "sourceOutUs": 9000000, "speed": 1, "volume": 0.5, "effects": [] }
+    ]},
+    { "id": "trk_top", "kind": "video", "muted": false, "clips": [
+      { "id": "top", "assetId": "ast_pip", "startUs": 12000000, "sourceInUs": 0, "sourceOutUs": 1000000, "speed": 1, "volume": 1, "effects": [] }
+    ]}
+  ]
+}

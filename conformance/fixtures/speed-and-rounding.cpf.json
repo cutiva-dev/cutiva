@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "id": "prj_speed",
+  "settings": { "width": 1920, "height": 1080, "fps": { "num": 30, "den": 1 }, "sampleRate": 48000 },
+  "assets": [
+    { "id": "ast_v", "kind": "video", "name": "long.mp4", "uri": "file://long.mp4", "durationUs": 60000000, "hasAudio": true }
+  ],
+  "tracks": [
+    { "id": "trk_v", "kind": "video", "muted": false, "clips": [
+      { "id": "fast", "assetId": "ast_v", "startUs": 0, "sourceInUs": 0, "sourceOutUs": 1000000, "speed": 3, "volume": 1, "effects": [] },
+      { "id": "slow", "assetId": "ast_v", "startUs": 333333, "sourceInUs": 10000000, "sourceOutUs": 13000000, "speed": 0.5, "volume": 1, "effects": [] },
+      { "id": "tiny", "assetId": "ast_v", "startUs": 6333333, "sourceInUs": 20000001, "sourceOutUs": 20000006, "speed": 2, "volume": 1, "effects": [] },
+      { "id": "odd", "assetId": "ast_v", "startUs": 7000000, "sourceInUs": 30000000, "sourceOutUs": 31500000, "speed": 1.5, "volume": 1, "effects": [] }
+    ]}
+  ]
+}

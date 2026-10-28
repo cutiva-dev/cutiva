@@ -117,8 +117,11 @@ export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxP
             aria-valuenow={timeUs}
             aria-valuetext={formatTimecode(timeUs)}
             onKeyDown={(e) => {
-              if (e.key === "ArrowRight") onSeek(timeUs + 1_000_000 / 30);
-              if (e.key === "ArrowLeft") onSeek(Math.max(0, timeUs - 1_000_000 / 30));
+              // One frame at the project's rate, in whole microseconds.
+              const { num, den } = project.settings.fps;
+              const frameUs = Math.round((1_000_000 * den) / num);
+              if (e.key === "ArrowRight") onSeek(timeUs + frameUs);
+              if (e.key === "ArrowLeft") onSeek(Math.max(0, timeUs - frameUs));
             }}
           >
             {ticks.map((s) => (

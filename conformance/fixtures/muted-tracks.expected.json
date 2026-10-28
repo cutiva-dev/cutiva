@@ -1,0 +1,20 @@
+{
+  "_notes": [
+    "A muted video track is still visible: c1 shows at t=0 under c2.",
+    "c1 is on a muted track, c2 has volume 0 and m1 is on a muted track: none of them make sound.",
+    "m3's fade has a non-numeric inUs, which counts as no fade in; its outUs still applies.",
+    "Clips end at c1 4000000, c2 1000000, m1 3000000, m2 3000000 and m3 5000000, so the project lasts 5000000."
+  ],
+  "durationUs": 5000000,
+  "videoAt": [
+    { "tUs": 0, "layers": [{ "clipId": "c1", "sourceTimeUs": 0 }, { "clipId": "c2", "sourceTimeUs": 5000000 }] },
+    { "tUs": 999999, "layers": [{ "clipId": "c1", "sourceTimeUs": 999999 }, { "clipId": "c2", "sourceTimeUs": 5999999 }] },
+    { "tUs": 1000000, "layers": [{ "clipId": "c1", "sourceTimeUs": 1000000 }] },
+    { "tUs": 4000000, "layers": [] }
+  ],
+  "audioSegments": 2,
+  "audio": [
+    { "clipId": "m2", "startUs": 1000000, "sourceInUs": 0, "sourceOutUs": 2000000, "speed": 1, "volume": 2, "fadeInUs": 250000, "fadeOutUs": 0 },
+    { "clipId": "m3", "startUs": 3000000, "sourceInUs": 2000000, "sourceOutUs": 4000000, "speed": 1, "volume": 1, "fadeInUs": 0, "fadeOutUs": 500000 }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "_notes": [
+    "fast: round(1000000 / 3) = 333333, so it covers [0, 333333).",
+    "slow: 3000000 / 0.5 = 6000000, so [333333, 6333333).",
+    "tiny: round(5 / 2) = round(2.5) = 3 (halves go up), so [6333333, 6333336).",
+    "odd: 1500000 / 1.5 = 1000000, so [7000000, 8000000). [6333336, 7000000) is a gap.",
+    "t=333334: 10000000 + round(1 * 0.5) = 10000000 + round(0.5) = 10000001.",
+    "t=6333332: 10000000 + round(5999999 * 0.5) = 10000000 + round(2999999.5) = 13000000.",
+    "t=7500001: 30000000 + round(500001 * 1.5) = 30000000 + round(750001.5) = 30750002."
+  ],
+  "durationUs": 8000000,
+  "videoAt": [
+    { "tUs": 0, "layers": [{ "clipId": "fast", "sourceTimeUs": 0 }] },
+    { "tUs": 1, "layers": [{ "clipId": "fast", "sourceTimeUs": 3 }] },
+    { "tUs": 333332, "layers": [{ "clipId": "fast", "sourceTimeUs": 999996 }] },
+    { "tUs": 333333, "layers": [{ "clipId": "slow", "sourceTimeUs": 10000000 }] },
+    { "tUs": 333334, "layers": [{ "clipId": "slow", "sourceTimeUs": 10000001 }] },
+    { "tUs": 6333332, "layers": [{ "clipId": "slow", "sourceTimeUs": 13000000 }] },
+    { "tUs": 6333333, "layers": [{ "clipId": "tiny", "sourceTimeUs": 20000001 }] },
+    { "tUs": 6333335, "layers": [{ "clipId": "tiny", "sourceTimeUs": 20000005 }] },
+    { "tUs": 6333336, "layers": [] },
+    { "tUs": 7000000, "layers": [{ "clipId": "odd", "sourceTimeUs": 30000000 }] },
+    { "tUs": 7500001, "layers": [{ "clipId": "odd", "sourceTimeUs": 30750002 }] },
+    { "tUs": 8000000, "layers": [] }
+  ],
+  "audioSegments": 4,
+  "audio": [
+    { "clipId": "fast", "startUs": 0, "sourceInUs": 0, "sourceOutUs": 1000000, "speed": 3, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 },
+    { "clipId": "slow", "startUs": 333333, "sourceInUs": 10000000, "sourceOutUs": 13000000, "speed": 0.5, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 },
+    { "clipId": "tiny", "startUs": 6333333, "sourceInUs": 20000001, "sourceOutUs": 20000006, "speed": 2, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 },
+    { "clipId": "odd", "startUs": 7000000, "sourceInUs": 30000000, "sourceOutUs": 31500000, "speed": 1.5, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 }
+  ]
+}

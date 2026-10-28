@@ -1,0 +1,19 @@
+{
+  "version": "0.1.0",
+  "id": "prj_gaps",
+  "settings": { "width": 1280, "height": 720, "fps": { "num": 25, "den": 1 }, "sampleRate": 44100 },
+  "assets": [
+    { "id": "ast_v", "kind": "video", "name": "silent.mp4", "uri": "file://silent.mp4", "durationUs": 10000000, "hasAudio": false },
+    { "id": "ast_a", "kind": "audio", "name": "music.mp3", "uri": "file://music.mp3", "durationUs": 30000000 }
+  ],
+  "tracks": [
+    { "id": "trk_v", "kind": "video", "muted": false, "clips": [
+      { "id": "v1", "assetId": "ast_v", "startUs": 2000000, "sourceInUs": 0, "sourceOutUs": 3000000, "speed": 1, "volume": 1, "effects": [] },
+      { "id": "v2", "assetId": "ast_v", "startUs": 8000000, "sourceInUs": 5000000, "sourceOutUs": 6000000, "speed": 1, "volume": 1, "effects": [] }
+    ]},
+    { "id": "trk_a", "kind": "audio", "muted": false, "clips": [
+      { "id": "m1", "assetId": "ast_a", "startUs": 0, "sourceInUs": 1000000, "sourceOutUs": 4000000, "speed": 1, "volume": 1, "effects": [] },
+      { "id": "m2", "assetId": "ast_a", "startUs": 10000000, "sourceInUs": 0, "sourceOutUs": 2500000, "speed": 1, "volume": 0.8, "effects": [] }
+    ]}
+  ]
+}
