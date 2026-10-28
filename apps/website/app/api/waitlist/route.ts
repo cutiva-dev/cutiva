@@ -1,24 +1,20 @@
-import type { APIRoute } from "astro";
 import { MongoClient } from "mongodb";
-
-// Runs on the server; every other page is static HTML.
-export const prerender = false;
 
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
 
+// Module scope so warm serverless invocations reuse the connection.
 let client: MongoClient | null = null;
 async function collection() {
-  const uri = import.meta.env.MONGODB_URI ?? process.env.MONGODB_URI;
+  const uri = process.env.MONGODB_URI;
   if (!uri) return null;
   client ??= new MongoClient(uri);
   await client.connect();
   return client.db(process.env.MONGODB_DB ?? "cutiva").collection("waitlist");
 }
 
-const json = (status: number, body: Record<string, unknown>) =>
-  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+const json = (status: number, body: Record<string, unknown>) => Response.json(body, { status });
 
-export const POST: APIRoute = async ({ request }) => {
+export async function POST(request: Request) {
   let data: Record<string, unknown> = {};
   try {
     const type = request.headers.get("content-type") ?? "";
@@ -44,4 +40,4 @@ export const POST: APIRoute = async ({ request }) => {
     { upsert: true },
   );
   return json(200, { ok: true });
-};
+}

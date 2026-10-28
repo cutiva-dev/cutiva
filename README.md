@@ -23,7 +23,7 @@ Cutiva lets you add trimming, splitting, audio and MP4 export to your app withou
 | [`@cutiva/web`](packages/web) | Implemented, needs browser testing | Import with Mediabunny, real-time preview on a canvas, audio mixing, MP4 (H.264 + AAC) export with WebCodecs. |
 | [`@cutiva/react`](packages/react) | Implemented, needs browser testing | `useCutiva`, `useProject`, `usePreview` and a `<Timeline>` with drag to reorder and trim handles. |
 | [`apps/playground`](apps/playground) | Builds, needs browser testing | A small editor built on the three packages. |
-| [`apps/website`](apps/website) | Builds | The cutiva.dev landing, docs (Starlight) and waitlist endpoint. |
+| [`apps/website`](apps/website) | Builds | The cutiva.dev landing, docs (Next.js + Fumadocs) and waitlist endpoint. |
 | React Native, Flutter | Planned | See the [roadmap](ROADMAP.md). |
 
 ## Quick look
