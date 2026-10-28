@@ -24,3 +24,23 @@ All times are **integer microseconds**. `12_000_000` is twelve seconds.
 ```
 
 `parseProject()` validates a document and reports the exact path of any error.
+
+## Rules every SDK follows
+
+These rules define what a project means. The conformance fixtures in `conformance/fixtures` are written from them.
+
+**Rounding.** Where a rule says *round*, round to the nearest integer, with halves going up (`round(2.5) = 3`). All inputs are non-negative, so this matches `Math.round` in JavaScript and `round()` in Dart, Swift and Kotlin.
+
+**Clips.**
+- A clip lasts `round((sourceOutUs - sourceInUs) / speed)` on the timeline.
+- It occupies the half-open range `[startUs, startUs + duration)`: at its end time it is no longer visible.
+- At timeline time `t` inside that range, it shows source time `sourceInUs + round((t - startUs) * speed)`.
+- Clips on one track never overlap and are stored in order of `startUs`. Gaps between them are allowed.
+- A clip's asset has the same kind as its track: video assets on video tracks, audio assets on audio tracks.
+- `speed` is between 0.1 and 16, and `volume` is between 0 and 4.
+
+**Project duration** is the latest clip end on any track, or 0 when there are no clips.
+
+**Video.** At time `t`, each video track shows the clip that contains `t`, if any. Layers are listed in track order, bottom first; later tracks draw on top. A muted video track is still visible.
+
+**Audio.** Every clip on a track that is not muted plays its sound, except clips of a video asset with `hasAudio: false` and clips with `volume` 0. Each one is an audio segment with the clip's start, source range, speed and volume, listed in track order and then clip order. A `core/fade` effect adds `inUs` and `outUs` fades, in timeline time; without one, both are 0.

@@ -1,0 +1,23 @@
+{
+  "_notes": [
+    "v1 covers [2000000, 5000000) and v2 [8000000, 9000000); before, between and after them nothing is visible.",
+    "The audio track ends last: m2 covers [10000000, 12500000), so the project lasts 12500000.",
+    "The video asset has hasAudio: false, so only m1 and m2 make sound."
+  ],
+  "durationUs": 12500000,
+  "videoAt": [
+    { "tUs": 0, "layers": [] },
+    { "tUs": 1999999, "layers": [] },
+    { "tUs": 2000000, "layers": [{ "clipId": "v1", "sourceTimeUs": 0 }] },
+    { "tUs": 4999999, "layers": [{ "clipId": "v1", "sourceTimeUs": 2999999 }] },
+    { "tUs": 5000000, "layers": [] },
+    { "tUs": 8500000, "layers": [{ "clipId": "v2", "sourceTimeUs": 5500000 }] },
+    { "tUs": 9000000, "layers": [] },
+    { "tUs": 11000000, "layers": [] }
+  ],
+  "audioSegments": 2,
+  "audio": [
+    { "clipId": "m1", "startUs": 0, "sourceInUs": 1000000, "sourceOutUs": 4000000, "speed": 1, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 },
+    { "clipId": "m2", "startUs": 10000000, "sourceInUs": 0, "sourceOutUs": 2500000, "speed": 1, "volume": 0.8, "fadeInUs": 0, "fadeOutUs": 0 }
+  ]
+}

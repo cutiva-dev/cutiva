@@ -10,7 +10,7 @@ Talk to the maintainer (Wilfredo) in Spanish. Write all code, comments, commit m
 npm install
 npm run build        # core → web → react (tsc). Run before typecheck: packages resolve each other via dist/
 npm run typecheck    # every workspace
-npm test             # vitest: core unit tests + conformance fixtures
+npm test             # vitest: core unit tests + conformance fixtures; fails under 90% coverage
 npm run e2e          # Playwright in Google Chrome: import, split, export, check the MP4 (needs Chrome installed)
 npm run dev          # playground at http://localhost:5173 (aliases package sources, no rebuild needed)
 npm run build -w @cutiva/playground
@@ -45,7 +45,7 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 
 ## Current status (update this section as work lands)
 
-- Core: implemented, 22 tests passing.
+- Core: 103 tests, 100% line/branch/function coverage (`npm test` fails under 90%). 5 conformance fixtures (split, speed and rounding, gaps, multiple video tracks, muted tracks). The timing rules every SDK follows are written in `apps/website/content/docs/project-format.mdx`.
 - Web engine, React package, playground: verified in Chrome 156 on macOS with a scripted run (Playwright driving the playground): import MP4, preview frames, playback advances on the audio clock, split, trim, reorder, add MP3, export. The exported MP4 has the right frames in the right order, both audio sources mixed, and audio aligned to video (AAC priming is measured and trimmed with an edit list, `encoder-delay.ts`). Preview sound was not checked by ear. Firefox, Safari and Chrome on Windows/Linux not tested. Known: exported audio track runs ~33 ms past the video (AAC frame padding; Mediabunny can't trim it).
 - Preview frames: `FrameServer` (`frames.ts`) keeps one decoder per asset running forward and caches decoded frames within a 192 MB budget shared by all assets. On a 1080p30 clip with 2 s GOPs, playback shows every frame (was ~25 fps) and scrubbing over seen frames is ~instant; a jump to an unseen spot still costs one GOP decode (~50 ms). Timeline thumbnails (`thumbnails.ts`, `engine.thumbnail`, `<Timeline thumbnail>`) show the keyframe at or before each slot.
 - E2E: `apps/playground/e2e/export.spec.ts` imports `e2e/fixtures/clip.mp4` (white flash + 440 Hz beep at x.5–x.6 s each second), splits, deletes the first second and exports; it checks codecs, size, duration, that every flash and beep lands within 5 ms of where it belongs, and that no main-thread task during export exceeds 250 ms. `preview.spec.ts` checks the thumbnail strip draws and that the preview shows the right frame after seeking forward and back. Runs in CI on `macos-latest`, where Chrome has the platform H.264 and AAC encoders; Linux runners are untested.
@@ -56,9 +56,8 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 
 Each task is a GitHub issue in `cutiva-dev/cutiva`. Close the issue from the PR that finishes it, and remove the line here.
 
-1. (#7) Raise core coverage to ≥ 90% and add more conformance fixtures (speed, gaps, multiple video tracks, muted tracks).
-2. (#8) Then update README/ROADMAP status honestly and prepare npm v0.1 with Changesets.
-3. (#9) Deploy both apps on Vercel: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and `apps/playground` → play.cutiva.dev (Root Directory `apps/playground`, framework Vite, output `dist`).
+1. (#8) Then update README/ROADMAP status honestly and prepare npm v0.1 with Changesets.
+2. (#9) Deploy both apps on Vercel: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and `apps/playground` → play.cutiva.dev (Root Directory `apps/playground`, framework Vite, output `dist`).
 
 Deferred: (#5) export in a Web Worker. Measured in Chrome 156 on macOS: export on the main thread keeps the UI at ~60 fps (worst task 50–75 ms on a 4K source, also with 4× CPU throttling), because WebCodecs already runs off the main thread. A worker would add bundler friction for SDK users for little gain. Revisit when export draws heavy canvas work (text, overlays, effects) or low-end devices show jank. The E2E test fails if any main-thread task during export exceeds 250 ms.
 

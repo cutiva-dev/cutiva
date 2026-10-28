@@ -7,6 +7,8 @@ interface Expected {
   durationUs: number;
   videoAt: { tUs: number; layers: { clipId: string; sourceTimeUs: number }[] }[];
   audioSegments: number;
+  /** Optional: every audio segment in order, field by field. */
+  audio?: { clipId: string; startUs: number; sourceInUs: number; sourceOutUs: number; speed: number; volume: number; fadeInUs: number; fadeOutUs: number }[];
 }
 
 const dir = join(__dirname, "../../../conformance/fixtures");
@@ -21,7 +23,11 @@ describe("conformance fixtures", () => {
         const got = resolveVideoAt(project, sample.tUs).map((l) => ({ clipId: l.clip.id, sourceTimeUs: l.sourceTimeUs }));
         expect(got, `t=${sample.tUs}`).toEqual(sample.layers);
       }
-      expect(audioSegments(project)).toHaveLength(expected.audioSegments);
+      const audio = audioSegments(project);
+      expect(audio).toHaveLength(expected.audioSegments);
+      if (expected.audio) {
+        expect(audio.map(({ assetId: _, ...segment }) => segment)).toEqual(expected.audio);
+      }
     });
   }
 });

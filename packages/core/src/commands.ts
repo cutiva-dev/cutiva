@@ -65,6 +65,16 @@ function trackEndUs(track: Track): Us {
   return track.clips.reduce((end, c) => Math.max(end, clipEndUs(c)), 0);
 }
 
+function checkKind(asset: Asset, track: Track, what: string): void {
+  if (asset.kind !== track.kind) {
+    throw new CutivaError("TRACK_KIND_MISMATCH", `${what} of ${asset.kind} asset "${asset.id}" needs a ${asset.kind} track.`);
+  }
+}
+
+function checkTime(value: Us, name: string): void {
+  if (!Number.isInteger(value) || value < 0) throw new CutivaError("INVALID_RANGE", `${name} must be a non-negative integer.`);
+}
+
 function checkRange(asset: Asset, sourceInUs: Us, sourceOutUs: Us): void {
   if (!Number.isInteger(sourceInUs) || !Number.isInteger(sourceOutUs)) {
     throw new CutivaError("INVALID_RANGE", "Source times must be integer microseconds.");
@@ -119,9 +129,7 @@ export function applyCommand(project: Project, cmd: Command, ids: IdFactory): Co
       } else {
         track = findTrack(project, cmd.trackId);
       }
-      if (asset.kind === "video" && track.kind !== "video") {
-        throw new CutivaError("TRACK_KIND_MISMATCH", `Video asset "${asset.id}" needs a video track.`);
-      }
+      checkKind(asset, track, "A clip");
       const sourceInUs = cmd.sourceInUs ?? 0;
       const sourceOutUs = cmd.sourceOutUs ?? asset.durationUs;
       checkRange(asset, sourceInUs, sourceOutUs);
@@ -135,7 +143,7 @@ export function applyCommand(project: Project, cmd: Command, ids: IdFactory): Co
         volume: 1,
         effects: [],
       };
-      if (clip.startUs < 0) throw new CutivaError("INVALID_RANGE", "startUs must be >= 0.");
+      checkTime(clip.startUs, "startUs");
       track.clips.push(clip);
       assertNoOverlap(track);
       sortTrack(track);
@@ -152,6 +160,7 @@ export function applyCommand(project: Project, cmd: Command, ids: IdFactory): Co
     }
     case "clip.split": {
       const { track, clip, index } = findClip(project, cmd.clipId);
+      checkTime(cmd.atUs, "atUs");
       const offsetUs = cmd.atUs - clip.startUs;
       if (offsetUs < MIN_CLIP_US || cmd.atUs > clipEndUs(clip) - MIN_CLIP_US) {
         throw new CutivaError("INVALID_RANGE", `Split point ${cmd.atUs} is not inside clip "${clip.id}".`);
@@ -185,16 +194,11 @@ export function applyCommand(project: Project, cmd: Command, ids: IdFactory): Co
     }
     case "clip.move": {
       const { track, clip, index } = findClip(project, cmd.clipId);
-      if (cmd.startUs < 0 || !Number.isInteger(cmd.startUs)) {
-        throw new CutivaError("INVALID_RANGE", "startUs must be a non-negative integer.");
-      }
+      checkTime(cmd.startUs, "startUs");
       let target = track;
       if (cmd.trackId && cmd.trackId !== track.id) {
         target = findTrack(project, cmd.trackId);
-        const asset = findAsset(project, clip.assetId);
-        if (asset.kind === "video" && target.kind !== "video") {
-          throw new CutivaError("TRACK_KIND_MISMATCH", `Video clip "${clip.id}" needs a video track.`);
-        }
+        checkKind(findAsset(project, clip.assetId), target, `Clip "${clip.id}"`);
         track.clips.splice(index, 1);
         target.clips.push(clip);
       }
@@ -227,7 +231,9 @@ export function applyCommand(project: Project, cmd: Command, ids: IdFactory): Co
     case "clip.setFade": {
       const { clip } = findClip(project, cmd.clipId);
       const len = clipDurationUs(clip);
-      if (cmd.inUs < 0 || cmd.outUs < 0 || cmd.inUs + cmd.outUs > len) {
+      checkTime(cmd.inUs, "inUs");
+      checkTime(cmd.outUs, "outUs");
+      if (cmd.inUs + cmd.outUs > len) {
         throw new CutivaError("INVALID_RANGE", "Fades must be non-negative and fit inside the clip.");
       }
       clip.effects = clip.effects.filter((e) => e.type !== "core/fade");

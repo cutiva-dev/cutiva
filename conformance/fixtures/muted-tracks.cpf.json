@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "id": "prj_muted",
+  "settings": { "width": 1920, "height": 1080, "fps": { "num": 30, "den": 1 }, "sampleRate": 48000 },
+  "assets": [
+    { "id": "ast_v", "kind": "video", "name": "talk.mp4", "uri": "file://talk.mp4", "durationUs": 10000000, "hasAudio": true },
+    { "id": "ast_a", "kind": "audio", "name": "voice.m4a", "uri": "file://voice.m4a", "durationUs": 10000000 },
+    { "id": "ast_b", "kind": "audio", "name": "sfx.wav", "uri": "file://sfx.wav", "durationUs": 10000000 }
+  ],
+  "tracks": [
+    { "id": "trk_v_muted", "kind": "video", "muted": true, "clips": [
+      { "id": "c1", "assetId": "ast_v", "startUs": 0, "sourceInUs": 0, "sourceOutUs": 4000000, "speed": 1, "volume": 1, "effects": [] }
+    ]},
+    { "id": "trk_v_quiet", "kind": "video", "muted": false, "clips": [
+      { "id": "c2", "assetId": "ast_v", "startUs": 0, "sourceInUs": 5000000, "sourceOutUs": 6000000, "speed": 1, "volume": 0, "effects": [] }
+    ]},
+    { "id": "trk_a_muted", "kind": "audio", "muted": true, "clips": [
+      { "id": "m1", "assetId": "ast_a", "startUs": 0, "sourceInUs": 0, "sourceOutUs": 3000000, "speed": 1, "volume": 1, "effects": [] }
+    ]},
+    { "id": "trk_a", "kind": "audio", "muted": false, "clips": [
+      { "id": "m2", "assetId": "ast_b", "startUs": 1000000, "sourceInUs": 0, "sourceOutUs": 2000000, "speed": 1, "volume": 2,
+        "effects": [{ "type": "core/fade", "params": { "inUs": 250000, "outUs": 0 } }] },
+      { "id": "m3", "assetId": "ast_b", "startUs": 3000000, "sourceInUs": 2000000, "sourceOutUs": 4000000, "speed": 1, "volume": 1,
+        "effects": [{ "type": "core/fade", "params": { "inUs": "soon", "outUs": 500000 } }] }
+    ]}
+  ]
+}

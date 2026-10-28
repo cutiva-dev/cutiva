@@ -1,4 +1,5 @@
 import { CutivaError } from "./errors.js";
+import { clipEndUs } from "./time.js";
 import type { IdFactory } from "./ids.js";
 import { randomId } from "./ids.js";
 import { CPF_VERSION, type AssetKind, type Clip, type Project, type ProjectSettings, type Track, type TrackKind } from "./types.js";
@@ -45,11 +46,12 @@ function fail(path: string, expected: string): never {
   throw new CutivaError("INVALID_PROJECT", `Invalid project at ${path}: expected ${expected}.`);
 }
 const isObj = (v: unknown): v is Json => typeof v === "object" && v !== null && !Array.isArray(v);
-function num(o: Json, k: string, path: string, opts: { int?: boolean; min?: number } = {}): number {
+function num(o: Json, k: string, path: string, opts: { int?: boolean; min?: number; max?: number } = {}): number {
   const v = o[k];
   if (typeof v !== "number" || !Number.isFinite(v)) fail(`${path}.${k}`, "a number");
   if (opts.int && !Number.isInteger(v)) fail(`${path}.${k}`, "an integer");
   if (opts.min !== undefined && v < opts.min) fail(`${path}.${k}`, `a number >= ${opts.min}`);
+  if (opts.max !== undefined && v > opts.max) fail(`${path}.${k}`, `a number <= ${opts.max}`);
   return v;
 }
 function str(o: Json, k: string, path: string): string {
@@ -85,14 +87,14 @@ export function parseProject(input: unknown): Project {
     sampleRate: num(s, "sampleRate", "$.settings", { int: true, min: 8000 }),
   };
 
-  const assetIds = new Set<string>();
+  const assetKinds = new Map<string, AssetKind>();
   const assets = arr(raw, "assets", "$").map((a, i) => {
     const p = `$.assets[${i}]`;
     if (!isObj(a)) fail(p, "an object");
     const kind = a.kind;
     if (kind !== "video" && kind !== "audio") fail(`${p}.kind`, '"video" or "audio"');
     const id = str(a, "id", p);
-    assetIds.add(id);
+    assetKinds.set(id, kind);
     const fp = a.fingerprint;
     return {
       id,
@@ -122,15 +124,17 @@ export function parseProject(input: unknown): Project {
       if (clipIds.has(id)) fail(`${cp}.id`, "a unique clip id");
       clipIds.add(id);
       const assetId = str(c, "assetId", cp);
-      if (!assetIds.has(assetId)) fail(`${cp}.assetId`, "the id of an asset in $.assets");
+      const assetKind = assetKinds.get(assetId);
+      if (!assetKind) fail(`${cp}.assetId`, "the id of an asset in $.assets");
+      if (assetKind !== kind) fail(`${cp}.assetId`, `a ${kind} asset, like its track`);
       const clip: Clip = {
         id,
         assetId,
         startUs: num(c, "startUs", cp, { int: true, min: 0 }),
         sourceInUs: num(c, "sourceInUs", cp, { int: true, min: 0 }),
         sourceOutUs: num(c, "sourceOutUs", cp, { int: true, min: 1 }),
-        speed: c.speed === undefined ? 1 : num(c, "speed", cp, { min: 0.01 }),
-        volume: c.volume === undefined ? 1 : num(c, "volume", cp, { min: 0 }),
+        speed: c.speed === undefined ? 1 : num(c, "speed", cp, { min: 0.1, max: 16 }),
+        volume: c.volume === undefined ? 1 : num(c, "volume", cp, { min: 0, max: 4 }),
         effects: Array.isArray(c.effects)
           ? c.effects.filter(isObj).map((e) => ({ type: String(e.type), params: isObj(e.params) ? e.params : {} }))
           : [],
@@ -138,6 +142,11 @@ export function parseProject(input: unknown): Project {
       if (clip.sourceOutUs <= clip.sourceInUs) fail(`${cp}.sourceOutUs`, "a value greater than sourceInUs");
       return clip;
     });
+    // Clips are kept in start order; they may have gaps but must not overlap.
+    clips.sort((a, b) => a.startUs - b.startUs);
+    for (let j = 1; j < clips.length; j++) {
+      if (clips[j]!.startUs < clipEndUs(clips[j - 1]!)) fail(`${p}.clips`, `clips that do not overlap ("${clips[j]!.id}" starts inside "${clips[j - 1]!.id}")`);
+    }
     return { id: str(t, "id", p), kind: kind as TrackKind, muted: t.muted === true, clips } satisfies Track;
   });
 

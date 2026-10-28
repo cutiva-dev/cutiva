@@ -1,0 +1,24 @@
+{
+  "_notes": [
+    "Layers are listed bottom first, in track order: trk_bottom, trk_middle, trk_top.",
+    "bg covers [0, 10000000), logo [1000000, 3000000), pip [6000000, 11000000), top [12000000, 13000000).",
+    "logo's asset has no audio, so bg, pip and top make sound."
+  ],
+  "durationUs": 13000000,
+  "videoAt": [
+    { "tUs": 0, "layers": [{ "clipId": "bg", "sourceTimeUs": 0 }] },
+    { "tUs": 1000000, "layers": [{ "clipId": "bg", "sourceTimeUs": 1000000 }, { "clipId": "logo", "sourceTimeUs": 0 }] },
+    { "tUs": 2999999, "layers": [{ "clipId": "bg", "sourceTimeUs": 2999999 }, { "clipId": "logo", "sourceTimeUs": 1999999 }] },
+    { "tUs": 3000000, "layers": [{ "clipId": "bg", "sourceTimeUs": 3000000 }] },
+    { "tUs": 7000000, "layers": [{ "clipId": "bg", "sourceTimeUs": 7000000 }, { "clipId": "pip", "sourceTimeUs": 5000000 }] },
+    { "tUs": 10000000, "layers": [{ "clipId": "pip", "sourceTimeUs": 8000000 }] },
+    { "tUs": 11500000, "layers": [] },
+    { "tUs": 12000000, "layers": [{ "clipId": "top", "sourceTimeUs": 0 }] }
+  ],
+  "audioSegments": 3,
+  "audio": [
+    { "clipId": "bg", "startUs": 0, "sourceInUs": 0, "sourceOutUs": 10000000, "speed": 1, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 },
+    { "clipId": "pip", "startUs": 6000000, "sourceInUs": 4000000, "sourceOutUs": 9000000, "speed": 1, "volume": 0.5, "fadeInUs": 0, "fadeOutUs": 0 },
+    { "clipId": "top", "startUs": 12000000, "sourceInUs": 0, "sourceOutUs": 1000000, "speed": 1, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 }
+  ]
+}
