@@ -22,6 +22,7 @@ import {
 } from "mediabunny";
 import { scheduleSegments } from "./audio.js";
 import { drawContain } from "./draw.js";
+import { aacEncoderDelay } from "./encoder-delay.js";
 import type { MediaRegistry } from "./media.js";
 
 export type Resolution = "480p" | "720p" | "1080p" | "source";
@@ -133,7 +134,13 @@ export function exportProject(project: Project, media: MediaRegistry, options: E
     output = new Output({ format: new Mp4OutputFormat({ fastStart: "in-memory" }), target });
     const videoSource = new CanvasSource(canvas, { codec: "avc", bitrate: options.videoBitrate ?? QUALITY_HIGH });
     output.addVideoTrack(videoSource, { frameRate: fps });
-    const audioSource = mixed ? new AudioBufferSource({ codec: "aac", bitrate: QUALITY_HIGH }) : null;
+    // Start the audio early by the encoder's priming so the edit list trims it and sound lines up with video.
+    const audioSource = mixed
+      ? new AudioBufferSource(
+          { codec: "aac", bitrate: QUALITY_HIGH },
+          { startTimestamp: -(await aacEncoderDelay(sampleRate)) / sampleRate },
+        )
+      : null;
     if (audioSource) output.addAudioTrack(audioSource);
     await output.start();
 
