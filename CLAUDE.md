@@ -58,7 +58,7 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 
 Each task is a GitHub issue in `cutiva-dev/cutiva`. Close the issue from the PR that finishes it, and remove the line here.
 
-1. (#9) Deploy both apps on Vercel: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and `apps/playground` → play.cutiva.dev (Root Directory `apps/playground`, framework Vite, output `dist`).
+1. (#9) Deploy both apps on Vercel. Playground first, at play-cutiva.ngstudio.com until cutiva.dev is bought: Root Directory `apps/playground`; build settings live in `apps/playground/vercel.json`. DNS for ngstudio.com is at GoDaddy (CNAME `play-cutiva` to the value Vercel shows). Later: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and move the playground to play.cutiva.dev.
 
 Then: create the `cutiva` npm org and publish v0.1 following RELEASING.md (the maintainer does this).
 
