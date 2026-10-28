@@ -61,7 +61,7 @@ npm run dev       # playground at http://localhost:5173
 npm run dev:website  # landing + docs at http://localhost:4321
 ```
 
-Export needs a browser that can encode H.264 with WebCodecs (Chrome or Edge today). `engine.capabilities()` tells your app before it tries.
+Export needs a browser that can encode H.264 with WebCodecs. `engine.capabilities()` tells your app before it tries. See [browser support](https://cutiva.ngstudios.co/docs/browser-support) for what is tested.
 
 ## Architecture
 

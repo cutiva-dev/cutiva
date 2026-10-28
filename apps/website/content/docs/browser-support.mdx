@@ -1,0 +1,51 @@
+---
+title: Browser support
+description: Where Cutiva's web engine works today, and how we know.
+---
+
+Cutiva runs in the browser with WebCodecs and Web Audio, so what it can do depends on the browser. This page only marks something as working when a test checks it.
+
+## Tested
+
+The end-to-end tests run on every pull request, in CI on macOS. They import a video, edit it, export an MP4, and decode the result to check that every frame and every sound lands within 5 ms of where it belongs. They also check that the preview shows the right frame after seeking and that timeline thumbnails draw.
+
+| Browser | Preview | Export video | Export audio | How it's tested |
+| --- | --- | --- | --- | --- |
+| Chrome (macOS) | Works | H.264 | AAC | E2E in CI, and by hand |
+| Firefox (macOS) | Works | H.264 | Opus | E2E in CI |
+| Safari engine, WebKit (macOS) | Works | H.264 | AAC | E2E in CI with Playwright's WebKit build |
+
+## Not tested yet
+
+| Browser | Status |
+| --- | --- |
+| Safari itself (macOS) | Needs testing. The tests use Playwright's WebKit build, which shares Safari's engine but isn't the Safari app. |
+| Edge | Needs testing. It's built on Chromium, so we expect it to match Chrome. |
+| Safari on iPhone and iPad | Needs testing. |
+| Chrome on Android | Needs testing. |
+| Any browser on Windows or Linux | Needs testing. Codecs come from the operating system, so results can differ from macOS. |
+
+## Audio in exported MP4s
+
+Exports use AAC audio where the browser can encode it. Firefox can't, so exports made in Firefox use **Opus**. Chrome, Firefox and Edge play Opus in MP4. QuickTime and some phones may not. If a browser can encode neither codec, the export has no audio.
+
+## Check before you export
+
+Ask the engine what the current browser can do, and adapt your UI:
+
+```ts
+const caps = await engine.capabilities();
+
+if (!caps.exportMp4) {
+  // No H.264 encoder: keep editing and preview, hide export.
+} else if (caps.audioCodec === "opus") {
+  // Exports will carry Opus audio; warn users who need QuickTime or phone playback.
+} else if (caps.audioCodec === null) {
+  // Exports will be silent.
+}
+```
+
+## Known limits
+
+- Exported audio can run up to about 40 ms past the end of the video (codec frame padding).
+- The tests don't check preview sound yet. It has only been checked in Chrome, where the audio clock was confirmed running.
