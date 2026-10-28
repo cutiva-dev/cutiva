@@ -51,11 +51,13 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 
 ## Next tasks, in order (Phase 0 gate: a trimmed MP4 exports in Chromium)
 
-1. Add a Playwright E2E test (Chromium) that imports a small committed test video (generate one with ffmpeg, a few seconds, H.264 + AAC, under 500 KB), splits, exports, and checks the output duration and tracks with Mediabunny. Add it to CI.
-2. Move export into a Web Worker (OffscreenCanvas) so the UI never freezes.
-3. Timeline thumbnails and a frame cache so scrubbing phone videos (long GOP) stays fast.
-4. Raise core coverage to ≥ 90% and add more conformance fixtures (speed, gaps, multiple video tracks, muted tracks).
-5. Then update README/ROADMAP status honestly and prepare npm v0.1 with Changesets.
-6. Deploy both apps on Vercel: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and `apps/playground` → play.cutiva.dev (Root Directory `apps/playground`, framework Vite, output `dist`).
+Each task is a GitHub issue in `cutiva-dev/cutiva`. Close the issue from the PR that finishes it, and remove the line here.
+
+1. (#4) Add a Playwright E2E test (Chromium) that imports a small committed test video (generate one with ffmpeg, a few seconds, H.264 + AAC, under 500 KB), splits, exports, and checks the output duration and tracks with Mediabunny. Add it to CI.
+2. (#5) Move export into a Web Worker (OffscreenCanvas) so the UI never freezes.
+3. (#6) Timeline thumbnails and a frame cache so scrubbing phone videos (long GOP) stays fast.
+4. (#7) Raise core coverage to ≥ 90% and add more conformance fixtures (speed, gaps, multiple video tracks, muted tracks).
+5. (#8) Then update README/ROADMAP status honestly and prepare npm v0.1 with Changesets.
+6. (#9) Deploy both apps on Vercel: `apps/website` → cutiva.dev (Root Directory `apps/website`, framework Next.js, env `MONGODB_URI`) and `apps/playground` → play.cutiva.dev (Root Directory `apps/playground`, framework Vite, output `dist`).
 
 Brand, if UI work is needed: background `#0E0F12`, raised `#17191E`, lines `#2A2D33`, text `#EDEEF0`, muted `#9BA1AC`, accent `#FF6A3D` (text on it `#14161A`), audio green `#34D399`. Fonts: Geist and Geist Mono. Borders instead of shadows, no gradients.
