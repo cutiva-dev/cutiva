@@ -18,7 +18,11 @@ const PX_PER_SECOND = 60; // <Timeline> default zoom
 
 const clipTitles = (page: Page) => page.locator(".cutiva-clip").evaluateAll((els) => els.map((e) => e.getAttribute("title")));
 
-test("import, split, delete the first part, export: output is trimmed and in sync", async ({ page }) => {
+test("import, split, delete the first part, export: output is trimmed and in sync", async ({ page, browserName }) => {
+  test.fail(
+    browserName === "firefox" && process.platform === "win32",
+    "Known: Firefox's H.264 encoder on Windows shifts video one frame late (#21).",
+  );
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
@@ -33,6 +37,7 @@ test("import, split, delete the first part, export: output is trimmed and in syn
   test.skip(await noVideoEncoder.isVisible(), "This browser can't encode H.264, so the app turns export off.");
   test.skip(await page.getByText("exports will be silent").isVisible(), "This browser can't encode AAC or Opus, so exports are silent.");
   const audioCodec = (await page.getByText("exported audio uses Opus").isVisible()) ? "opus" : "aac";
+  console.log(`[${browserName} on ${process.platform}] exports H.264 video with ${audioCodec} audio`);
 
   // Seek to 1 s on the ruler, select the clip, split.
   const ruler = page.getByRole("slider", { name: "Playhead" });
