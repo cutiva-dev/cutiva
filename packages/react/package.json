@@ -3,17 +3,57 @@
   "version": "0.0.1",
   "description": "React hooks and components for Cutiva.",
   "license": "Apache-2.0",
+  "author": "Cutiva contributors",
+  "homepage": "https://cutiva.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cutiva-dev/cutiva.git",
+    "directory": "packages/react"
+  },
+  "bugs": "https://github.com/cutiva-dev/cutiva/issues",
+  "keywords": [
+    "video",
+    "video-editing",
+    "react",
+    "timeline",
+    "sdk"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./styles.css": "./styles.css"
   },
-  "files": ["dist", "styles.css"],
-  "sideEffects": ["*.css"],
-  "scripts": { "build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit" },
-  "dependencies": { "@cutiva/core": "0.0.1", "@cutiva/web": "0.0.1" },
-  "peerDependencies": { "react": ">=18" },
-  "devDependencies": { "react": "19.3.0", "@types/react": "19.3.0" }
+  "files": [
+    "dist",
+    "styles.css",
+    "src",
+    "NOTICE"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@cutiva/core": "0.0.1",
+    "@cutiva/web": "0.0.1"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "react": "19.3.0",
+    "@types/react": "19.3.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

@@ -3,15 +3,43 @@
   "version": "0.0.1",
   "description": "Headless timeline model, commands and undo/redo for Cutiva.",
   "license": "Apache-2.0",
+  "author": "Cutiva contributors",
+  "homepage": "https://cutiva.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cutiva-dev/cutiva.git",
+    "directory": "packages/core"
+  },
+  "bugs": "https://github.com/cutiva-dev/cutiva/issues",
+  "keywords": [
+    "video",
+    "video-editing",
+    "timeline",
+    "undo",
+    "sdk"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "files": ["dist"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "NOTICE"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "prepack": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

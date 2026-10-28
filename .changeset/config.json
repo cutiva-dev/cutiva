@@ -1,0 +1,10 @@
+{
+  "$schema": "../node_modules/@changesets/config/schema.json",
+  "baseBranch": "main",
+  "access": "public",
+  "fixed": [["@cutiva/core", "@cutiva/web", "@cutiva/react"]],
+  "updateInternalDependencies": "patch",
+  "privatePackages": { "version": false, "tag": false },
+  "changelog": "@changesets/cli/changelog",
+  "commit": false
+}
