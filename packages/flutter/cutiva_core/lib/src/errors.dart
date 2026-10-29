@@ -8,6 +8,12 @@ enum CutivaErrorCode {
   invalidProject('INVALID_PROJECT'),
   unsupportedVersion('UNSUPPORTED_VERSION'),
   unsupportedCodec('UNSUPPORTED_CODEC'),
+
+  /// The engine on this platform can't render part of the project yet.
+  unsupportedFeature('UNSUPPORTED_FEATURE'),
+
+  /// The platform encoder or muxer failed during export.
+  exportFailed('EXPORT_FAILED'),
   exportCancelled('EXPORT_CANCELLED'),
   nothingToExport('NOTHING_TO_EXPORT');
 

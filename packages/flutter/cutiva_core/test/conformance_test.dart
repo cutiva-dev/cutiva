@@ -48,6 +48,10 @@ void main() {
           },
       ], expected['videoSegments']);
       expect([for (final a in plan.audio) a.segment.toJson()], [for (final a in audio) a.toJson()]);
+      for (final a in plan.audio) {
+        final s = a.segment;
+        expect(a.endUs, s.startUs + roundHalfUp((s.sourceOutUs - s.sourceInUs) / s.speed));
+      }
       // An engine that only reads the plan shows the same frames as resolveVideoAt.
       for (final sample in expected['videoAt'] as List<Object?>) {
         final s = sample as Map<String, Object?>;
