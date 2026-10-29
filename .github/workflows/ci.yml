@@ -20,6 +20,16 @@ jobs:
       - run: npm run build -w @cutiva/playground
       - run: npm run build:website
 
+  dart:
+    # The Dart core (Flutter SDK): analysis, formatting, unit tests, conformance fixtures, coverage.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.7.2
+      - run: npm run test:dart
+
   e2e:
     # macOS: Google Chrome there has the platform H.264 and AAC encoders that export needs.
     runs-on: macos-latest
