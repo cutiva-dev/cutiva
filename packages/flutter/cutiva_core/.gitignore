@@ -1,0 +1,4 @@
+.dart_tool/
+coverage/
+# A library: apps that depend on it resolve their own versions.
+pubspec.lock

@@ -22,4 +22,4 @@ The rules are in the [project format spec](https://cutiva.dev/docs/project-forma
 | `multiple-video-tracks` | Layer order across three video tracks, overlays starting and ending, a 29.97 fps project |
 | `muted-tracks` | Muted tracks stay visible but silent, zero volume, partial fade params |
 
-To add a case: write the fixture, write the expected values by hand from the spec (not by running an SDK), and add it to every SDK's test run.
+To add a case: write the fixture, write the expected values by hand from the spec (not by running an SDK), and add it to every SDK's test run. Today two SDKs run every fixture in this folder: TypeScript (`npm test`) and Dart (`npm run test:dart`).
