@@ -7,5 +7,9 @@
     { "tUs": 12500000, "layers": [{ "clipId": "clip_2", "sourceTimeUs": 25000000 }] },
     { "tUs": 15000000, "layers": [] }
   ],
-  "audioSegments": 3
+  "audioSegments": 3,
+  "videoSegments": [
+    { "layer": 0, "clipId": "clip_1", "startUs": 0, "endUs": 10000000, "sourceInUs": 2000000, "sourceOutUs": 12000000, "speed": 1 },
+    { "layer": 0, "clipId": "clip_2", "startUs": 10000000, "endUs": 15000000, "sourceInUs": 20000000, "sourceOutUs": 30000000, "speed": 2 }
+  ]
 }

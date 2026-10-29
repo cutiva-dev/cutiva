@@ -6,6 +6,7 @@ import {
   formatTimecode,
   projectDurationUs,
   randomId,
+  renderPlan,
   resolveVideoAt,
   secondsToUs,
   sequentialIds,
@@ -163,5 +164,30 @@ describe("ids", () => {
   it("sequential ids count per prefix", () => {
     const ids = sequentialIds();
     expect([ids("clip"), ids("clip"), ids("trk")]).toEqual(["clip_1", "clip_2", "trk_1"]);
+  });
+});
+
+describe("renderPlan", () => {
+  it("carries URIs and settings, numbers layers among video tracks only, and skips clips without an asset", () => {
+    const editor = createEditor({ ids: sequentialIds() });
+    editor.dispatch({ type: "asset.add", asset: video });
+    editor.dispatch({ type: "asset.add", asset: { id: "ast_a", kind: "audio", name: "a.mp3", uri: "file://a.mp3", durationUs: 5_000_000 } });
+    editor.dispatch({ type: "clip.add", assetId: "ast_a" });
+    editor.dispatch({ type: "track.add", kind: "video" });
+    editor.dispatch({ type: "clip.add", assetId: "ast_v", trackId: "trk_2", startUs: 1_000_000 });
+    const plan = renderPlan(editor.project);
+    expect(plan.settings).toEqual(editor.project.settings);
+    expect(plan.settings.fps).not.toBe(editor.project.settings.fps);
+    expect(plan.video).toEqual([
+      { layer: 0, trackId: "trk_2", clipId: "clip_2", assetId: "ast_v", uri: "file://v.mp4", startUs: 1_000_000, endUs: 21_000_000, sourceInUs: 0, sourceOutUs: 20_000_000, speed: 1 },
+    ]);
+    expect(plan.audio.map((a) => [a.clipId, a.uri])).toEqual([
+      ["clip_1", "file://a.mp3"],
+      ["clip_2", "file://v.mp4"],
+    ]);
+
+    const orphan = editor.toJSON();
+    orphan.assets = [];
+    expect(renderPlan(orphan)).toMatchObject({ video: [], audio: [] });
   });
 });

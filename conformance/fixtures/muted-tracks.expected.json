@@ -16,5 +16,9 @@
   "audio": [
     { "clipId": "m2", "startUs": 1000000, "sourceInUs": 0, "sourceOutUs": 2000000, "speed": 1, "volume": 2, "fadeInUs": 250000, "fadeOutUs": 0 },
     { "clipId": "m3", "startUs": 3000000, "sourceInUs": 2000000, "sourceOutUs": 4000000, "speed": 1, "volume": 1, "fadeInUs": 0, "fadeOutUs": 500000 }
+  ],
+  "videoSegments": [
+    { "layer": 0, "clipId": "c1", "startUs": 0, "endUs": 4000000, "sourceInUs": 0, "sourceOutUs": 4000000, "speed": 1 },
+    { "layer": 1, "clipId": "c2", "startUs": 0, "endUs": 1000000, "sourceInUs": 5000000, "sourceOutUs": 6000000, "speed": 1 }
   ]
 }

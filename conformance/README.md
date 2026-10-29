@@ -10,6 +10,7 @@ The rules are in the [project format spec](https://cutiva.dev/docs/project-forma
 - `videoAt`: for each sampled time `tUs`, the visible layers bottom first, each with its `clipId` and the `sourceTimeUs` it shows.
 - `audioSegments`: how many audio segments play.
 - `audio` (optional): every audio segment in order, with `clipId`, `startUs`, `sourceInUs`, `sourceOutUs`, `speed`, `volume`, `fadeInUs` and `fadeOutUs`.
+- `videoSegments`: the render plan's video segments, bottom layer first, each with `layer` (0 is the bottom video track), `clipId`, `startUs`, `endUs`, `sourceInUs`, `sourceOutUs` and `speed`. SDKs also check that reading the plan gives the same `videoAt` layers.
 - `_notes` (optional): the arithmetic behind the values, for reviewers. SDKs ignore it.
 
 ## Cases

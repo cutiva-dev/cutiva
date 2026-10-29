@@ -43,4 +43,6 @@ These rules define what a project means. The conformance fixtures in `conformanc
 
 **Video.** At time `t`, each video track shows the clip that contains `t`, if any. Layers are listed in track order, bottom first; later tracks draw on top. A muted video track is still visible.
 
+**Render plan.** `renderPlan(project)` lists the same thing flat, for native engines: every video clip as a segment with its layer (its position among the video tracks, 0 at the bottom), its timeline range `[startUs, endUs)`, its source range and speed; the audio segments above with their asset URIs; the duration and settings. Clips whose asset is missing are left out.
+
 **Audio.** Every clip on a track that is not muted plays its sound, except clips of a video asset with `hasAudio: false` and clips with `volume` 0. Each one is an audio segment with the clip's start, source range, speed and volume, listed in track order and then clip order. A `core/fade` effect adds `inUs` and `outUs` fades, in timeline time; without one, both are 0.

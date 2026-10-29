@@ -36,6 +36,29 @@ void main() {
       if (expected['audio'] != null) {
         expect([for (final a in audio) a.toJson()..remove('assetId')], expected['audio']);
       }
+
+      final plan = renderPlan(project);
+      expect(plan.durationUs, expected['durationUs']);
+      const fields = ['layer', 'clipId', 'startUs', 'endUs', 'sourceInUs', 'sourceOutUs', 'speed'];
+      expect([
+        for (final v in plan.video)
+          {
+            for (final e in v.toJson().entries)
+              if (fields.contains(e.key)) e.key: e.value,
+          },
+      ], expected['videoSegments']);
+      expect([for (final a in plan.audio) a.segment.toJson()], [for (final a in audio) a.toJson()]);
+      // An engine that only reads the plan shows the same frames as resolveVideoAt.
+      for (final sample in expected['videoAt'] as List<Object?>) {
+        final s = sample as Map<String, Object?>;
+        final t = s['tUs'] as int;
+        final shown = [
+          for (final v in plan.video)
+            if (t >= v.startUs && t < v.endUs)
+              {'clipId': v.clipId, 'sourceTimeUs': v.sourceInUs + roundHalfUp((t - v.startUs) * v.speed)},
+        ];
+        expect(shown, s['layers'], reason: 'plan at t=$t');
+      }
     });
   }
 }
