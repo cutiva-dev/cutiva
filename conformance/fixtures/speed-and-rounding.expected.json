@@ -29,5 +29,11 @@
     { "clipId": "slow", "startUs": 333333, "sourceInUs": 10000000, "sourceOutUs": 13000000, "speed": 0.5, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 },
     { "clipId": "tiny", "startUs": 6333333, "sourceInUs": 20000001, "sourceOutUs": 20000006, "speed": 2, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 },
     { "clipId": "odd", "startUs": 7000000, "sourceInUs": 30000000, "sourceOutUs": 31500000, "speed": 1.5, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 }
+  ],
+  "videoSegments": [
+    { "layer": 0, "clipId": "fast", "startUs": 0, "endUs": 333333, "sourceInUs": 0, "sourceOutUs": 1000000, "speed": 3 },
+    { "layer": 0, "clipId": "slow", "startUs": 333333, "endUs": 6333333, "sourceInUs": 10000000, "sourceOutUs": 13000000, "speed": 0.5 },
+    { "layer": 0, "clipId": "tiny", "startUs": 6333333, "endUs": 6333336, "sourceInUs": 20000001, "sourceOutUs": 20000006, "speed": 2 },
+    { "layer": 0, "clipId": "odd", "startUs": 7000000, "endUs": 8000000, "sourceInUs": 30000000, "sourceOutUs": 31500000, "speed": 1.5 }
   ]
 }

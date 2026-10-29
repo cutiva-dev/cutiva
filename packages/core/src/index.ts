@@ -6,3 +6,4 @@ export { createProject, parseProject, findClip, findTrack, DEFAULT_SETTINGS, CPF
 export { applyCommand, type Command, type CommandType, type CommandResult } from "./commands.js";
 export { createEditor, type Editor, type EditorChange, type EditorOptions, type ResultOf } from "./editor.js";
 export { resolveVideoAt, audioSegments, type ActiveVideoLayer, type AudioSegment } from "./resolve.js";
+export { renderPlan, type RenderPlan, type VideoSegment, type PlanAudioSegment } from "./plan.js";

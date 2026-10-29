@@ -9,6 +9,7 @@ export 'src/editor.dart';
 export 'src/errors.dart';
 export 'src/ids.dart';
 export 'src/project.dart' show createProject, parseProject, findClip, findTrack, defaultSettings, cpfSchemaUrl;
+export 'src/plan.dart';
 export 'src/resolve.dart';
 export 'src/time.dart';
 export 'src/types.dart';

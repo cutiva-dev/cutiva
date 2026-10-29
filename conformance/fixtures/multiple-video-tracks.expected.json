@@ -20,5 +20,11 @@
     { "clipId": "bg", "startUs": 0, "sourceInUs": 0, "sourceOutUs": 10000000, "speed": 1, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 },
     { "clipId": "pip", "startUs": 6000000, "sourceInUs": 4000000, "sourceOutUs": 9000000, "speed": 1, "volume": 0.5, "fadeInUs": 0, "fadeOutUs": 0 },
     { "clipId": "top", "startUs": 12000000, "sourceInUs": 0, "sourceOutUs": 1000000, "speed": 1, "volume": 1, "fadeInUs": 0, "fadeOutUs": 0 }
+  ],
+  "videoSegments": [
+    { "layer": 0, "clipId": "bg", "startUs": 0, "endUs": 10000000, "sourceInUs": 0, "sourceOutUs": 10000000, "speed": 1 },
+    { "layer": 1, "clipId": "logo", "startUs": 1000000, "endUs": 3000000, "sourceInUs": 0, "sourceOutUs": 2000000, "speed": 1 },
+    { "layer": 1, "clipId": "pip", "startUs": 6000000, "endUs": 11000000, "sourceInUs": 4000000, "sourceOutUs": 9000000, "speed": 1 },
+    { "layer": 2, "clipId": "top", "startUs": 12000000, "endUs": 13000000, "sourceInUs": 0, "sourceOutUs": 1000000, "speed": 1 }
   ]
 }
