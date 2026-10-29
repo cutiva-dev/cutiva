@@ -45,13 +45,16 @@ class VideoSegment {
   };
 }
 
-/// An [AudioSegment] with its asset's URI.
+/// An [AudioSegment] with its asset's URI and the timeline time where it stops playing.
 class PlanAudioSegment {
   final AudioSegment segment;
   final String uri;
-  const PlanAudioSegment(this.segment, this.uri);
 
-  Map<String, Object?> toJson() => {...segment.toJson(), 'uri': uri};
+  /// `startUs` plus the segment's length after speed.
+  final Us endUs;
+  const PlanAudioSegment(this.segment, this.uri, this.endUs);
+
+  Map<String, Object?> toJson() => {...segment.toJson(), 'uri': uri, 'endUs': endUs};
 }
 
 /// A flat description of what plays where. Native engines (AVFoundation, Media3) build their
@@ -106,6 +109,9 @@ RenderPlan renderPlan(Project project) {
     durationUs: projectDurationUs(project),
     settings: project.settings.copy(),
     video: video,
-    audio: [for (final s in audioSegments(project)) PlanAudioSegment(s, uris[s.assetId]!)],
+    audio: [
+      for (final s in audioSegments(project))
+        PlanAudioSegment(s, uris[s.assetId]!, s.startUs + timelineLengthUs(s.sourceInUs, s.sourceOutUs, s.speed)),
+    ],
   );
 }

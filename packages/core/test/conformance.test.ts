@@ -36,7 +36,8 @@ describe("conformance fixtures", () => {
       expect(plan.video.map(({ layer, clipId, startUs, endUs, sourceInUs, sourceOutUs, speed }) => ({ layer, clipId, startUs, endUs, sourceInUs, sourceOutUs, speed }))).toEqual(
         expected.videoSegments,
       );
-      expect(plan.audio.map(({ uri: _, ...segment }) => segment)).toEqual(audio);
+      expect(plan.audio.map(({ uri: _, endUs: __, ...segment }) => segment)).toEqual(audio);
+      for (const a of plan.audio) expect(a.endUs).toBe(a.startUs + Math.round((a.sourceOutUs - a.sourceInUs) / a.speed));
       // An engine that only reads the plan shows the same frames as resolveVideoAt.
       for (const sample of expected.videoAt) {
         const shown = plan.video

@@ -11,6 +11,7 @@ npm install
 npm run build        # core → web → react (tsc). Run before typecheck: packages resolve each other via dist/
 npm run typecheck    # every workspace
 npm test             # vitest: core unit tests + conformance fixtures; fails under 90% coverage
+npm run test:android # Android engine: JVM tests + exports on a running emulator (needs JDK 17, Android SDK)
 npm run test:dart    # Dart core: analyze, format check, tests + conformance fixtures, fails under 90% coverage (needs Dart 3.7)
 npm run e2e          # Playwright in Google Chrome: import, split, export, check the MP4 (needs Chrome installed)
 npm run dev          # playground at http://localhost:5173 (aliases package sources, no rebuild needed)
@@ -28,6 +29,7 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 - `packages/web` — `@cutiva/web`. Mediabunny + WebCodecs + Web Audio: import (`media.ts`), preview (`preview.ts`), audio scheduling shared by preview and export (`audio.ts`), MP4 export (`export.ts`).
 - `packages/react` — `@cutiva/react`. Hooks (`useCutiva`, `useProject`, `usePreview`) and `<Timeline>`; default theme in `styles.css`.
 - `packages/flutter/cutiva_core` — `cutiva_core`, the core ported to Dart for Flutter (same files: `types.dart`, `project.dart`, `commands.dart`, `editor.dart`, `resolve.dart`, `plan.dart`). Not an npm workspace. **Any change to the core's behavior lands in TypeScript and Dart in the same PR**, and both run the conformance fixtures. Round with `roundHalfUp`, never Dart's `round()` (it differs from `Math.round` for negative halves).
+- `packages/engine-android` — Kotlin library `dev.cutiva.engine` (Gradle 9.8, AGP 9.4 with built-in Kotlin, Media3 1.11.1). Renders a `RenderPlan` JSON; never apply edit rules here. `CutivaExporter` builds one video sequence plus one audio sequence per lane of non-overlapping sounds. `EncoderDelay` and `SourceDelay` correct two Media3 audio offsets; `ExportTest` (instrumentation) checks sync like the web E2E test.
 - `apps/playground` — Vite + React editor built on the three packages. Dev runs at `/`; the production build uses base `/play/` and is served by the website.
 - `apps/website` — Next.js (App Router) site for cutiva.dev, deployed on Vercel. Two root layouts: `app/(home)` is the landing (`page.tsx`, plain CSS in `landing.css`, no Tailwind) and `app/(docs)` is the docs with Fumadocs (`content/docs/*.mdx` → `/docs/...`, sidebar order in `content/docs/meta.json`, theme in `docs.css`). The playground is copied into `public/play` at build time (`scripts/copy-playground.mjs`, gitignored) and `/play` is rewritten to its `index.html` in `next.config.mjs`. `app/api/waitlist/route.ts` stores emails in MongoDB (needs `MONGODB_URI`, see `.env.example`); `app/api/search/route.ts` serves docs search. Keep the docs in sync with the real API in the same PR that changes it.
 - `conformance/fixtures` — `*.cpf.json` + `*.expected.json`. Every SDK on every platform must produce the expected values.
@@ -55,6 +57,7 @@ Always finish a task with `npm run build && npm run typecheck && npm test` green
 - Website: migrated to Next.js 16 + Fumadocs (ADR 0003). Builds; landing, docs, search and the waitlist endpoint respond locally under `next start` (validation, honeypot and the no-database 503 tested). Not yet tested against a real MongoDB or deployed.
 - Release: Changesets is set up (`.changeset/`, three packages share one version) with a pending changeset for 0.1.0. Packed tarballs install in a clean project, core runs in Node, and the README examples type-check (consumers need `skipLibCheck: true` because of Mediabunny's type dependencies). Not published: the `@cutiva` npm org doesn't exist yet.
 - Dart core (`cutiva_core`): 99 tests, 99.8% line coverage, passes all 5 conformance fixtures; `dart` CI job (not required yet). Not on pub.dev. `renderPlan` exists in both and every fixture pins its video segments. Flutter preview/export and React Native not started; the mobile plan is ADR 0004 (accepted).
+- Android engine: export works on the API 35 emulator (6 instrumentation tests: sync wherever a clip starts, gaps and 2x speed, volume and fades, mixing, refusals). One video layer only (`UNSUPPORTED_FEATURE` otherwise). Not tested on real devices; no preview yet. `android` CI job (emulator, not required).
 - Whole monorepo is on React 19.3 (`@cutiva/react` still accepts `react >=18` as a peer).
 
 ## Next tasks, in order (Phase 0 gate: a trimmed MP4 exports in Chromium)

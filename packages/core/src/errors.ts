@@ -8,6 +8,10 @@ export type CutivaErrorCode =
   | "INVALID_PROJECT"
   | "UNSUPPORTED_VERSION"
   | "UNSUPPORTED_CODEC"
+  /** The engine on this platform can't render part of the project yet (for example, more than one video layer on Android). */
+  | "UNSUPPORTED_FEATURE"
+  /** The platform encoder or muxer failed during export. */
+  | "EXPORT_FAILED"
   | "EXPORT_CANCELLED"
   | "NOTHING_TO_EXPORT";
 

@@ -20,6 +20,8 @@ export interface VideoSegment {
 
 export interface PlanAudioSegment extends AudioSegment {
   uri: string;
+  /** Timeline time where the segment stops playing: `startUs` plus its length after speed. */
+  endUs: Us;
 }
 
 /**
@@ -63,6 +65,6 @@ export function renderPlan(project: Project): RenderPlan {
     durationUs: projectDurationUs(project),
     settings: { ...project.settings, fps: { ...project.settings.fps } },
     video,
-    audio: audioSegments(project).map((s) => ({ ...s, uri: uris.get(s.assetId)! })),
+    audio: audioSegments(project).map((s) => ({ ...s, uri: uris.get(s.assetId)!, endUs: clipEndUs(s) })),
   };
 }
