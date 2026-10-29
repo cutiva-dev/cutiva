@@ -1,0 +1,13 @@
+name: cutiva_core
+description: Project format, editing commands and timeline rules of Cutiva, the open-source video editing SDK. Pure Dart, no Flutter dependency.
+version: 0.1.0
+repository: https://github.com/cutiva-dev/cutiva
+homepage: https://cutiva.ngstudios.co
+publish_to: none
+
+environment:
+  sdk: ^3.7.0
+dev_dependencies:
+  coverage: 1.15.1
+  lints: 5.1.1
+  test: 1.31.0
