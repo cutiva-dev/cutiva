@@ -1,6 +1,6 @@
 # ADR 0004: One native engine per OS, driven by a render plan
 
-**Status:** proposed · 2026-10-28
+**Status:** accepted · 2026-10-28
 
 ## Context
 
