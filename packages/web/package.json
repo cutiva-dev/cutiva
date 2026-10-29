@@ -4,6 +4,12 @@
   "description": "Web engine for Cutiva: import, preview and MP4 export with WebCodecs and Mediabunny.",
   "license": "Apache-2.0",
   "author": "Cutiva contributors",
+  "contributors": [
+    {
+      "name": "Wilfredo Noyola",
+      "url": "https://github.com/wilfredonoyola"
+    }
+  ],
   "homepage": "https://cutiva.dev",
   "repository": {
     "type": "git",

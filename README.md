@@ -90,6 +90,10 @@ The core answers one question: *what is visible and audible at time t?* The prev
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Decisions are recorded in [docs/adr](docs/adr).
 
+## Maintainer
+
+Cutiva was created and is maintained by [Wilfredo Noyola](https://github.com/wilfredonoyola). Read why on the [about page](https://cutiva.ngstudios.co/about).
+
 ## License
 
 [Apache-2.0](LICENSE). Mediabunny is MPL-2.0.
