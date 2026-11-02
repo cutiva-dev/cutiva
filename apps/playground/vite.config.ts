@@ -12,6 +12,7 @@ export default defineConfig(({ command }) => ({
   resolve: {
     alias: [
       { find: "@cutiva/core", replacement: pkg("core/src/index.ts") },
+      { find: "@cutiva/web/mediapipe", replacement: pkg("web/src/mediapipe.ts") },
       { find: "@cutiva/web", replacement: pkg("web/src/index.ts") },
       { find: "@cutiva/react/styles.css", replacement: pkg("react/styles.css") },
       { find: "@cutiva/react", replacement: pkg("react/src/index.ts") },

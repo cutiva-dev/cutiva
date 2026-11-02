@@ -1,0 +1,100 @@
+---
+title: Auto-reframe
+description: Turn landscape footage into vertical video that follows whoever is talking.
+---
+
+**Status: beta, needs testing.** An E2E test checks, in Chrome and Firefox, that dragging the window changes both preview and export. A manual test (it needs the network) checks that MediaPipe loads and analyses a clip. How well it picks the speaker in real conversations has not been measured yet.
+
+Auto-reframe crops a landscape clip for a vertical (or square) project. It watches the clip, finds the people, works out who is talking from mouth movement and speech, and writes **crop keys**: a cut to each new speaker, and a gentle follow while they move. You then fix the keys it gets wrong by dragging the window.
+
+## Web
+
+Set the project's format, then reframe a clip. Face detection is pluggable; `@cutiva/web/mediapipe` provides a detector on MediaPipe Face Landmarker (Apache-2.0). Install it yourself, it is an optional peer dependency:
+
+```bash
+npm install @mediapipe/tasks-vision@1.1.1
+```
+
+```ts
+import { createEditor } from "@cutiva/core";
+import { createWebEngine } from "@cutiva/web";
+import { createMediaPipeFaceDetector } from "@cutiva/web/mediapipe";
+
+const editor = createEditor();
+const engine = createWebEngine(editor);
+const { clipId } = await engine.importFile(file);
+
+editor.dispatch({ type: "project.setSize", width: 1080, height: 1920 }); // 9:16
+const detector = await createMediaPipeFaceDetector();
+const result = await engine.autoReframe(clipId!, {
+  detector,
+  onProgress: (ratio) => console.log(`${Math.round(ratio * 100)}%`),
+});
+
+result.people; // [{ id: "s0p0", speakingUs: 17_000_000, face: { x, y, w, h, atUs } }, ...]
+editor.undo(); // the whole reframe is one undo step
+```
+
+Analysis decodes 5 frames per second, which is the slow part. To try another zoom without decoding again, pass the earlier analysis back: `engine.autoReframe(clipId, { detector, analysis: result.analysis, zoom: 1.5 })`.
+
+The MediaPipe detector downloads its WASM files and model (about 4 MB) from jsDelivr and Google the first time. Pass `wasmBaseUrl` and `modelAssetPath` to host them yourself. Video frames never leave the device.
+
+## React
+
+`<Timeline>` marks each framing change on the clip; click a mark to seek there. `<ReframeBox>` draws the crop window over the uncropped source, and dragging it moves the framing at the playhead:
+
+```tsx
+import { ReframeBox } from "@cutiva/react";
+
+<div style={{ position: "relative", aspectRatio: `${asset.width} / ${asset.height}` }}>
+  <SourceFrame /> {/* for example a canvas drawn from engine.sourceFrame(assetId, sourceUs) */}
+  <ReframeBox editor={editor} clipId={clipId} timeUs={timeUs} />
+</div>
+```
+
+The container must have the source's exact aspect ratio, so the window lines up with the picture.
+
+## Crop keys by hand
+
+The framing is a `core/reframe` effect holding keys in **source time**, so splitting, trimming or changing speed keeps it. Set them with one command:
+
+```ts
+editor.dispatch({
+  type: "clip.setReframe",
+  clipId,
+  keys: [
+    { atUs: 0, x: 480, y: 540, h: 1080 },                      // centre at (480, 540), full height
+    { atUs: 12_000_000, x: 1440, y: 540, h: 1080, cut: true }, // jump to the right at 12 s
+    { atUs: 15_000_000, x: 1500, y: 540, h: 900 },             // glide right and zoom in by 15 s
+  ],
+});
+```
+
+The exact rules (rounding, clamping, gliding) are in the [project format](/docs/project-format#rules-every-sdk-follows).
+
+## Other platforms
+
+The planning step, `autoReframe(input)`, is in the core and in the Dart core (`cutiva_core`), so it gives the same keys everywhere. A platform only needs to supply observations: for each sampled frame, its faces (box and mouth openness) and optionally speech loudness, plus camera cuts from `detectCuts`. On iOS that can be Apple Vision; on Android, MediaPipe Tasks. Flutter and React Native engines are [planned](https://github.com/cutiva-dev/cutiva/blob/main/ROADMAP.md).
+
+## How it decides
+
+For each shot (cuts split the clip):
+
+1. **Track faces.** Faces in consecutive frames are the same person when their centres are closer than 0.75 of the larger face's width, matching the closest pairs first. People seen in fewer than 20% of the shot's frames (and fewer than 2) are dropped as noise.
+2. **Find the speaker.** Mouth movement is the change in mouth openness from one frame to the next, averaged over 400 ms on each side. The person with the most movement, at least 0.02, is speaking. Frames quieter than 0.1 of the clip's speech level count as silence: nobody new takes the frame.
+3. **Hold.** Nobody speaking keeps the last speaker; before anyone speaks, the first speaker; if nobody speaks at all, the most visible person. A speaker keeps the frame at least 1.5 s (`minHoldUs`): shorter turns fold into the previous one.
+4. **Write keys.** Each speaker change is a cut. The window is as tall as the source (or `1 / zoom` of it), with the face centre 15% of the window height above the window's centre. While one person speaks, positions are averaged over 500 ms and the window follows only after they move more than 5% of its size.
+
+Shots with no faces are centred.
+
+## Feedback from the playground
+
+After an auto-reframe, the [playground](/play) lists each framing change. Mark each one right or wrong, fix the wrong ones by dragging the window, rate the result and send it. The report holds numbers only: face boxes, mouth movement, speech levels, the keys auto-reframe made and the keys after your fixes. No video, images or file names. It goes to `/api/reframe-feedback`; where that isn't available (local `npm run dev`) the report downloads as a JSON file instead.
+
+Reports are how auto-reframe improves: each one replays through `autoReframe` offline, so a change to the rules can be measured against real corrections before it ships, and bad cases become regression tests.
+
+## Known limits
+
+- It reads mouths, so profiles, covered mouths, overlapping talk and off-screen voices fool it.
+- A person in two shots counts as two people.
+- Cuts are found at the analysis rate (every 200 ms), so a framing change can land up to one sample late.

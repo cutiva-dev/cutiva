@@ -1,3 +1,4 @@
+import { clipCropKeys, cropKeysInRange, type CropKey } from "./reframe.js";
 import { audioSegments, type AudioSegment } from "./resolve.js";
 import { clipEndUs, projectDurationUs } from "./time.js";
 import type { Id, Project, ProjectSettings, Us } from "./types.js";
@@ -16,6 +17,11 @@ export interface VideoSegment {
   sourceInUs: Us;
   sourceOutUs: Us;
   speed: number;
+  /**
+   * When the clip is reframed: crop rectangles by source time. At a source time `s` the engine shows
+   * `cropAt(crop, s)`, scaled to fill the output frame. Without it, the frame is letterboxed.
+   */
+  crop?: CropKey[];
 }
 
 export interface PlanAudioSegment extends AudioSegment {
@@ -37,6 +43,7 @@ export interface RenderPlan {
 
 export function renderPlan(project: Project): RenderPlan {
   const uris = new Map(project.assets.map((a) => [a.id, a.uri]));
+  const assets = new Map(project.assets.map((a) => [a.id, a]));
   const video: VideoSegment[] = [];
   let layer = 0;
   for (const track of project.tracks) {
@@ -44,6 +51,7 @@ export function renderPlan(project: Project): RenderPlan {
     for (const clip of track.clips) {
       const uri = uris.get(clip.assetId);
       if (uri === undefined) continue;
+      const keys = clipCropKeys(clip, assets.get(clip.assetId)!, project.settings);
       video.push({
         layer,
         trackId: track.id,
@@ -55,6 +63,7 @@ export function renderPlan(project: Project): RenderPlan {
         sourceInUs: clip.sourceInUs,
         sourceOutUs: clip.sourceOutUs,
         speed: clip.speed,
+        ...(keys ? { crop: cropKeysInRange(keys, clip.sourceInUs, clip.sourceOutUs) } : {}),
       });
     }
     layer++;

@@ -1,3 +1,4 @@
+import 'reframe.dart';
 import 'time.dart';
 import 'types.dart';
 
@@ -8,7 +9,17 @@ class ActiveVideoLayer {
 
   /// Source time to show from the asset at this instant.
   final Us sourceTimeUs;
-  const ActiveVideoLayer({required this.track, required this.clip, required this.asset, required this.sourceTimeUs});
+
+  /// Part of the source frame to show, in source pixels, when the clip is reframed. Engines scale it
+  /// to fill the whole output frame. Without it, the frame is drawn whole and letterboxed.
+  final CropRect? crop;
+  const ActiveVideoLayer({
+    required this.track,
+    required this.clip,
+    required this.asset,
+    required this.sourceTimeUs,
+    this.crop,
+  });
 }
 
 Asset? _assetOf(Project project, Clip clip) {
@@ -34,7 +45,17 @@ List<ActiveVideoLayer> resolveVideoAt(Project project, Us t) {
     if (clip == null) continue;
     final asset = _assetOf(project, clip);
     if (asset == null) continue;
-    layers.add(ActiveVideoLayer(track: track, clip: clip, asset: asset, sourceTimeUs: sourceTimeAt(clip, t)));
+    final sourceTimeUs = sourceTimeAt(clip, t);
+    final keys = clipCropKeys(clip, asset, project.settings);
+    layers.add(
+      ActiveVideoLayer(
+        track: track,
+        clip: clip,
+        asset: asset,
+        sourceTimeUs: sourceTimeUs,
+        crop: keys == null ? null : cropAt(keys, sourceTimeUs),
+      ),
+    );
   }
   return layers;
 }

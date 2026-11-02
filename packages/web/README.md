@@ -28,4 +28,6 @@ if ((await engine.capabilities()).exportMp4) {
 
 E2E-tested in Chrome, Edge and Firefox on macOS, Windows and Linux, and in WebKit on macOS; real Safari and mobile need testing. Export needs H.264 encoding in WebCodecs. Audio is AAC, or Opus where the browser can't encode AAC (Firefox, Chrome on Linux); `capabilities().audioCodec` says which.
 
-Docs: [cutiva.dev/docs](https://cutiva.dev/docs). License: Apache-2.0. Mediabunny is MPL-2.0.
+**Auto-reframe (beta, needs testing on real footage):** `engine.autoReframe(clipId, { detector })` crops a clip for the project's format and follows whoever is talking. Detectors are pluggable; `@cutiva/web/mediapipe` has one on MediaPipe, an optional peer dependency (`npm install @mediapipe/tasks-vision@1.1.1`). See the [auto-reframe guide](https://cutiva.dev/docs/auto-reframe).
+
+Docs: [cutiva.dev/docs](https://cutiva.dev/docs). License: Apache-2.0. Mediabunny is MPL-2.0. MediaPipe (optional) is Apache-2.0.

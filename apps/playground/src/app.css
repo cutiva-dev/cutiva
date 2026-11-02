@@ -26,6 +26,22 @@ button.link { background: none; border: 0; padding: 0; min-height: 0; color: var
 .viewer { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .screen { position: relative; width: 100%; max-height: 58vh; margin: 0 auto; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
 .screen canvas { width: 100%; height: 100%; display: block; object-fit: contain; }
+.screens { display: flex; gap: 12px; align-items: flex-start; justify-content: center; }
+.screens .screen--output { width: auto; height: min(58vh, 640px); max-width: 100%; margin: 0; flex: none; }
+.screens:has(.source) .screen--output { height: min(46vh, 520px); }
+.source { flex: 1; min-width: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.source figcaption { font-size: 12px; }
+.screen--source { max-height: none; margin: 0 auto; }
+@media (max-width: 860px) { .screens { flex-direction: column; align-items: stretch; } .screens .screen--output { align-self: center; } }
+.format { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.format select { background: var(--raised); border: 1px solid var(--line); border-radius: 8px; min-height: 36px; padding: 0 8px; }
+.small { margin: 0; font-size: 13px; }
+.reframe progress { width: 100%; accent-color: var(--cut); }
+.reframe__result { display: flex; flex-direction: column; gap: 10px; }
+.people { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; }
+.people li { display: flex; align-items: center; gap: 8px; }
+.people img, .people__blank { width: 32px; height: 32px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
 .empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; background: var(--surface); }
 .empty p { margin: 0; font-size: 16px; }
 .empty .hint { font-size: 13px; color: var(--muted); }
@@ -33,7 +49,7 @@ button.link { background: none; border: 0; padding: 0; min-height: 0; color: var
 .play { width: 44px; min-height: 44px; display: grid; place-items: center; padding: 0; border-radius: 22px; background: var(--ink); color: var(--on-accent); border: 0; }
 .tc { font: 14px "Geist Mono", ui-monospace, monospace; }
 .grow { flex: 1; }
-.inspector { background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.inspector { align-self: start; max-height: calc(58vh + 60px); overflow-y: auto; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
 .inspector h2 { margin: 0; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
 .inspector dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13px; }
 .inspector dt { color: var(--muted); }
@@ -47,3 +63,11 @@ legend { font-size: 13px; color: var(--muted); padding: 0 4px; }
 .export { position: fixed; right: 16px; bottom: 16px; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; width: 280px; }
 .export p { margin: 0; }
 .export progress { width: 100%; accent-color: var(--cut); }
+.feedback { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; }
+.changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
+.changes li { display: flex; align-items: center; gap: 6px; font: 13px "Geist Mono", ui-monospace, monospace; }
+.changes li .link { margin-right: auto; }
+.chip { min-height: 28px; padding: 0 10px; border-radius: 14px; font-size: 13px; }
+.chip.is-on { border-color: var(--cut); color: var(--cut-strong); }
+.overall { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+.feedback textarea { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; color: inherit; resize: vertical; }

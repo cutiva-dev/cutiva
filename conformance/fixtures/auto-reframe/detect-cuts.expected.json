@@ -1,0 +1,7 @@
+{
+  "_notes": [
+    "Distance is half the L1 distance of normalised histograms. Threshold 0.4, minimum shot 1 s.",
+    "0.5 s: 0.1, no cut. 1 s: 0.9 and 1 s after the start -> cut. 1.5 s: 0. 1.8 s: 1.0 but only 0.8 s after the last cut -> no cut. 3 s: 1.0, 2 s after -> cut."
+  ],
+  "cuts": [1000000, 3000000]
+}

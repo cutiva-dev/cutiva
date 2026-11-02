@@ -1,5 +1,6 @@
+import { clipCropKeys, cropAt } from "./reframe.js";
 import { clipEndUs, sourceTimeAt } from "./time.js";
-import type { Asset, Clip, Project, Track, Us } from "./types.js";
+import type { Asset, Clip, CropRect, Project, Track, Us } from "./types.js";
 
 export interface ActiveVideoLayer {
   track: Track;
@@ -7,6 +8,11 @@ export interface ActiveVideoLayer {
   asset: Asset;
   /** Source time to show from the asset at this instant. */
   sourceTimeUs: Us;
+  /**
+   * Part of the source frame to show, in source pixels, when the clip is reframed. Engines scale it
+   * to fill the whole output frame. Without it, the frame is drawn whole and letterboxed.
+   */
+  crop?: CropRect;
 }
 
 /**
@@ -21,7 +27,9 @@ export function resolveVideoAt(project: Project, t: Us): ActiveVideoLayer[] {
     if (!clip) continue;
     const asset = project.assets.find((a) => a.id === clip.assetId);
     if (!asset) continue;
-    layers.push({ track, clip, asset, sourceTimeUs: sourceTimeAt(clip, t) });
+    const sourceTimeUs = sourceTimeAt(clip, t);
+    const keys = clipCropKeys(clip, asset, project.settings);
+    layers.push({ track, clip, asset, sourceTimeUs, ...(keys ? { crop: cropAt(keys, sourceTimeUs) } : {}) });
   }
   return layers;
 }

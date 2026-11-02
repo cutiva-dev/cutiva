@@ -34,6 +34,30 @@ export interface Asset {
   fingerprint?: AssetFingerprint;
 }
 
+/**
+ * Where the crop window sits at one instant of the source. Stored in the `core/reframe` effect of a
+ * video clip as `params.keys`, sorted by `atUs`. Integers only.
+ */
+export interface ReframeKey {
+  /** Source time of the asset (not timeline time), so split, trim and speed keep the framing. */
+  atUs: Us;
+  /** Centre of the crop window, in source pixels. */
+  x: number;
+  y: number;
+  /** Height of the crop window in source pixels. Its width follows the project's aspect ratio. */
+  h: number;
+  /** Jump to this key at `atUs` instead of gliding to it from the previous key. */
+  cut?: boolean;
+}
+
+/** A rectangle of the source frame, in integer source pixels. */
+export interface CropRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export interface Effect {
   type: string;
   params: Record<string, unknown>;

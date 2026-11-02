@@ -1,12 +1,14 @@
 import { CutivaError } from "./errors.js";
 import type { IdFactory } from "./ids.js";
 import { findClip, findTrack } from "./project.js";
+import { normalizeReframeKeys, REFRAME_EFFECT } from "./reframe.js";
 import { clipDurationUs, clipEndUs } from "./time.js";
-import type { Asset, Clip, Id, Project, Track, TrackKind, Us } from "./types.js";
+import type { Asset, Clip, Id, Project, ReframeKey, Track, TrackKind, Us } from "./types.js";
 
 /** Every edit is a plain, serializable object. */
 export type Command =
   | { type: "asset.add"; asset: Asset }
+  | { type: "project.setSize"; width: number; height: number }
   | { type: "track.add"; kind: TrackKind; trackId?: Id }
   | { type: "track.setMuted"; trackId: Id; muted: boolean }
   | {
@@ -27,7 +29,9 @@ export type Command =
   | { type: "clip.reorder"; clipId: Id; index: number }
   | { type: "clip.setVolume"; clipId: Id; volume: number }
   | { type: "clip.setSpeed"; clipId: Id; speed: number }
-  | { type: "clip.setFade"; clipId: Id; inUs: Us; outUs: Us };
+  | { type: "clip.setFade"; clipId: Id; inUs: Us; outUs: Us }
+  /** Replace a video clip's crop keys (source times). An empty list removes the reframe. */
+  | { type: "clip.setReframe"; clipId: Id; keys: ReframeKey[] };
 
 export type CommandType = Command["type"];
 
@@ -106,6 +110,14 @@ export function applyCommand(project: Project, cmd: Command, ids: IdFactory): Co
       if (project.assets.some((a) => a.id === cmd.asset.id)) return { type: cmd.type, assetId: cmd.asset.id };
       project.assets.push({ ...cmd.asset });
       return { type: cmd.type, assetId: cmd.asset.id };
+    }
+    case "project.setSize": {
+      if (!Number.isInteger(cmd.width) || !Number.isInteger(cmd.height) || cmd.width < 2 || cmd.height < 2) {
+        throw new CutivaError("INVALID_RANGE", "width and height must be integers >= 2.");
+      }
+      project.settings.width = cmd.width;
+      project.settings.height = cmd.height;
+      return { type: cmd.type };
     }
     case "track.add": {
       const trackId = cmd.trackId ?? ids("trk");
@@ -238,6 +250,18 @@ export function applyCommand(project: Project, cmd: Command, ids: IdFactory): Co
       }
       clip.effects = clip.effects.filter((e) => e.type !== "core/fade");
       if (cmd.inUs > 0 || cmd.outUs > 0) clip.effects.push({ type: "core/fade", params: { inUs: cmd.inUs, outUs: cmd.outUs } });
+      return { type: cmd.type };
+    }
+    case "clip.setReframe": {
+      const { clip } = findClip(project, cmd.clipId);
+      const asset = findAsset(project, clip.assetId);
+      const keys = normalizeReframeKeys(cmd.keys);
+      if (asset.kind !== "video") throw new CutivaError("TRACK_KIND_MISMATCH", `Only video clips can be reframed ("${clip.id}" is audio).`);
+      if (keys.length > 0 && (!asset.width || !asset.height)) {
+        throw new CutivaError("ASSET_SIZE_UNKNOWN", `Asset "${asset.id}" has no width and height, so its clips can't be reframed.`);
+      }
+      clip.effects = clip.effects.filter((e) => e.type !== REFRAME_EFFECT);
+      if (keys.length > 0) clip.effects.push({ type: REFRAME_EFFECT, params: { keys } });
       return { type: cmd.type };
     }
     default: {

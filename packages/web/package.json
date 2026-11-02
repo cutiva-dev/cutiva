@@ -32,6 +32,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./mediapipe": {
+      "types": "./dist/mediapipe.d.ts",
+      "import": "./dist/mediapipe.js"
     }
   },
   "files": [
@@ -49,6 +53,17 @@
   "dependencies": {
     "@cutiva/core": "0.1.0",
     "mediabunny": "1.61.3"
+  },
+  "peerDependencies": {
+    "@mediapipe/tasks-vision": "1.1.1"
+  },
+  "peerDependenciesMeta": {
+    "@mediapipe/tasks-vision": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@mediapipe/tasks-vision": "1.1.1"
   },
   "publishConfig": {
     "access": "public"

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'errors.dart';
+import 'reframe.dart';
 import 'ids.dart';
 import 'time.dart';
 import 'types.dart';
@@ -141,8 +142,8 @@ Project parseProject(Object? input) {
         effects:
             effects is List<Object?>
                 ? [
-                  for (final e in effects.whereType<_Json>())
-                    Effect(type: '${e['type']}', params: e['params'] is _Json ? copyJson(e['params']) as _Json : {}),
+                  for (final (k, e) in effects.whereType<_Json>().indexed)
+                    _parseEffect(e, '$cp.effects[$k]', video: kind == TrackKind.video),
                 ]
                 : [],
       );
@@ -207,5 +208,22 @@ void sortClips(List<Clip> clips) {
   });
   for (var i = 0; i < clips.length; i++) {
     clips[i] = indexed[i].$2;
+  }
+}
+
+Effect _parseEffect(_Json e, String path, {required bool video}) {
+  final type = '${e['type']}';
+  final params = e['params'] is _Json ? copyJson(e['params']) as _Json : <String, Object?>{};
+  if (type != reframeEffect) return Effect(type: type, params: params);
+  if (!video) _fail(path, 'a reframe only on video clips');
+  try {
+    return Effect(
+      type: type,
+      params: {
+        'keys': [for (final k in normalizeReframeKeys(params['keys'])) k.toJson()],
+      },
+    );
+  } on CutivaError catch (err) {
+    _fail('$path.params.keys', 'valid reframe keys (${err.message})');
   }
 }
