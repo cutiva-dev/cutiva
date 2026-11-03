@@ -5,12 +5,12 @@ export const US_PER_SECOND = 1_000_000;
 export const secondsToUs = (s: number): Us => Math.round(s * US_PER_SECOND);
 export const usToSeconds = (us: Us): number => us / US_PER_SECOND;
 
-/** Length of a clip on the timeline, after speed. */
-export function clipDurationUs(clip: Clip): Us {
+/** Length of a clip (or anything with a source range and speed) on the timeline, after speed. */
+export function clipDurationUs(clip: Pick<Clip, "sourceInUs" | "sourceOutUs" | "speed">): Us {
   return Math.round((clip.sourceOutUs - clip.sourceInUs) / clip.speed);
 }
 
-export function clipEndUs(clip: Clip): Us {
+export function clipEndUs(clip: Pick<Clip, "startUs" | "sourceInUs" | "sourceOutUs" | "speed">): Us {
   return clip.startUs + clipDurationUs(clip);
 }
 

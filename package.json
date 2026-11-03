@@ -15,6 +15,7 @@
     "test": "npm run test -w @cutiva/core",
     "test:dart": "cd packages/flutter/cutiva_core && dart pub get && dart analyze --fatal-infos && dart format --line-length 120 --output none --set-exit-if-changed lib test tool example && dart run coverage:test_with_coverage && dart run tool/check_coverage.dart",
     "e2e": "npm run e2e -w @cutiva/playground",
+    "test:android": "cd packages/engine-android && ./gradlew :engine:testDebugUnitTest :engine:connectedDebugAndroidTest --console=plain",
     "dev": "npm run dev -w @cutiva/playground",
     "dev:website": "npm run dev -w @cutiva/website",
     "build:website": "npm run build -w @cutiva/website",

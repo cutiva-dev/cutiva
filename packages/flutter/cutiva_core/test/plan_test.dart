@@ -42,6 +42,7 @@ void main() {
           'fadeInUs': 0,
           'fadeOutUs': 0,
           'uri': 'file://a.mp3',
+          'endUs': 5000000,
         },
         containsPair('uri', 'file://v.mp4'),
       ],

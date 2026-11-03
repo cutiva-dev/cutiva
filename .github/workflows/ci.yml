@@ -30,6 +30,39 @@ jobs:
           sdk: 3.7.2
       - run: npm run test:dart
 
+  android:
+    # The Android engine: JVM unit tests, then exports on an emulator checked for sync, gaps, speed and mixing.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: packages/engine-android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - run: ./gradlew :engine:testDebugUnitTest --console=plain
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: default
+          working-directory: packages/engine-android
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
+          script: ./gradlew :engine:connectedDebugAndroidTest --console=plain
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: android-test-results
+          path: packages/engine-android/engine/build/reports/androidTests
+
   e2e:
     # macOS: Google Chrome there has the platform H.264 and AAC encoders that export needs.
     runs-on: macos-latest

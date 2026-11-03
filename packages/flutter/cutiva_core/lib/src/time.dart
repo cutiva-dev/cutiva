@@ -13,7 +13,10 @@ Us secondsToUs(double s) => roundHalfUp(s * usPerSecond);
 double usToSeconds(Us us) => us / usPerSecond;
 
 /// Length of a clip on the timeline, after speed.
-Us clipDurationUs(Clip clip) => roundHalfUp((clip.sourceOutUs - clip.sourceInUs) / clip.speed);
+Us clipDurationUs(Clip clip) => timelineLengthUs(clip.sourceInUs, clip.sourceOutUs, clip.speed);
+
+/// Length on the timeline of a source range played at [speed].
+Us timelineLengthUs(Us sourceInUs, Us sourceOutUs, double speed) => roundHalfUp((sourceOutUs - sourceInUs) / speed);
 
 Us clipEndUs(Clip clip) => clip.startUs + clipDurationUs(clip);
 

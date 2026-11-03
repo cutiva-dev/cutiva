@@ -181,9 +181,9 @@ describe("renderPlan", () => {
     expect(plan.video).toEqual([
       { layer: 0, trackId: "trk_2", clipId: "clip_2", assetId: "ast_v", uri: "file://v.mp4", startUs: 1_000_000, endUs: 21_000_000, sourceInUs: 0, sourceOutUs: 20_000_000, speed: 1 },
     ]);
-    expect(plan.audio.map((a) => [a.clipId, a.uri])).toEqual([
-      ["clip_1", "file://a.mp3"],
-      ["clip_2", "file://v.mp4"],
+    expect(plan.audio.map((a) => [a.clipId, a.uri, a.endUs])).toEqual([
+      ["clip_1", "file://a.mp3", 5_000_000],
+      ["clip_2", "file://v.mp4", 21_000_000],
     ]);
 
     const orphan = editor.toJSON();
