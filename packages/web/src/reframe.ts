@@ -1,13 +1,16 @@
 import {
   autoReframe,
   CutivaError,
+  detectActiveArea,
   detectCuts,
   findClip,
+  stereoPan,
   type AutoReframeResult,
+  type CropRect,
   type Editor,
-  type FaceObservation,
   type FrameHistogram,
-  type FrameObservation,
+  type PlanFace,
+  type PlanFrame,
   type Us,
 } from "@cutiva/core";
 import { CanvasSink } from "mediabunny";
@@ -15,9 +18,15 @@ import type { MediaRegistry } from "./media.js";
 
 /** Finds faces in one frame. `@cutiva/web/mediapipe` has one built on MediaPipe; any other works. */
 export interface FaceDetector {
-  /** Faces in `frame`, in the frame's own pixels, with how open each mouth is (0 to 1). */
-  detect(frame: HTMLCanvasElement | OffscreenCanvas): FaceObservation[] | Promise<FaceObservation[]>;
+  /**
+   * Faces in `frame`, in the frame's own pixels, with how open each mouth is (0 to 1, or null when
+   * it can't be seen) and, if the detector has one, a confidence (0 to 1).
+   */
+  detect(frame: HTMLCanvasElement | OffscreenCanvas): PlanFace[] | Promise<PlanFace[]>;
 }
+
+/** What `analyzeAsset` is doing: decoding frames and finding faces, then reading the audio. */
+export type AnalyzeStage = "video" | "audio";
 
 export interface AnalyzeOptions {
   detector: FaceDetector;
@@ -28,16 +37,23 @@ export interface AnalyzeOptions {
   /** Part of the source to analyse. Defaults to all of it. */
   sourceInUs?: Us;
   sourceOutUs?: Us;
-  onProgress?: (ratio: number) => void;
+  /** Overall progress from 0 to 1, and the stage it is in. */
+  onProgress?: (ratio: number, stage: AnalyzeStage) => void;
   signal?: AbortSignal;
 }
 
-/** What the analysis saw: the input `autoReframe` needs, kept so it can be re-run with other settings. */
+/**
+ * What the analysis saw: the input `planReframe` (and the older `autoReframe`) needs, kept so it can
+ * be re-run with other settings. Numbers only: no images or audio.
+ */
 export interface ReframeAnalysis {
   assetId: string;
   durationUs: Us;
-  frames: FrameObservation[];
+  /** Faces in source pixels (display orientation, square pixels), speech level and stereo pan. */
+  frames: PlanFrame[];
   cuts: Us[];
+  /** The picture inside burned-in black bars, in source pixels. Absent when there are none. */
+  activeArea?: CropRect;
 }
 
 const HIST_W = 32;
@@ -45,6 +61,10 @@ const HIST_H = 18;
 const HIST_BINS = 16;
 /** Speech loudness is measured over this many seconds on each side of a frame. */
 const VOICE_WINDOW_S = 0.1;
+/** Width of the picture black bars are looked for in; 6 px of a 1080p source per pixel. */
+const BARS_W = 320;
+/** Share of the progress bar the video stage takes when there is audio to read after it. */
+const VIDEO_SHARE = 0.9;
 
 function makeCanvas(w: number, h: number): HTMLCanvasElement | OffscreenCanvas {
   return typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(w, h) : Object.assign(document.createElement("canvas"), { width: w, height: h });
@@ -59,6 +79,16 @@ function histogram(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingConte
     for (let c = 0; c < 3; c++) bins[c * HIST_BINS + ((data[i + c]! * HIST_BINS) >> 8)]!++;
   }
   return bins;
+}
+
+/** Keep, for each pixel, the brightest luma (BT.601 weights) seen so far. */
+function addPeak(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, frame: CanvasImageSource, peak: Uint8Array, w: number, h: number): void {
+  ctx.drawImage(frame, 0, 0, w, h);
+  const { data } = ctx.getImageData(0, 0, w, h);
+  for (let p = 0, i = 0; p < peak.length; p++, i += 4) {
+    const y = (77 * data[i]! + 150 * data[i + 1]! + 29 * data[i + 2]!) >> 8;
+    if (y > peak[p]!) peak[p] = y;
+  }
 }
 
 /** Loudness around each time, relative to the 90th percentile of the clip, from 0 to 1. */
@@ -80,12 +110,16 @@ function voiceLevels(buffer: AudioBuffer, timesUs: Us[]): number[] {
 
 /**
  * Decode a video asset at a few frames per second and record faces, mouth movement, speech
- * loudness and camera cuts. This is the slow part of auto-reframe; the result can be kept and fed
- * to `autoReframe` again with other settings.
+ * loudness and stereo pan, camera cuts and burned-in black bars. This is the slow part of
+ * auto-reframe; the result can be kept and planned again with other settings. Sizes come from the
+ * track's display size, so rotation metadata and non-square pixels are already applied.
+ * Throws ASSET_NOT_FOUND when the asset's media isn't loaded, NO_VIDEO_TRACK when it has no video,
+ * ANALYSIS_CANCELLED when `signal` aborts.
  */
 export async function analyzeAsset(media: MediaRegistry, assetId: string, options: AnalyzeOptions): Promise<ReframeAnalysis> {
   const entry = media.get(assetId);
-  if (!entry?.video) throw new CutivaError("ASSET_NOT_FOUND", `Video for asset "${assetId}" is not loaded.`);
+  if (!entry) throw new CutivaError("ASSET_NOT_FOUND", `Media for asset "${assetId}" is not loaded.`);
+  if (!entry.video) throw new CutivaError("NO_VIDEO_TRACK", `Asset "${assetId}" has no video track to analyse.`);
   const video = entry.video;
   const durationUs = entry.asset.durationUs;
   const fps = options.fps ?? 5;
@@ -102,36 +136,63 @@ export async function analyzeAsset(media: MediaRegistry, assetId: string, option
   const thumb = makeCanvas(HIST_W, HIST_H);
   const thumbCtx = thumb.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
   if (!thumbCtx) throw new Error("Canvas 2D context is not available.");
+  const barsW = Math.min(BARS_W, width);
+  const barsH = Math.max(1, Math.round((barsW * height) / width));
+  const bars = makeCanvas(barsW, barsH);
+  const barsCtx = bars.getContext("2d", { willReadFrequently: true }) as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
+  if (!barsCtx) throw new Error("Canvas 2D context is not available.");
+  const peak = new Uint8Array(barsW * barsH);
+  const hasAudio = entry.audio !== null && typeof OfflineAudioContext !== "undefined";
+  const videoShare = hasAudio ? VIDEO_SHARE : 1;
+  const cancelled = () => new CutivaError("ANALYSIS_CANCELLED", "Analysis was cancelled.");
 
-  const frames: FrameObservation[] = [];
+  const frames: PlanFrame[] = [];
   const histograms: FrameHistogram[] = [];
   let i = 0;
   const iterator = sink.canvasesAtTimestamps(timesUs.map((t) => t / 1e6));
   try {
     for await (const wrapped of iterator) {
-      if (options.signal?.aborted) throw new CutivaError("ANALYSIS_CANCELLED", "Analysis was cancelled.");
+      if (options.signal?.aborted) throw cancelled();
       const atUs = timesUs[i++]!;
       if (!wrapped) continue;
       const faces = await options.detector.detect(wrapped.canvas);
       frames.push({
         atUs,
-        faces: faces.map((f) => ({ x: f.x * scale, y: f.y * scale, w: f.w * scale, h: f.h * scale, mouth: f.mouth })),
+        faces: faces.map((f) => ({
+          x: f.x * scale,
+          y: f.y * scale,
+          w: f.w * scale,
+          h: f.h * scale,
+          mouth: f.mouth,
+          ...(f.conf !== undefined ? { conf: f.conf } : {}),
+        })),
       });
       histograms.push({ atUs, bins: histogram(thumbCtx, wrapped.canvas) });
-      options.onProgress?.(i / timesUs.length);
+      addPeak(barsCtx, wrapped.canvas, peak, barsW, barsH);
+      options.onProgress?.((i / timesUs.length) * videoShare, "video");
     }
   } finally {
     await iterator.return(undefined);
   }
 
-  if (entry.audio && typeof OfflineAudioContext !== "undefined") {
+  if (hasAudio) {
+    if (options.signal?.aborted) throw cancelled();
+    options.onProgress?.(videoShare, "audio");
     const buffer = await media.audioBuffer(entry, new OfflineAudioContext(1, 1, 48_000));
     if (buffer) {
-      const levels = voiceLevels(buffer, frames.map((f) => f.atUs));
-      frames.forEach((f, k) => (f.voice = levels[k]));
+      const times = frames.map((f) => f.atUs);
+      const levels = voiceLevels(buffer, times);
+      // decodeAudioData keeps the file's channels; pan needs two that differ.
+      const pan = buffer.numberOfChannels >= 2 ? stereoPan(buffer.getChannelData(0), buffer.getChannelData(1), buffer.sampleRate, times) : null;
+      frames.forEach((f, k) => {
+        f.voice = levels[k];
+        if (pan) f.pan = pan[k];
+      });
     }
+    options.onProgress?.(1, "audio");
   }
-  return { assetId, durationUs, frames, cuts: detectCuts(histograms) };
+  const activeArea = frames.length ? detectActiveArea({ width: barsW, height: barsH, luma: peak }, video.displayWidth, video.displayHeight) : null;
+  return { assetId, durationUs, frames, cuts: detectCuts(histograms), ...(activeArea ? { activeArea } : {}) };
 }
 
 export interface AutoReframeOptions extends Omit<AnalyzeOptions, "sourceInUs" | "sourceOutUs"> {
@@ -167,7 +228,12 @@ export async function autoReframeClip(editor: Editor, media: MediaRegistry, clip
     outputWidth: width,
     outputHeight: height,
     durationUs: analysis.durationUs,
-    frames: analysis.frames,
+    // The older planner needs a mouth number on every face and knows nothing of pan or confidence.
+    frames: analysis.frames.map((f) => ({
+      atUs: f.atUs,
+      faces: f.faces.map((face) => ({ x: face.x, y: face.y, w: face.w, h: face.h, mouth: face.mouth ?? 0 })),
+      ...(f.voice !== undefined ? { voice: f.voice } : {}),
+    })),
     cuts: analysis.cuts,
     ...(options.zoom !== undefined ? { zoom: options.zoom } : {}),
     ...(options.minHoldUs !== undefined ? { minHoldUs: options.minHoldUs } : {}),

@@ -1,0 +1,8 @@
+{
+ "_notes": [
+  "Only a 4x4 spot in the middle of a 10x10 peak image was ever bright (a dark scene with one lamp).",
+  "Edge runs: 3 dark rows top and bottom, 3 dark columns left and right, leaving 4 of 10 (40%) per side.",
+  "Under the 50% that must remain, so this is a dark scene, not bars: null (use the whole frame)."
+ ],
+ "area": null
+}

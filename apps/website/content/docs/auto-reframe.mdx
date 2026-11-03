@@ -28,7 +28,7 @@ editor.dispatch({ type: "project.setSize", width: 1080, height: 1920 }); // 9:16
 const detector = await createMediaPipeFaceDetector();
 const result = await engine.autoReframe(clipId!, {
   detector,
-  onProgress: (ratio) => console.log(`${Math.round(ratio * 100)}%`),
+  onProgress: (ratio, stage) => console.log(`${stage} ${Math.round(ratio * 100)}%`), // stage: "video", then "audio"
 });
 
 result.people; // [{ id: "s0p0", speakingUs: 17_000_000, face: { x, y, w, h, atUs } }, ...]
@@ -37,7 +37,21 @@ editor.undo(); // the whole reframe is one undo step
 
 Analysis decodes 5 frames per second, which is the slow part. To try another zoom without decoding again, pass the earlier analysis back: `engine.autoReframe(clipId, { detector, analysis: result.analysis, zoom: 1.5 })`.
 
-The MediaPipe detector downloads its WASM files and model (about 4 MB) from jsDelivr and Google the first time. Pass `wasmBaseUrl` and `modelAssetPath` to host them yourself. Video frames never leave the device.
+The MediaPipe detector downloads its WASM files from jsDelivr and its model (about 3.7 MB) from Google the first time. The model is checked against a pinned SHA-256 (`MEDIAPIPE_MODEL_SHA256`) and kept in Cache Storage, so later loads don't download it again; a cached copy with the wrong hash is thrown away. Pass `wasmBaseUrl` and `modelAssetPath` to host the files yourself, `modelSha256` if you host a different model, and `onProgress` to show the download. A failed download, a hash mismatch or a runtime that doesn't start throws `MODEL_LOAD_FAILED`. Video frames never leave the device.
+
+`analyzeAsset` throws `NO_VIDEO_TRACK` for an asset without video and `ANALYSIS_CANCELLED` when its `signal` aborts.
+
+### What the analysis records
+
+`result.analysis` holds numbers only, never images or audio. Sizes come from the video track's display size, so rotation metadata and non-square pixels are already applied.
+
+- **Faces** per analysed frame, in source pixels: box, mouth openness (`null` when the detector can't see the mouth) and, if the detector gives one, a confidence. MediaPipe gives no confidence.
+- **Speech level** per frame: loudness within 100 ms on each side, relative to the clip's 90th percentile, from 0 to 1.
+- **Stereo pan** per frame, from -1 (left) to 1 (right): `stereoPan` in the core computes `(R − L) / (R + L)` of the energy within 100 ms on each side. Absent when the file is mono or its two channels carry the same signal (their difference holds under 0.1% of the energy); silence gives 0.
+- **Camera cuts**, from colour histograms.
+- **Active area** (`activeArea`), the picture inside burned-in black bars. Each pixel keeps its brightest value across the sampled frames, on a copy 320 pixels wide, and `detectActiveArea` in the core reads it: a row or column is a bar when 95% of its pixels are at luma 32 or below, counted only from the edges inwards. Bars under 2% of a side are ignored, and if less than half of either side would remain the clip is treated as a dark scene (no active area). The result is rounded inwards to whole source pixels. Fixtures `signals-*.json` pin both functions for TypeScript and Dart.
+
+`autoReframe` doesn't use pan, confidence or the active area; `planReframe` does.
 
 ## React
 

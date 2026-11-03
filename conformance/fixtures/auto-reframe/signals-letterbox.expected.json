@@ -1,0 +1,17 @@
+{
+ "_notes": [
+  "16x9 peak image of a 1279x719 source (odd sizes check the inward rounding).",
+  "Row 0 and row 8 are black: one-row bars top and bottom (11% each, over the 2% minimum).",
+  "Row 1 has 15 of 16 dark pixels (93.75%), under the 95% needed: the top bar stops at row 0.",
+  "Column 15 is black on every row: a one-column bar on the right. Column 0 is dark on 3 of 9 rows only.",
+  "The 2x2 black object in rows 4-5 is inside the picture and doesn't matter.",
+  "x = ceil(0 * 1279 / 16) = 0; right edge = floor(15 * 1279 / 16) = floor(1199.06) = 1199, so w = 1199.",
+  "y = ceil(1 * 719 / 9) = ceil(79.89) = 80; bottom edge = floor(8 * 719 / 9) = floor(639.11) = 639, so h = 559."
+ ],
+ "area": {
+  "x": 0,
+  "y": 80,
+  "w": 1199,
+  "h": 559
+ }
+}

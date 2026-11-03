@@ -17,6 +17,7 @@ export {
   analyzeAsset,
   autoReframeClip,
   type AnalyzeOptions,
+  type AnalyzeStage,
   type AutoReframeClipResult,
   type AutoReframeOptions,
   type FaceDetector,

@@ -18,6 +18,12 @@ enum CutivaErrorCode {
   exportCancelled('EXPORT_CANCELLED'),
   analysisCancelled('ANALYSIS_CANCELLED'),
 
+  /// Analysis needs a video track and the asset has none.
+  noVideoTrack('NO_VIDEO_TRACK'),
+
+  /// A detection model couldn't be downloaded, failed its SHA-256 check, or didn't start.
+  modelLoadFailed('MODEL_LOAD_FAILED'),
+
   /// A reframe edit names a segment the clip's track doesn't have.
   segmentNotFound('SEGMENT_NOT_FOUND'),
 

@@ -1,4 +1,4 @@
-import type { FaceObservation } from "@cutiva/core";
+import { CutivaError, type PlanFace } from "@cutiva/core";
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import type { FaceDetector } from "./reframe.js";
 
@@ -7,39 +7,119 @@ export const MEDIAPIPE_VERSION = "1.1.1";
 
 const DEFAULT_WASM = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
 const DEFAULT_MODEL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+/** SHA-256 of `face_landmarker.task` (float16, version 1, 3,758,596 bytes, Apache-2.0). */
+export const MEDIAPIPE_MODEL_SHA256 = "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff";
+/** Downloaded models are kept in this Cache Storage bucket, checked against their hash on every load. */
+const CACHE_NAME = "cutiva-models";
 
 export interface MediaPipeFaceDetectorOptions {
   /** Folder with MediaPipe's WASM files. Defaults to jsDelivr; host them yourself to avoid the CDN. */
   wasmBaseUrl?: string;
   /** URL of `face_landmarker.task`. Defaults to Google's model storage. */
   modelAssetPath?: string;
+  /** Hex SHA-256 the model must have. Defaults to the pinned `MEDIAPIPE_MODEL_SHA256`; set it when you host another model. */
+  modelSha256?: string;
   /** Most faces to find per frame. Default 6. */
   maxFaces?: number;
+  /** Model download progress, 0 to 1. Not called when the model comes from the cache. */
+  onProgress?: (ratio: number) => void;
 }
 
 export interface MediaPipeFaceDetector extends FaceDetector {
   close(): void;
 }
 
+async function sha256(bytes: Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function openCache(): Promise<Cache | null> {
+  try {
+    return typeof caches !== "undefined" ? await caches.open(CACHE_NAME) : null;
+  } catch {
+    // Cache Storage needs a secure context and can be blocked; download every time then.
+    return null;
+  }
+}
+
+async function download(url: string, onProgress?: (ratio: number) => void): Promise<Uint8Array> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const total = Number(response.headers.get("content-length")) || 0;
+  if (!response.body || !onProgress || !total) return new Uint8Array(await response.arrayBuffer());
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    onProgress(Math.min(1, received / total));
+  }
+  const bytes = new Uint8Array(received);
+  let at = 0;
+  for (const c of chunks) {
+    bytes.set(c, at);
+    at += c.length;
+  }
+  return bytes;
+}
+
+/**
+ * The model's bytes, from the cache when a copy there still has the expected hash, else downloaded
+ * and checked. Throws MODEL_LOAD_FAILED when the download fails or the hash doesn't match.
+ */
+export async function loadModel(url: string, expectedSha256: string, onProgress?: (ratio: number) => void): Promise<Uint8Array> {
+  const expected = expectedSha256.toLowerCase();
+  const cache = await openCache();
+  const cached = await cache?.match(url).catch(() => undefined);
+  if (cached) {
+    const bytes = new Uint8Array(await cached.arrayBuffer());
+    if ((await sha256(bytes)) === expected) return bytes;
+    await cache!.delete(url).catch(() => false);
+  }
+  let bytes: Uint8Array;
+  try {
+    bytes = await download(url, onProgress);
+  } catch (e) {
+    throw new CutivaError("MODEL_LOAD_FAILED", `Couldn't download the face model from ${url}: ${(e as Error).message}`);
+  }
+  const got = await sha256(bytes);
+  if (got !== expected) throw new CutivaError("MODEL_LOAD_FAILED", `The face model from ${url} has SHA-256 ${got}, expected ${expected}.`);
+  await cache?.put(url, new Response(bytes.slice())).catch(() => undefined);
+  return bytes;
+}
+
 /**
  * A face detector on MediaPipe Face Landmarker (Apache-2.0). Install `@mediapipe/tasks-vision`
- * yourself; it is an optional peer dependency. The model and WASM files download on first use
- * (about 4 MB); video frames never leave the device. Mouth openness is the `jawOpen` blendshape.
+ * yourself; it is an optional peer dependency. The model (about 3.7 MB) downloads on first use, is
+ * checked against a pinned SHA-256 and kept in Cache Storage; video frames never leave the device.
+ * Mouth openness is the `jawOpen` blendshape; MediaPipe gives no per-face confidence. Throws
+ * MODEL_LOAD_FAILED when the model or the WASM runtime can't be loaded.
  */
 export async function createMediaPipeFaceDetector(options: MediaPipeFaceDetectorOptions = {}): Promise<MediaPipeFaceDetector> {
-  const fileset = await FilesetResolver.forVisionTasks(options.wasmBaseUrl ?? DEFAULT_WASM);
-  const create = (delegate: "GPU" | "CPU") =>
-    FaceLandmarker.createFromOptions(fileset, {
-      baseOptions: { modelAssetPath: options.modelAssetPath ?? DEFAULT_MODEL, delegate },
-      runningMode: "IMAGE",
-      numFaces: options.maxFaces ?? 6,
-      outputFaceBlendshapes: true,
-    });
-  const landmarker = await create("GPU").catch(() => create("CPU"));
+  const model = await loadModel(options.modelAssetPath ?? DEFAULT_MODEL, options.modelSha256 ?? MEDIAPIPE_MODEL_SHA256, options.onProgress);
+  let landmarker: FaceLandmarker;
+  try {
+    const fileset = await FilesetResolver.forVisionTasks(options.wasmBaseUrl ?? DEFAULT_WASM);
+    const create = (delegate: "GPU" | "CPU") =>
+      FaceLandmarker.createFromOptions(fileset, {
+        // MediaPipe may take ownership of the buffer, so each attempt gets its own copy.
+        baseOptions: { modelAssetBuffer: model.slice(), delegate },
+        runningMode: "IMAGE",
+        numFaces: options.maxFaces ?? 6,
+        outputFaceBlendshapes: true,
+      });
+    landmarker = await create("GPU").catch(() => create("CPU"));
+  } catch (e) {
+    throw new CutivaError("MODEL_LOAD_FAILED", `MediaPipe didn't start: ${(e as Error).message}`);
+  }
   return {
     detect(frame) {
       const result = landmarker.detect(frame);
-      return result.faceLandmarks.map((points, i): FaceObservation => {
+      return result.faceLandmarks.map((points, i): PlanFace => {
         let minX = 1;
         let minY = 1;
         let maxX = 0;

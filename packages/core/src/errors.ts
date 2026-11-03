@@ -15,6 +15,10 @@ export type CutivaErrorCode =
   | "EXPORT_FAILED"
   | "EXPORT_CANCELLED"
   | "ANALYSIS_CANCELLED"
+  /** Analysis needs a video track and the asset has none (or its media isn't loaded with one). */
+  | "NO_VIDEO_TRACK"
+  /** A detection model couldn't be downloaded, failed its SHA-256 check, or didn't start. */
+  | "MODEL_LOAD_FAILED"
   /** A reframe edit names a segment the clip's track doesn't have. */
   | "SEGMENT_NOT_FOUND"
   /** A reframe edit names a person the clip's track doesn't have. */
