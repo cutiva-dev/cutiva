@@ -48,3 +48,23 @@
 .cutiva-reframe__box.is-dragging { cursor: grabbing; }
 .cutiva-reframe__box:focus-visible { outline: 2px solid var(--cutiva-ink); outline-offset: 2px; }
 .cutiva-reframe__label { position: absolute; top: 6px; left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--cutiva-cut); color: var(--cutiva-on-accent); font: 600 12px/1.4 var(--cutiva-font, inherit); }
+
+/* Reframe lanes: Speakers (who talks) and Camera (what each segment frames), under a reframed video track. */
+.cutiva-timeline__label--lane { height: 28px; font-size: 12px; }
+.cutiva-timeline__lane { position: relative; height: 28px; border-bottom: 1px solid var(--cutiva-line); }
+.cutiva-segment { position: absolute; top: 4px; height: 20px; min-height: 0; min-width: 0; margin: 0; box-sizing: border-box; display: flex; align-items: center; overflow: hidden; padding: 0 6px; border: 1px solid var(--cutiva-line); border-radius: 4px; background: var(--cutiva-raised); color: var(--cutiva-ink); font: 500 11px/1 var(--cutiva-font, inherit); white-space: nowrap; cursor: pointer; }
+.cutiva-segment--voice { color: var(--cutiva-on-accent); border-color: transparent; }
+.cutiva-segment--silence { color: var(--cutiva-muted); }
+.cutiva-segment--single { border-left-width: 3px; }
+.cutiva-segment--split { border-style: dashed; }
+.cutiva-segment--wide { color: var(--cutiva-muted); }
+.cutiva-segment.is-locked::before { content: ""; flex: none; width: 6px; height: 6px; margin-right: 5px; border-radius: 1px; background: currentColor; }
+.cutiva-segment.is-selected { outline: 2px solid var(--cutiva-ink); outline-offset: -1px; z-index: 1; }
+.cutiva-segment:focus-visible { outline: 2px solid var(--cutiva-cut); outline-offset: 1px; }
+.cutiva-segment__name { overflow: hidden; text-overflow: ellipsis; }
+
+/* Faces on the source frame: click one to frame that person. */
+.cutiva-reframe__face { position: absolute; z-index: 1; box-sizing: border-box; min-height: 0; min-width: 0; margin: 0; padding: 0; border: 2px solid var(--cutiva-face, var(--cutiva-ink)); border-radius: 4px; background: transparent; cursor: pointer; }
+.cutiva-reframe__face.is-focused { border-width: 3px; }
+.cutiva-reframe__face:focus-visible { outline: 2px solid var(--cutiva-ink); outline-offset: 2px; }
+.cutiva-reframe__face-name { position: absolute; left: -2px; bottom: 100%; margin-bottom: 2px; padding: 1px 5px; border-radius: 3px; background: var(--cutiva-face, var(--cutiva-ink)); color: var(--cutiva-on-accent); font: 600 11px/1.4 var(--cutiva-font, inherit); white-space: nowrap; }

@@ -19,6 +19,8 @@ export type CutivaErrorCode =
   | "NO_VIDEO_TRACK"
   /** A detection model couldn't be downloaded, failed its SHA-256 check, or didn't start. */
   | "MODEL_LOAD_FAILED"
+  /** A reframe edit needs the clip's analysis (faces, speech) and it isn't cached: analyse again. */
+  | "ANALYSIS_NEEDED"
   /** A reframe edit names a segment the clip's track doesn't have. */
   | "SEGMENT_NOT_FOUND"
   /** A reframe edit names a person the clip's track doesn't have. */

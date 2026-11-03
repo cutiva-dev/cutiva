@@ -315,6 +315,46 @@ void main() {
     ]);
   });
 
+  test('lists where each person was seen, by time then person, with merges applied and noise dropped', () {
+    final fs = _frames(
+      3,
+      (i) => (
+        voice: 0.5,
+        pan: null,
+        faces: [_face(_b, _talk(i)), _face(_a, 0.1), _face(900, 0.1, h: 20), _face(1700, 0.1, conf: 0.2)],
+      ),
+    );
+    final r = _plan(fs);
+    List<Object?> box(String id, int atUs, double x) => [id, atUs, x, 300.0, 200.0, 200.0];
+    List<List<Object?>> brief(ReframePlanResult r) => [
+      for (final s in r.sightings) [s.personId, s.atUs, s.x, s.y, s.w, s.h],
+    ];
+    expect(brief(r), [
+      box('p1', 0, _a),
+      box('p2', 0, _b),
+      box('p1', _step, _a),
+      box('p2', _step, _b),
+      box('p1', 2 * _step, _a),
+      box('p2', 2 * _step, _b),
+    ]);
+    expect(r.toJson()['sightings'], hasLength(6));
+    final merged = _plan(fs, track: editReframeTrack(r.track, const PersonMerge('p2', 'p1')));
+    expect(
+      [
+        for (final s in merged.sightings) [s.personId, s.atUs, s.x],
+      ],
+      [
+        ['p1', 0, _a],
+        ['p1', 0, _b],
+        ['p1', _step, _a],
+        ['p1', _step, _b],
+        ['p1', 2 * _step, _a],
+        ['p1', 2 * _step, _b],
+      ],
+    );
+    expect(_plan([], srcW: 1080, srcH: 1920, durationUs: 1000000).sightings, isEmpty);
+  });
+
   test('merged people are one, across a cut', () {
     final fs = _frames(20, (i) => (voice: 0.5, pan: null, faces: [_face(i < 10 ? _a : _b, _talk(i))]));
     final first = _plan(fs, cuts: [2000000]);

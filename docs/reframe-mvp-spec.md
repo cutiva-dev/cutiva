@@ -399,19 +399,23 @@ El MVP se construye en 7 fases (0 a 6), cada una cerrada por una condición veri
 
 **Fase 3 — Detectores web y análisis**
 
-- [ ] Probe, área activa y tomas con WebCodecs + mp4box.js en un Web Worker.
-- [ ] YuNet y Face Landmarker en ONNX Runtime Web (WebGPU con respaldo WASM).
-- [ ] Silero VAD sobre el audio decodificado con WebAudio.
-- [ ] Descarga de modelos con hash fijado y caché; `analyze()` con progreso y cancelación.
-- [ ] **Condición:** un clip de 3 min se analiza en menos de 60 s en un portátil de gama media y coincide con el track esperado del fixture dentro de las tolerancias.
+> Adaptada (mapa, conflicto 6): sin dependencias nuevas de detección. Hecha en el PR #33.
+
+- [x] Probe, área activa y tomas con WebCodecs + mp4box.js en un Web Worker. *Con Mediabunny en el hilo principal (como el export, #5): tamaño de visualización (rotación, SAR), área activa (`detectActiveArea`) y cortes (`detectCuts`).*
+- [x] YuNet y Face Landmarker en ONNX Runtime Web (WebGPU con respaldo WASM). *MediaPipe Face Landmarker (GPU con respaldo CPU), que ya da caras y apertura de boca; sin YuNet ni ONNX Runtime.*
+- [ ] Silero VAD sobre el audio decodificado con WebAudio. *No hecho: la voz sigue siendo volumen; solo si el benchmark lo pide. Añadido el paneo estéreo (`stereoPan`).*
+- [x] Descarga de modelos con hash fijado y caché; `analyze()` con progreso y cancelación. *SHA-256 fijado, Cache Storage, progreso por etapa (`video`, `audio`), `ANALYSIS_CANCELLED`, `MODEL_LOAD_FAILED`.*
+- [ ] **Condición:** un clip de 3 min se analiza en menos de 60 s en un portátil de gama media y coincide con el track esperado del fixture dentro de las tolerancias. *Pendiente: faltan los vídeos reales de prueba.*
 
 **Fase 4 — Integración en el editor existente**
 
-- [ ] `ReframePreview` como capa sobre el preview existente, respetando el selector Format.
-- [ ] Sección Auto-reframe y People en el inspector del clip, con los componentes y estilos que ya usa el playground.
-- [ ] Carriles Speakers y Camera dentro del timeline existente.
-- [ ] Ediciones de reframe dentro del historial de undo/redo y del archivo de proyecto (Open/Save project).
-- [ ] **Condición:** en el playground se importa un video, se cambia Format a 9:16, se analiza un clip y funcionan las interacciones de la tabla; cada edición se ve en el preview en menos de 100 ms y se puede deshacer.
+> Adaptada (mapa, conflictos 3, 8, 9 y 13): el preview es el canvas existente; el monitor de origen al lado es la vista Show source; las observaciones viven en caché (memoria + IndexedDB), no en el proyecto.
+
+- [x] `ReframePreview` como capa sobre el preview existente, respetando el selector Format. *El canvas existente dibuja las claves del planner; split y wide se dibujan como una ventana centrada hasta la Fase 5.*
+- [x] Sección Auto-reframe y People en el inspector del clip, con los componentes y estilos que ya usa el playground. *Analyze con progreso y Cancel, layout del segmento, Focus on, Reset to automatic, Camera style, Zoom, Apply to every clip; People con nombre, Priority, Never focus y unir personas; estados Already vertical, Low quality crop, Bars removed y No faces. Safe zones queda para cuando existan los presets.*
+- [x] Carriles Speakers y Camera dentro del timeline existente.
+- [x] Ediciones de reframe dentro del historial de undo/redo y del archivo de proyecto (Open/Save project). *Todas pasan por `clip.setReframe` (claves + track) en un paso de undo; caras clicables en el monitor de origen y arrastre que bloquea el segmento.*
+- [x] **Condición:** en el playground se importa un video, se cambia Format a 9:16, se analiza un clip y funcionan las interacciones de la tabla; cada edición se ve en el preview en menos de 100 ms y se puede deshacer. *E2E `reframe-editor.spec.ts` en Chrome y Firefox (macOS) con un clip sintético y un detector de prueba. Re-planificar 3 min (900 frames) tarda ~22 ms en Node en un Mac (peor caso 35 ms). Sin vídeo real todavía.*
 
 **Fase 5 — Export web**
 

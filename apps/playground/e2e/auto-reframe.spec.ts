@@ -16,9 +16,10 @@ test("auto-reframe runs MediaPipe over a clip and applies the result", async ({ 
   await page.getByLabel("Import media files").setInputFiles(fixture);
   await page.getByLabel("Format").selectOption({ label: "9:16 vertical" });
   await page.locator(".cutiva-clip--video").click({ position: { x: 20, y: 10 } });
-  await page.getByRole("button", { name: "Auto-reframe", exact: true }).click();
-  await expect(page.getByText("0 people · 0 framing changes")).toBeVisible({ timeout: 60_000 });
-  // No faces: the window stays centred, on the green stripe.
+  await page.getByRole("button", { name: "Analyze", exact: true }).click();
+  await expect(page.getByText("0 people · 1 segment")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText("No faces here, so the whole picture shows (wide).")).toBeVisible();
+  // No faces: wide; until wide + blur is drawn the preview shows the centred window, on the green stripe.
   const pixel = () =>
     page.getByLabel("Video preview").evaluate((c: HTMLCanvasElement) => Array.from(c.getContext("2d")!.getImageData(540, 100, 1, 1).data.slice(0, 3)));
   await expect.poll(async () => ((p) => p[0]! < 60 && p[1]! > 200 && p[2]! < 60)(await pixel())).toBe(true);
@@ -38,13 +39,15 @@ test("auto-reframe runs MediaPipe over a clip and applies the result", async ({ 
   expect(params.get("body")).toContain((await downloading).suggestedFilename());
   const text = await readFile((await (await downloading).path())!, "utf8");
   const report = JSON.parse(text);
-  expect(report).toMatchObject({ version: 1, overall: "good", ratings: [{ atUs: 0, verdict: "good" }] });
+  expect(report).toMatchObject({ version: 2, overall: "good", ratings: [{ atUs: 0, verdict: "good" }] });
+  expect(report.final.track).toMatchObject({ version: 1, people: [], segments: [{ reason: "no-face", resolved: "wide" }] });
   expect(report.analysis.frames).toHaveLength(10);
-  expect(report.settings).toMatchObject({ sourceWidth: 1280, sourceHeight: 720, outputWidth: 1080, outputHeight: 1920 });
+  expect(report.settings).toMatchObject({ sourceWidth: 1280, sourceHeight: 720, outputWidth: 1080, outputHeight: 1920, style: 50, zoomPct: 100 });
   // Numbers only: the file name never leaves the page.
   expect(text).not.toContain("stripes");
   expect(params.get("body")).not.toContain("stripes");
 
-  await page.getByRole("button", { name: "Restore" }).click();
+  await page.getByRole("button", { name: "Remove auto-reframe" }).click();
+  await expect(page.getByRole("button", { name: "Analyze", exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });

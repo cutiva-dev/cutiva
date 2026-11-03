@@ -1,6 +1,7 @@
-import { clipDurationUs, clipEndUs, CutivaError, formatTimecode, reframeKeys, type Clip, type Editor, type Us } from "@cutiva/core";
+import { clipDurationUs, clipEndUs, CutivaError, formatTimecode, reframeKeys, reframeTrack, type Clip, type Editor, type Track, type Us } from "@cutiva/core";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useProject } from "./hooks.js";
+import { personColor, placedSegments, segmentCaption } from "./reframe-lanes.js";
 
 /** An image the timeline can draw, such as a canvas or ImageBitmap. */
 export type ThumbnailSource = CanvasImageSource & { width: number; height: number };
@@ -20,6 +21,15 @@ export interface TimelineProps {
    * With `@cutiva/web`, pass `engine.thumbnail`.
    */
   thumbnail?: (assetId: string, sourceUs: Us) => Promise<ThumbnailSource | null>;
+  /**
+   * Under each video track with a reframed clip (one with a Reframe Track), show a Speakers lane
+   * (who talks, coloured by person) and a Camera lane (what each segment frames). Default true.
+   */
+  reframeLanes?: boolean;
+  /** The highlighted reframe segment. */
+  selectedSegment?: { clipId: string; segmentId: string } | null;
+  /** Called when a segment of a lane is clicked; the playhead also moves to its middle. */
+  onSelectSegment?: (clipId: string, segmentId: string) => void;
 }
 
 type Drag =
@@ -29,7 +39,7 @@ type Drag =
 
 const TRACK_LABEL = { video: "Video", audio: "Audio" } as const;
 
-export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxPerSecond = 60, onError, thumbnail }: TimelineProps) {
+export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxPerSecond = 60, onError, thumbnail, reframeLanes = true, selectedSegment, onSelectSegment }: TimelineProps) {
   const project = useProject(editor);
   const [drag, setDrag] = useState<Drag | null>(null);
   const areaRef = useRef<HTMLDivElement>(null);
@@ -81,6 +91,45 @@ export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxP
     });
   };
 
+  const hasLanes = (t: Track) => reframeLanes && t.kind === "video" && t.clips.some((c) => (reframeTrack(c)?.segments.length ?? 0) > 0);
+
+  const lanes = (track: Track) =>
+    (["speakers", "camera"] as const).map((lane) => (
+      <div key={`${track.id}:${lane}`} className={`cutiva-timeline__lane cutiva-timeline__lane--${lane}`} role="group" aria-label={lane === "speakers" ? "Speakers" : "Camera"}>
+        {track.clips.flatMap((clip) => {
+          const rt = reframeTrack(clip);
+          if (!rt) return [];
+          return placedSegments(clip).map(({ segment, startUs, endUs }) => {
+            const selected = selectedSegment?.clipId === clip.id && selectedSegment.segmentId === segment.id;
+            const speakers = segment.speakers.filter((id) => rt.people.some((p) => p.id === id));
+            const caption = lane === "speakers" ? (speakers.length ? speakers.map((id) => rt.people.find((p) => p.id === id)!.label).join(" + ") : "Silence") : segmentCaption(rt, segment);
+            const stripes = speakers.map((id) => personColor(rt, id));
+            // Two voices at once: the first colour fills, the second underlines (no gradients in the theme).
+            const voices = lane === "speakers" && stripes.length > 0 ? { background: stripes[0], ...(stripes[1] ? { borderBottom: `4px solid ${stripes[1]}` } : {}) } : {};
+            const focus = segment.resolved === "single" ? (segment.focus[0] ?? segment.speakers[0]) : undefined;
+            return (
+              <button
+                key={`${clip.id}:${segment.id}`}
+                type="button"
+                className={`cutiva-segment cutiva-segment--${lane === "camera" ? segment.resolved : speakers.length ? "voice" : "silence"}${selected ? " is-selected" : ""}${lane === "camera" && segment.locked ? " is-locked" : ""}`}
+                style={{ left: startUs * pxPerUs, width: Math.max(2, (endUs - startUs) * pxPerUs), ...voices, ...(lane === "camera" && focus ? { borderColor: personColor(rt, focus) } : {}) }}
+                aria-pressed={selected}
+                aria-label={`${lane === "speakers" ? "Speakers" : "Camera"}: ${caption}${lane === "camera" && segment.locked ? " (locked)" : ""}, ${formatTimecode(startUs)} to ${formatTimecode(endUs)}`}
+                title={`${caption}${segment.locked ? " · locked" : ""} · ${segment.reason}`}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => {
+                  onSelectSegment?.(clip.id, segment.id);
+                  onSeek(startUs + Math.floor((endUs - startUs) / 2));
+                }}
+              >
+                <span className="cutiva-segment__name">{caption}</span>
+              </button>
+            );
+          });
+        })}
+      </div>
+    ));
+
   const ticks: number[] = [];
   const step = pxPerSecond >= 40 ? 1 : 5;
   for (let s = 0; s * 1e6 <= durationUs; s += step) ticks.push(s);
@@ -102,7 +151,16 @@ export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxP
               {t.muted ? "Muted" : "Mute"}
             </button>
           </div>
-        ))}
+        )).flatMap((label, i) => {
+          const t = project.tracks[i]!;
+          return hasLanes(t)
+            ? [
+                label,
+                <div key={`${t.id}:speakers`} className="cutiva-timeline__label cutiva-timeline__label--lane">Speakers</div>,
+                <div key={`${t.id}:camera`} className="cutiva-timeline__label cutiva-timeline__label--lane">Camera</div>,
+              ]
+            : [label];
+        })}
       </div>
       <div className="cutiva-timeline__area" ref={areaRef}>
         <div style={{ width: widthPx, position: "relative" }}>
@@ -130,7 +188,7 @@ export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxP
               </span>
             ))}
           </div>
-          {project.tracks.map((track) => (
+          {project.tracks.map((track) => [
             <div
               key={track.id}
               className={`cutiva-timeline__track cutiva-timeline__track--${track.kind}${track.muted ? " is-muted" : ""}`}
@@ -213,8 +271,9 @@ export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxP
                   </div>
                 );
               })}
-            </div>
-          ))}
+            </div>,
+            ...(hasLanes(track) ? lanes(track) : []),
+          ])}
           <div className="cutiva-timeline__playhead" style={{ left: timeUs * pxPerUs }} />
         </div>
       </div>

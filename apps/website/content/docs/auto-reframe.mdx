@@ -3,9 +3,9 @@ title: Auto-reframe
 description: Turn landscape footage into vertical video that follows whoever is talking.
 ---
 
-**Status: beta, needs testing.** An E2E test checks, in Chrome and Firefox, that dragging the window changes both preview and export. A manual test (it needs the network) checks that MediaPipe loads and analyses a clip. How well it picks the speaker in real conversations has not been measured yet.
+**Status: beta, needs testing.** E2E tests check, in Chrome and Firefox, that dragging the window changes both preview and export, and that the editor's reframe controls work on a synthetic two-speaker clip (with a stand-in face detector): lanes, clicking a face, layouts, people, camera style, undo, save and the analysis cache. A manual test (it needs the network) checks that MediaPipe loads and analyses a clip. How well it picks the speaker in real conversations has not been measured yet. Split and wide layouts are planned and stored, but preview and export still draw them as one centred window.
 
-Auto-reframe crops a landscape clip for a vertical (or square) project. It watches the clip, finds the people, works out who is talking from mouth movement and speech, and writes **crop keys**: a cut to each new speaker, and a gentle follow while they move. You then fix the keys it gets wrong by dragging the window.
+Auto-reframe crops a landscape clip for a vertical (or square) project. It watches the clip, finds the people, works out who is talking from mouth movement and speech, and splits the clip into **segments**: who is framed, and how (one person, a split for two, or wide). The camera cuts to each new speaker and follows gently while they move. You fix what it gets wrong with a click: pick a face, a layout or a person's flags, and that segment stays as you set it.
 
 ## Web
 
@@ -26,16 +26,36 @@ const { clipId } = await engine.importFile(file);
 
 editor.dispatch({ type: "project.setSize", width: 1080, height: 1920 }); // 9:16
 const detector = await createMediaPipeFaceDetector();
-const result = await engine.autoReframe(clipId!, {
+const result = await engine.reframe(clipId!, {
   detector,
   onProgress: (ratio, stage) => console.log(`${stage} ${Math.round(ratio * 100)}%`), // stage: "video", then "audio"
 });
 
-result.people; // [{ id: "s0p0", speakingUs: 17_000_000, face: { x, y, w, h, atUs } }, ...]
-editor.undo(); // the whole reframe is one undo step
+result.track.people;   // [{ id: "p1", label: "Speaker A", kind: "face", priority: false, neverFocus: false }, ...]
+result.track.segments; // [{ id: "s1", startUs: 0, endUs: 4_200_000, speakers: ["p1"], resolved: "single", locked: false, ... }, ...]
+editor.undo();         // the whole reframe is one undo step
 ```
 
-Analysis decodes 5 frames per second, which is the slow part. To try another zoom without decoding again, pass the earlier analysis back: `engine.autoReframe(clipId, { detector, analysis: result.analysis, zoom: 1.5 })`.
+`engine.reframe` runs the [reframe planner](#the-reframe-planner) and stores its Reframe Track and keys in the clip's `core/reframe` effect, so undo, Save project and export need nothing else. Analysis decodes 5 frames per second, which is the slow part (about a minute for a three-minute clip). The older `engine.autoReframe(clipId, { detector, zoom })` still works: it writes keys only, with the planner under [How it decides](#how-it-decides).
+
+### Editing the framing
+
+Every change is a `ReframeEdit` applied with `engine.editReframe(clipId, edit)`: the engine edits the track, re-plans from the cached analysis (about 20 ms for three minutes) and applies the result as one undo step. Pass an array to apply several edits as one step.
+
+```ts
+const seg = result.track.segments[2]!;
+await engine.editReframe(clipId, { type: "segment", segmentId: seg.id, focus: ["p2"], layout: "single" }); // frame p2 here
+await engine.editReframe(clipId, { type: "segment", segmentId: seg.id, layout: "wide" });                 // or show everything
+await engine.editReframe(clipId, { type: "segment", segmentId: seg.id, window: { x: 960, y: 540, h: 1080 } }); // a dragged window
+await engine.editReframe(clipId, { type: "reset", segmentId: seg.id });                                   // back to automatic
+await engine.editReframe(clipId, { type: "person", personId: "p1", label: "Host", neverFocus: true });
+await engine.editReframe(clipId, { type: "merge", personId: "p3", intoId: "p1" });                         // the same person
+await engine.editReframe(clipId, { type: "settings", style: 0, zoomPct: 120 });                           // calm, 1.2x
+```
+
+Segment edits lock the segment: re-planning (after a person edit, a style change or a new analysis) never changes it. `engine.reframePlan(clipId, edits?)` returns the plan without changing the project: its `sightings` say where each person's face was seen (for clickable faces and avatars), and with `edits` it previews a change or builds plans for several clips to apply in one `editor.batch`.
+
+Observations stay out of the project ([ADR 0006](https://github.com/cutiva-dev/cutiva/blob/main/docs/adr/0006-reframe-track-in-cpf.md)): the engine keeps each analysis in memory and in IndexedDB, keyed by the file's size and the SHA-256 of its first 64 KiB, so it survives a reload. Without it (another device, cleared storage) `editReframe` throws `ANALYSIS_NEEDED`: analyse again with `engine.reframe(clipId, { detector, reanalyze: true })`. The track keeps names, flags and locked segments either way, and the clip still previews and exports.
 
 The MediaPipe detector downloads its WASM files from jsDelivr and its model (about 3.7 MB) from Google the first time. The model is checked against a pinned SHA-256 (`MEDIAPIPE_MODEL_SHA256`) and kept in Cache Storage, so later loads don't download it again; a cached copy with the wrong hash is thrown away. Pass `wasmBaseUrl` and `modelAssetPath` to host the files yourself, `modelSha256` if you host a different model, and `onProgress` to show the download. A failed download, a hash mismatch or a runtime that doesn't start throws `MODEL_LOAD_FAILED`. Video frames never leave the device.
 
@@ -55,18 +75,27 @@ The MediaPipe detector downloads its WASM files from jsDelivr and its model (abo
 
 ## React
 
-`<Timeline>` marks each framing change on the clip; click a mark to seek there. `<ReframeBox>` draws the crop window over the uncropped source, and dragging it moves the framing at the playhead:
+`<Timeline>` marks each framing change on the clip; click a mark to seek there. Under a video track with a reframed clip it adds two lanes: **Speakers** (who talks, coloured by person) and **Camera** (what each segment frames; locked segments carry a mark). Clicking a segment calls `onSelectSegment(clipId, segmentId)` and moves the playhead to its middle; `selectedSegment` highlights one; `reframeLanes={false}` hides them.
+
+`<ReframeBox>` draws the crop window over the uncropped source. Without a Reframe Track, dragging it moves the key at the playhead. With one, pass `onWindow` and turn the drop into a segment edit that locks it; pass `faces` (for example from `reframePlan`'s `sightings` near the playhead) to draw boxes that call `onFaceClick` with the person's id:
 
 ```tsx
-import { ReframeBox } from "@cutiva/react";
+import { personColor, ReframeBox } from "@cutiva/react";
 
 <div style={{ position: "relative", aspectRatio: `${asset.width} / ${asset.height}` }}>
   <SourceFrame /> {/* for example a canvas drawn from engine.sourceFrame(assetId, sourceUs) */}
-  <ReframeBox editor={editor} clipId={clipId} timeUs={timeUs} />
+  <ReframeBox
+    editor={editor}
+    clipId={clipId}
+    timeUs={timeUs}
+    faces={facesNow.map((f) => ({ ...f, id: f.personId, label: nameOf(f.personId), color: personColor(track, f.personId) }))}
+    onFaceClick={(id) => engine.editReframe(clipId, { type: "segment", segmentId, focus: [id], layout: "single" })}
+    onWindow={(window) => engine.editReframe(clipId, { type: "segment", segmentId, window })}
+  />
 </div>
 ```
 
-The container must have the source's exact aspect ratio, so the window lines up with the picture.
+The container must have the source's exact aspect ratio, so the window lines up with the picture. `placedSegments(clip)` and `segmentCaption(track, segment)` give the lanes' timing and labels for custom UIs.
 
 ## Crop keys by hand
 
@@ -103,7 +132,7 @@ Shots with no faces are centred.
 
 ## The reframe planner
 
-`planReframe(input)` is the next version of auto-reframe, in the core and the Dart core. It also decides *how* each stretch is framed (one person, a split for two, or wide) and returns a Reframe Track (who speaks when, the people, the user's locked choices) next to the keys. The playground still uses `autoReframe`; it switches to the planner when the editor gets the People panel and per-segment layouts. Re-run it after every edit with the clip's current track: names, flags, merges and locked segments carry over. `editReframeTrack(track, edit)` applies the editor's changes (a segment's layout or focus, reset to automatic, a person's name, priority or never-focus, merging two people, camera style).
+`planReframe(input)` is what `engine.reframe` runs, in the core and the Dart core. Next to `autoReframe` it also decides *how* each stretch is framed (one person, a split for two, or wide) and returns a Reframe Track (who speaks when, the people, the user's locked choices) next to the keys, plus `sightings`: each kept face with the person it belongs to (not stored in the project). Re-run it after every edit with the clip's current track: names, flags, merges and locked segments carry over. `editReframeTrack(track, edit)` applies the editor's changes (a segment's layout or focus, reset to automatic, a person's name, priority or never-focus, merging two people, camera style).
 
 Input per analysed frame: faces (box, mouth openness or `null` when the mouth can't be seen, optional confidence), the speech level (omit on every frame when there is no audio) and an optional stereo pan. Times are integer µs of source time, sizes source pixels.
 
@@ -131,12 +160,14 @@ Values in between are linear (times rounded half up to whole µs). The constants
 
 ## Feedback from the playground
 
-After an auto-reframe, the [playground](/play) lists each framing change. Mark each one right or wrong, fix the wrong ones by dragging the window, rate the result and press **Report on GitHub**. The report downloads as a JSON file and a GitHub issue opens with a summary filled in; drag the file into the issue and submit it (you need a GitHub account, and the issue is public). The report holds numbers only: face boxes, mouth movement, speech levels, the keys auto-reframe made and the keys after your fixes. No video, images or file names.
+After an auto-reframe, the [playground](/play) lists each framing change. Mark each one right or wrong, fix the wrong ones by dragging the window, rate the result and press **Report on GitHub**. The report downloads as a JSON file and a GitHub issue opens with a summary filled in; drag the file into the issue and submit it (you need a GitHub account, and the issue is public). The report holds numbers only: face boxes, mouth movement, speech levels, and the clip's Reframe Track and keys with your fixes (locked segments, flags, style). Names you typed are replaced by ids. No video, images or file names.
 
-Reports are how auto-reframe improves: each one attached to an issue replays through `autoReframe` offline, so a change to the rules can be measured against real corrections before it ships, and bad cases become regression tests.
+Reports are how auto-reframe improves: each one attached to an issue replays through `planReframe` offline, so a change to the rules can be measured against real corrections before it ships, and bad cases become regression tests.
 
 ## Known limits
 
 - It reads mouths, so profiles, covered mouths, overlapping talk and off-screen voices fool it.
-- A person in two shots counts as two people.
+- A person in two shots counts as two people (merge them in People).
+- Split and wide layouts preview and export as one centred window until the web renderer draws them.
+- Changing the project's format reshapes the windows but doesn't re-plan the layouts; call `engine.reframe(clipId)` again, which re-plans from the cached analysis.
 - Cuts are found at the analysis rate (every 200 ms), so a framing change can land up to one sample late.

@@ -55,6 +55,22 @@ export interface ReframePlanResult {
   keys: ReframeKey[];
   /** The source already has the output's shape (within 2%): one key showing the whole active area, no segments. */
   passthrough: boolean;
+  /**
+   * Where each face person was seen: the input's faces that the planner kept and tracked, with the
+   * person they belong to (after merges), by time and then person. For an editor's clickable faces
+   * and avatars; not stored in the project. Empty for passthrough.
+   */
+  sightings: PlanSighting[];
+}
+
+/** One face of the input, assigned to a person of the track. */
+export interface PlanSighting {
+  personId: string;
+  atUs: Us;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 // ---- Constants (starting values; calibrated with the test footage) ----
@@ -212,6 +228,7 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
       track: trackOf(prev ? prev.people.map((p) => ({ ...p, ...(p.merged ? { merged: [...p.merged] } : {}) })) : [], []),
       keys: [{ atUs: 0, x: areaCentre.x, y: areaCentre.y, h: area.h, cut: true }],
       passthrough: true,
+      sightings: [],
     };
   }
 
@@ -764,7 +781,10 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
   }
   segments.forEach((s, i) => (s.id = `s${i + 1}`));
   people.sort((a, b) => personNumber(a.id) - personNumber(b.id));
-  return { track: trackOf(people, segments), keys, passthrough: false };
+  const sightings: PlanSighting[] = tracks
+    .flatMap((t) => t.seen.map(({ fi, face }) => ({ personId: personIds[t.person]!, atUs: at(fi), x: face.x, y: face.y, w: face.w, h: face.h })))
+    .sort((a, b) => a.atUs - b.atUs || personNumber(a.personId) - personNumber(b.personId) || a.x - b.x || a.y - b.y);
+  return { track: trackOf(people, segments), keys, passthrough: false, sightings };
 }
 
 /** A change the user makes to a clip's Reframe Track. Re-run `planReframe` with the result to redraw the keys. */

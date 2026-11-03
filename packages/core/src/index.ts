@@ -28,6 +28,7 @@ export {
   type PlanFrame,
   type ReframePlanInput,
   type ReframePlanResult,
+  type PlanSighting,
   type ReframeEdit,
 } from "./reframe-plan.js";
 export { detectActiveArea, stereoPan, type LumaImage } from "./reframe-signals.js";

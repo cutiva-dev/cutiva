@@ -1,8 +1,8 @@
-import { clipDurationUs, CutivaError, findClip, formatTimecode, reframeKeys, type Us } from "@cutiva/core";
+import { clipDurationUs, CutivaError, findClip, formatTimecode, reframeKeys, reframeTrack, type ReframeEdit, type Us } from "@cutiva/core";
 import { Timeline, useCutiva, usePreview, useProject } from "@cutiva/react";
 import type { Capabilities, ExportJob } from "@cutiva/web";
 import { useEffect, useRef, useState } from "react";
-import { AutoReframePanel, FormatPicker, SourceMonitor } from "./Reframe";
+import { AutoReframePanel, clipSourceUs, FormatPicker, segmentAt, SourceMonitor, useReframePlan } from "./Reframe";
 
 const MEDIA_ACCEPT = "video/*,audio/*";
 
@@ -41,6 +41,11 @@ export function App() {
   })();
 
   const selectedVideo = selectedClip && project.assets.find((a) => a.id === selectedClip.assetId)?.kind === "video" ? selectedClip : null;
+  const reframe = useReframePlan(engine, selectedVideo);
+  const selectedSegment = (() => {
+    const seg = selectedVideo ? segmentAt(reframeTrack(selectedVideo), clipSourceUs(selectedVideo, timeUs)) : null;
+    return selectedVideo && seg ? { clipId: selectedVideo.id, segmentId: seg.id } : null;
+  })();
 
   /** Whether an asset already has the project's aspect ratio, so there is nothing to reframe. */
   const sameShape = (assetId: string) => {
@@ -49,6 +54,18 @@ export function App() {
   };
 
   const fail = (e: unknown) => setMessage({ tone: "error", text: e instanceof Error ? e.message : String(e) });
+
+  /** A reframe edit on the selected clip: re-plan from the cached analysis, one undo step. */
+  function editReframe(edits: ReframeEdit | ReframeEdit[]) {
+    if (!selectedVideo) return;
+    engine
+      .editReframe(selectedVideo.id, edits)
+      .then((p) => {
+        reframe.setPlan(p);
+        setMessage(null);
+      })
+      .catch(fail);
+  }
   const run = (fn: () => void) => {
     try {
       fn();
@@ -189,7 +206,7 @@ export function App() {
         <section className="viewer">
           <div className="screens">
             {selectedVideo && (reframeKeys(selectedVideo) || !sameShape(selectedVideo.assetId)) && (
-              <SourceMonitor engine={engine} editor={editor} clip={selectedVideo} project={project} timeUs={timeUs} />
+              <SourceMonitor engine={engine} editor={editor} clip={selectedVideo} project={project} timeUs={timeUs} plan={reframe.plan} onEdit={editReframe} />
             )}
             <div className="screen screen--output" style={{ aspectRatio: `${project.settings.width} / ${project.settings.height}` }}>
               <canvas ref={setCanvas} aria-label="Video preview" />
@@ -262,7 +279,19 @@ export function App() {
                 </select>
               </label>
               {selectedVideo && (
-                <AutoReframePanel engine={engine} editor={editor} project={project} clip={selectedVideo} onSeek={(t) => preview?.seek(t)} onError={fail} />
+                <AutoReframePanel
+                  engine={engine}
+                  editor={editor}
+                  project={project}
+                  clip={selectedVideo}
+                  timeUs={timeUs}
+                  plan={reframe.plan}
+                  missing={reframe.missing}
+                  onPlan={reframe.setPlan}
+                  onEdit={editReframe}
+                  onSeek={(t) => preview?.seek(t)}
+                  onError={fail}
+                />
               )}
               <FadeControls
                 key={selectedClip.id}
@@ -284,6 +313,8 @@ export function App() {
         onSelect={setSelected}
         onError={(e) => setMessage({ tone: "error", text: e.message })}
         thumbnail={engine.thumbnail}
+        selectedSegment={selectedSegment}
+        onSelectSegment={(clipId) => setSelected(clipId)}
       />
 
       {job && (

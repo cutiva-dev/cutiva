@@ -1,4 +1,4 @@
-import { clipEndUs, cropAt, cropRect, CutivaError, findClip, reframeKeys, sourceTimeAt, type Editor, type ReframeKey, type Us } from "@cutiva/core";
+import { clipEndUs, cropAt, cropRect, CutivaError, findClip, reframeKeys, sourceTimeAt, type Editor, type ReframeKey, type ReframeWindow, type Us } from "@cutiva/core";
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useProject } from "./hooks.js";
 
@@ -10,6 +10,28 @@ export interface ReframeBoxProps {
   timeUs: Us;
   /** Called when an edit is refused. */
   onError?: (error: CutivaError) => void;
+  /**
+   * When set, a drag doesn't rewrite the keys: it calls this with the dropped window (centre and
+   * height, source pixels) and the source time it was dropped at. Use it for clips with a Reframe
+   * Track, where a drag locks the segment (`engine.editReframe` with a `segment` edit and `window`).
+   */
+  onWindow?: (window: ReframeWindow, sourceUs: Us) => void;
+  /** Faces to draw over the source, in source pixels; clicking one calls `onFaceClick` with its id. */
+  faces?: ReframeBoxFace[];
+  onFaceClick?: (id: string) => void;
+}
+
+export interface ReframeBoxFace {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** CSS colour of the box. */
+  color?: string;
+  /** The person the current segment frames. */
+  focused?: boolean;
 }
 
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
@@ -21,7 +43,7 @@ const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
  * `timeUs` (the last key at or before it) as one undo step. A clip with no reframe gets one key
  * that frames the whole clip.
  */
-export function ReframeBox({ editor, clipId, timeUs, onError }: ReframeBoxProps) {
+export function ReframeBox({ editor, clipId, timeUs, onError, onWindow, faces, onFaceClick }: ReframeBoxProps) {
   const project = useProject(editor);
   const ref = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<{ startX: number; startY: number; dx: number; dy: number } | null>(null);
@@ -61,17 +83,14 @@ export function ReframeBox({ editor, clipId, timeUs, onError }: ReframeBoxProps)
     setDrag(null);
     const delta = toSource(drag.dx, drag.dy);
     if (delta.x === 0 && delta.y === 0) return;
+    const dropped = {
+      x: Math.max(0, Math.round(Math.min(Math.max(rect.x + delta.x, 0), srcW - rect.w) + rect.w / 2)),
+      y: Math.max(0, Math.round(Math.min(Math.max(rect.y + delta.y, 0), srcH - rect.h) + rect.h / 2)),
+    };
+    if (onWindow) return onWindow({ ...dropped, h: rect.h }, sourceUs);
     let index = 0;
     while (index + 1 < effective.length && effective[index + 1]!.atUs <= sourceUs) index++;
-    const next = effective.map((k, i) =>
-      i === index
-        ? {
-            ...k,
-            x: Math.max(0, Math.round(Math.min(Math.max(rect.x + delta.x, 0), srcW - rect.w) + rect.w / 2)),
-            y: Math.max(0, Math.round(Math.min(Math.max(rect.y + delta.y, 0), srcH - rect.h) + rect.h / 2)),
-          }
-        : k,
-    );
+    const next = effective.map((k, i) => (i === index ? { ...k, ...dropped } : k));
     try {
       editor.dispatch({ type: "clip.setReframe", clipId, keys: next });
     } catch (e) {
@@ -104,6 +123,26 @@ export function ReframeBox({ editor, clipId, timeUs, onError }: ReframeBoxProps)
           {width / d}:{height / d}
         </span>
       </div>
+      {faces?.map((f) => (
+        <button
+          key={f.id}
+          type="button"
+          className={`cutiva-reframe__face${f.focused ? " is-focused" : ""}`}
+          aria-label={`Frame ${f.label}`}
+          aria-pressed={f.focused === true}
+          style={{
+            left: `${(f.x / srcW) * 100}%`,
+            top: `${(f.y / srcH) * 100}%`,
+            width: `${(f.w / srcW) * 100}%`,
+            height: `${(f.h / srcH) * 100}%`,
+            ...(f.color ? ({ "--cutiva-face": f.color } as Record<string, string>) : {}),
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => onFaceClick?.(f.id)}
+        >
+          <span className="cutiva-reframe__face-name">{f.label}</span>
+        </button>
+      ))}
     </div>
   );
 }

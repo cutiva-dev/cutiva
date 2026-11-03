@@ -23,3 +23,4 @@ export {
   type FaceDetector,
   type ReframeAnalysis,
 } from "./reframe.js";
+export { AnalysisCache, type ReframeClipResult, type ReframeOptions } from "./reframe-track.js";

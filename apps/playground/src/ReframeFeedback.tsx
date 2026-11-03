@@ -1,26 +1,25 @@
-import { formatTimecode, reframeKeys, type Clip, type Project, type Us } from "@cutiva/core";
-import type { AutoReframeClipResult } from "@cutiva/web";
+import { formatTimecode, reframeKeys, reframeTrack, type Clip, type Project, type ReframeKey, type ReframeTrack, type Us } from "@cutiva/core";
+import type { ReframeClipResult } from "@cutiva/web";
 import { useEffect, useState } from "react";
 
 type Verdict = "good" | "wrong";
 
 /**
- * What a feedback report holds. Numbers only: face boxes, mouth openness, speech levels and crop
- * keys. No video, no images, no file names. People attach it to a GitHub issue; the maintainer replays
- * it through `autoReframe` to tune it and to turn bad cases into regression tests.
+ * What a feedback report holds. Numbers only: face boxes, mouth openness, speech levels, the
+ * Reframe Track and crop keys. No video, no images, no file names (people's names are left out of
+ * the track). People attach it to a GitHub issue; the maintainer replays it through `planReframe`
+ * to tune it and to turn bad cases into regression tests. Version 1 came from `autoReframe`.
  */
 export interface ReframeFeedbackReport {
-  version: 1;
+  version: 2;
   createdAt: string;
   userAgent: string;
   overall: "good" | "ok" | "bad";
   comment: string;
-  settings: { sourceWidth: number; sourceHeight: number; outputWidth: number; outputHeight: number; zoom: number; sourceInUs: Us; sourceOutUs: Us };
-  analysis: AutoReframeClipResult["analysis"];
-  /** What auto-reframe produced. */
-  auto: { keys: AutoReframeClipResult["keys"]; people: { id: string; shot: number; speakingUs: Us }[] };
-  /** The clip's keys when the report was sent, after any hand fixes. */
-  final: AutoReframeClipResult["keys"];
+  settings: { sourceWidth: number; sourceHeight: number; outputWidth: number; outputHeight: number; style: number; zoomPct: number; sourceInUs: Us; sourceOutUs: Us };
+  analysis: ReframeClipResult["analysis"];
+  /** The clip's track and keys when the report was sent, with the user's locked segments and flags. */
+  final: { keys: ReframeKey[]; track: ReframeTrack | null };
   /** A verdict per framing change, by the source time where it starts. */
   ratings: { atUs: Us; verdict: Verdict }[];
 }
@@ -36,6 +35,9 @@ function downloadJson(report: ReframeFeedbackReport, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/** The track without the names people typed: labels become ids. */
+const anonymous = (track: ReframeTrack | null): ReframeTrack | null => (track ? { ...track, people: track.people.map((p) => ({ ...p, label: p.id })) } : null);
+
 const OVERALL = { good: "Good", ok: "Needs fixes", bad: "Bad" } as const;
 
 /** A new-issue link with a short summary; the full report goes in the attached file. */
@@ -46,7 +48,7 @@ export function issueUrl(report: ReframeFeedbackReport, fileName: string): strin
   const body = [
     `**Overall:** ${OVERALL[report.overall]}`,
     `**Framing changes rated:** ${report.ratings.length} (${wrong} wrong)`,
-    `**Source:** ${s.sourceWidth}×${s.sourceHeight} → **output:** ${s.outputWidth}×${s.outputHeight}, zoom ${s.zoom}`,
+    `**Source:** ${s.sourceWidth}×${s.sourceHeight} → **output:** ${s.outputWidth}×${s.outputHeight}, camera style ${s.style}, zoom ${s.zoomPct}%`,
     `**Browser:** ${report.userAgent}`,
     "",
     "**What went wrong:**",
@@ -61,13 +63,12 @@ export function issueUrl(report: ReframeFeedbackReport, fileName: string): strin
 interface Props {
   project: Project;
   clip: Clip;
-  result: AutoReframeClipResult;
-  zoom: number;
+  plan: ReframeClipResult;
   onSeek: (t: Us) => void;
 }
 
 /** Rate each framing change, then send the numbers so auto-reframe can be tuned. */
-export function ReframeFeedback({ project, clip, result, zoom, onSeek }: Props) {
+export function ReframeFeedback({ project, clip, plan, onSeek }: Props) {
   const [ratings, setRatings] = useState<Record<number, Verdict>>({});
   const [overall, setOverall] = useState<ReframeFeedbackReport["overall"] | null>(null);
   const [comment, setComment] = useState("");
@@ -76,19 +77,19 @@ export function ReframeFeedback({ project, clip, result, zoom, onSeek }: Props) 
   useEffect(() => {
     setRatings({});
     setState("idle");
-  }, [result]);
+  }, [plan.analysis]);
 
   const asset = project.assets.find((a) => a.id === clip.assetId)!;
   const toTimeline = (sourceUs: Us) => clip.startUs + Math.round((Math.max(sourceUs, clip.sourceInUs) - clip.sourceInUs) / clip.speed);
   // Every framing the viewer sees: the one at the clip's start, then each cut inside the clip.
-  const cuts = result.keys.filter((k) => k.cut && k.atUs < clip.sourceOutUs);
+  const cuts = plan.keys.filter((k) => k.cut && k.atUs < clip.sourceOutUs);
   const atStart = cuts.filter((k) => k.atUs <= clip.sourceInUs).pop();
   const segments = [...(atStart ? [atStart] : []), ...cuts.filter((k) => k.atUs > clip.sourceInUs)];
 
   function send() {
     if (!overall) return;
     const report: ReframeFeedbackReport = {
-      version: 1,
+      version: 2,
       createdAt: new Date().toISOString(),
       userAgent: navigator.userAgent,
       overall,
@@ -98,13 +99,13 @@ export function ReframeFeedback({ project, clip, result, zoom, onSeek }: Props) 
         sourceHeight: asset.height!,
         outputWidth: project.settings.width,
         outputHeight: project.settings.height,
-        zoom,
+        style: plan.track.style,
+        zoomPct: plan.track.zoomPct,
         sourceInUs: clip.sourceInUs,
         sourceOutUs: clip.sourceOutUs,
       },
-      analysis: result.analysis,
-      auto: { keys: result.keys, people: result.people.map(({ id, shot, speakingUs }) => ({ id, shot, speakingUs })) },
-      final: reframeKeys(clip) ?? [],
+      analysis: plan.analysis,
+      final: { keys: reframeKeys(clip) ?? [], track: anonymous(reframeTrack(clip)) },
       ratings: Object.entries(ratings).map(([atUs, verdict]) => ({ atUs: Number(atUs), verdict })),
     };
     const name = `reframe-feedback-${Date.now()}.json`;

@@ -38,9 +38,22 @@ button.link { background: none; border: 0; padding: 0; min-height: 0; color: var
 .small { margin: 0; font-size: 13px; }
 .reframe progress { width: 100%; accent-color: var(--cut); }
 .reframe__result { display: flex; flex-direction: column; gap: 10px; }
-.people { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; }
-.people li { display: flex; align-items: center; gap: 8px; }
-.people img, .people__blank { width: 32px; height: 32px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
+.people { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+.people li { display: flex; align-items: flex-start; gap: 8px; }
+.people img, .people__blank { flex: none; width: 32px; height: 32px; border-radius: 16px; border: 2px solid var(--person, var(--line)); background: var(--surface); }
+.people__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.people__body > input { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; min-height: 30px; padding: 0 8px; }
+.people__flags { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.inspector .people__flags select { min-height: 28px; font-size: 12px; }
+.inspector label.check { flex-direction: row; align-items: center; gap: 4px; font-size: 12px; }
+.check input { accent-color: var(--cut); margin: 0; }
+.notice { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.notice p { margin: 0; }
+.segment { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; }
+.segment h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.segmented, .focus { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip--person { border-left: 4px solid var(--person); }
+.scale { display: flex; justify-content: space-between; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; }
 .empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; background: var(--surface); }
 .empty p { margin: 0; font-size: 16px; }
@@ -57,7 +70,7 @@ button.link { background: none; border: 0; padding: 0; min-height: 0; color: var
 .inspector label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .inspector select, .inspector input[type=number] { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-height: 36px; padding: 0 8px; }
 .inspector input[type=range] { accent-color: var(--cut); }
-fieldset { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; margin: 0; }
+fieldset { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; margin: 0; min-width: 0; }
 legend { font-size: 13px; color: var(--muted); padding: 0 4px; }
 .shortcuts { margin: auto 0 0; font-size: 12px; }
 .export { position: fixed; right: 16px; bottom: 16px; background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; width: 280px; }

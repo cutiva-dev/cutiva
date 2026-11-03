@@ -58,13 +58,44 @@ class ReframePlanResult {
 
   /// The source already has the output's shape (within 2%): one key showing the whole active area.
   final bool passthrough;
-  const ReframePlanResult({required this.track, required this.keys, required this.passthrough});
+
+  /// Where each face person was seen: the input's faces that the planner kept and tracked, with the
+  /// person they belong to (after merges), by time and then person. For an editor's clickable faces
+  /// and avatars; not stored in the project. Empty for passthrough.
+  final List<PlanSighting> sightings;
+  const ReframePlanResult({
+    required this.track,
+    required this.keys,
+    required this.passthrough,
+    this.sightings = const [],
+  });
 
   Map<String, Object?> toJson() => {
     'track': track.toJson(),
     'keys': [for (final k in keys) k.toJson()],
     'passthrough': passthrough,
+    'sightings': [for (final s in sightings) s.toJson()],
   };
+}
+
+/// One face of the input, assigned to a person of the track.
+class PlanSighting {
+  final String personId;
+  final Us atUs;
+  final double x;
+  final double y;
+  final double w;
+  final double h;
+  const PlanSighting({
+    required this.personId,
+    required this.atUs,
+    required this.x,
+    required this.y,
+    required this.w,
+    required this.h,
+  });
+
+  Map<String, Object?> toJson() => {'personId': personId, 'atUs': atUs, 'x': x, 'y': y, 'w': w, 'h': h};
 }
 
 const _minConf = 0.6;
@@ -988,7 +1019,19 @@ ReframePlanResult planReframe({
     segments[i].id = 's${i + 1}';
   }
   people.sort((a, b) => _personNumber(a.id).compareTo(_personNumber(b.id)));
-  return ReframePlanResult(track: trackOf(people, segments), keys: keys, passthrough: false);
+  final sightings = [
+    for (final t in tracks)
+      for (final s in t.seen)
+        PlanSighting(personId: personIds[t.person], atUs: at(s.fi), x: s.face.x, y: s.face.y, w: s.face.w, h: s.face.h),
+  ]..sort((a, b) {
+    final byTime = a.atUs.compareTo(b.atUs);
+    if (byTime != 0) return byTime;
+    final byPerson = _personNumber(a.personId).compareTo(_personNumber(b.personId));
+    if (byPerson != 0) return byPerson;
+    final byX = a.x.compareTo(b.x);
+    return byX != 0 ? byX : a.y.compareTo(b.y);
+  });
+  return ReframePlanResult(track: trackOf(people, segments), keys: keys, passthrough: false, sightings: sightings);
 }
 
 /// A change the user makes to a clip's Reframe Track. Re-run [planReframe] with the result.

@@ -49,6 +49,11 @@ export interface AnalyzeOptions {
 export interface ReframeAnalysis {
   assetId: string;
   durationUs: Us;
+  /** The analysed part of the source, `[fromUs, toUs)`. */
+  fromUs: Us;
+  toUs: Us;
+  /** Frames analysed per second. */
+  fps: number;
   /** Faces in source pixels (display orientation, square pixels), speech level and stereo pan. */
   frames: PlanFrame[];
   cuts: Us[];
@@ -192,7 +197,7 @@ export async function analyzeAsset(media: MediaRegistry, assetId: string, option
     options.onProgress?.(1, "audio");
   }
   const activeArea = frames.length ? detectActiveArea({ width: barsW, height: barsH, luma: peak }, video.displayWidth, video.displayHeight) : null;
-  return { assetId, durationUs, frames, cuts: detectCuts(histograms), ...(activeArea ? { activeArea } : {}) };
+  return { assetId, durationUs, fromUs: from, toUs: to, fps, frames, cuts: detectCuts(histograms), ...(activeArea ? { activeArea } : {}) };
 }
 
 export interface AutoReframeOptions extends Omit<AnalyzeOptions, "sourceInUs" | "sourceOutUs"> {
