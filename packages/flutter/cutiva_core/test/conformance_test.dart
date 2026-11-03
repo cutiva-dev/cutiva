@@ -34,6 +34,21 @@ void main() {
             cuts: [for (final c in (input['cuts'] as List<Object?>?) ?? const []) c as int],
           );
           expect(result.toJson(), expected);
+        case 'planReframe':
+          final area = input['activeArea'] as Map<String, Object?>?;
+          final result = planReframe(
+            sourceWidth: input['sourceWidth'] as int,
+            sourceHeight: input['sourceHeight'] as int,
+            outputWidth: input['outputWidth'] as int,
+            outputHeight: input['outputHeight'] as int,
+            durationUs: input['durationUs'] as int,
+            frames: [for (final f in frames) PlanFrame.fromJson(f as Map<String, Object?>)],
+            cuts: [for (final c in (input['cuts'] as List<Object?>?) ?? const []) c as int],
+            activeArea:
+                area == null ? null : CropRect(area['x'] as int, area['y'] as int, area['w'] as int, area['h'] as int),
+            track: input['track'] == null ? null : normalizeReframeTrack(input['track']),
+          );
+          expect(result.toJson(), expected);
         case 'detectCuts':
           final cuts = detectCuts([
             for (final f in frames.cast<Map<String, Object?>>())

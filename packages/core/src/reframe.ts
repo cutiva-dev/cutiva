@@ -1,5 +1,5 @@
 import { CutivaError } from "./errors.js";
-import type { Asset, Clip, CropRect, ProjectSettings, ReframeKey, Us } from "./types.js";
+import type { Asset, Clip, CropRect, ProjectSettings, ReframeKey, ReframeTrack, ReframeWindow, TrackPerson, TrackSegment, Us } from "./types.js";
 
 /** Effect type that holds a video clip's crop keys: `{ type: "core/reframe", params: { keys } }`. */
 export const REFRAME_EFFECT = "core/reframe";
@@ -15,9 +15,18 @@ export interface CropKey {
 
 const isInt = (v: unknown, min: number): v is number => typeof v === "number" && Number.isInteger(v) && v >= min;
 
+function normalizeWindow(input: unknown, what: string): ReframeWindow {
+  const w = input as Partial<ReframeWindow> | null;
+  if (typeof w !== "object" || w === null || !isInt(w.x, 0) || !isInt(w.y, 0) || !isInt(w.h, 1)) {
+    throw new CutivaError("INVALID_RANGE", `${what} needs integer x, y >= 0 and h >= 1.`);
+  }
+  return { x: w.x, y: w.y, h: w.h };
+}
+
 /**
  * Check and copy a list of reframe keys. Keys must be sorted by strictly increasing `atUs`; every
- * field is a non-negative integer and `h` is at least 1. Throws INVALID_RANGE.
+ * field is a non-negative integer and `h` is at least 1. A `split` key needs exactly two regions;
+ * no other key may have any. Throws INVALID_RANGE.
  */
 export function normalizeReframeKeys(input: unknown): ReframeKey[] {
   if (!Array.isArray(input)) throw new CutivaError("INVALID_RANGE", "Reframe keys must be an array.");
@@ -30,9 +39,140 @@ export function normalizeReframeKeys(input: unknown): ReframeKey[] {
     }
     if (key.atUs <= last) throw new CutivaError("INVALID_RANGE", `Reframe key ${i} must come after the previous key.`);
     if (key.cut !== undefined && typeof key.cut !== "boolean") throw new CutivaError("INVALID_RANGE", `Reframe key ${i}: cut must be a boolean.`);
+    if (key.layout !== undefined && key.layout !== "split" && key.layout !== "wide") {
+      throw new CutivaError("INVALID_RANGE", `Reframe key ${i}: layout must be "split" or "wide".`);
+    }
+    const split = key.layout === "split";
+    if (split !== (key.regions !== undefined)) throw new CutivaError("INVALID_RANGE", `Reframe key ${i}: regions go with the split layout, and only with it.`);
+    if (split && (!Array.isArray(key.regions) || key.regions.length !== 2)) throw new CutivaError("INVALID_RANGE", `Reframe key ${i}: a split needs two regions.`);
     last = key.atUs;
-    return { atUs: key.atUs, x: key.x, y: key.y, h: key.h, ...(key.cut ? { cut: true } : {}) };
+    return {
+      atUs: key.atUs,
+      x: key.x,
+      y: key.y,
+      h: key.h,
+      ...(key.cut ? { cut: true } : {}),
+      ...(key.layout ? { layout: key.layout } : {}),
+      ...(split ? { regions: [normalizeWindow(key.regions![0], `Reframe key ${i} region 0`), normalizeWindow(key.regions![1], `Reframe key ${i} region 1`)] as [ReframeWindow, ReframeWindow] } : {}),
+    };
   });
+}
+
+const PERSON_ID = /^p[0-9]+$/;
+const SEGMENT_ID = /^s[0-9]+$/;
+const LAYOUTS = ["auto", "single", "split", "wide"];
+const RESOLVED = ["single", "split", "wide"];
+const REASONS = ["lips+voice", "overlap", "no-face", "voice-only", "never-focus", "low-quality", "user"];
+
+/**
+ * Check and copy a Reframe Track (ADR 0006, `spec/reframe-track.schema.json`), plus the rules a
+ * schema can't express: unique ids, segments sorted and not overlapping, every person a segment or
+ * a merge names exists, `window` only on locked segments. Throws INVALID_RANGE.
+ */
+export function normalizeReframeTrack(input: unknown): ReframeTrack {
+  const bad = (what: string): never => {
+    throw new CutivaError("INVALID_RANGE", `Reframe track: ${what}.`);
+  };
+  const t = input as Record<string, unknown> | null;
+  if (typeof t !== "object" || t === null || Array.isArray(t)) bad("must be an object");
+  if (t!.version !== 1) bad("version must be 1");
+  if (!isInt(t!.style, 0) || (t!.style as number) > 100) bad("style must be an integer from 0 to 100");
+  if (!isInt(t!.maxUpscalePct, 100)) bad("maxUpscalePct must be an integer of at least 100");
+  if (!isInt(t!.zoomPct, 100) || (t!.zoomPct as number) > 1000) bad("zoomPct must be an integer from 100 to 1000");
+  if (t!.safeZone !== "none") bad('safeZone must be "none"');
+  let activeArea: CropRect | undefined;
+  if (t!.activeArea !== undefined) {
+    const a = t!.activeArea as Partial<CropRect> | null;
+    if (typeof a !== "object" || a === null || !isInt(a.x, 0) || !isInt(a.y, 0) || !isInt(a.w, 1) || !isInt(a.h, 1)) bad("activeArea needs integer x, y >= 0 and w, h >= 1");
+    activeArea = { x: a!.x!, y: a!.y!, w: a!.w!, h: a!.h! };
+  }
+  if (!Array.isArray(t!.people)) bad("people must be an array");
+  if (!Array.isArray(t!.segments)) bad("segments must be an array");
+
+  const ids = new Set<string>();
+  const people: TrackPerson[] = (t!.people as unknown[]).map((raw, i) => {
+    const p = raw as Partial<TrackPerson> | null;
+    if (typeof p !== "object" || p === null) return bad(`person ${i} must be an object`);
+    if (typeof p.id !== "string" || !PERSON_ID.test(p.id) || ids.has(p.id)) bad(`person ${i} needs a unique id like "p1"`);
+    if (typeof p.label !== "string" || p.label.length < 1 || p.label.length > 60) bad(`person ${i} needs a label of 1 to 60 characters`);
+    if (p.kind !== "face" && p.kind !== "voice") bad(`person ${i}: kind must be "face" or "voice"`);
+    if (typeof p.priority !== "boolean" || typeof p.neverFocus !== "boolean") bad(`person ${i} needs boolean priority and neverFocus`);
+    ids.add(p.id!);
+    return { id: p.id!, label: p.label!, kind: p.kind!, priority: p.priority!, neverFocus: p.neverFocus!, ...(p.merged !== undefined ? { merged: p.merged } : {}) };
+  });
+  for (const [i, p] of people.entries()) {
+    if (p.merged === undefined) continue;
+    if (!Array.isArray(p.merged) || p.merged.some((m) => typeof m !== "string" || !PERSON_ID.test(m) || ids.has(m))) bad(`person ${i}: merged must list ids of people no longer in the track`);
+    p.merged = [...p.merged];
+  }
+  const merged = people.flatMap((p) => p.merged ?? []);
+  if (new Set(merged).size !== merged.length) bad("a person can be merged only once");
+
+  const known = (list: unknown, what: string): string[] => {
+    if (!Array.isArray(list) || list.some((x) => typeof x !== "string" || !ids.has(x)) || new Set(list).size !== list.length) bad(`${what} must list distinct people of the track`);
+    return [...(list as string[])];
+  };
+  const segIds = new Set<string>();
+  let end = 0;
+  const segments: TrackSegment[] = (t!.segments as unknown[]).map((raw, i) => {
+    const s = raw as Partial<TrackSegment> | null;
+    if (typeof s !== "object" || s === null) return bad(`segment ${i} must be an object`);
+    if (typeof s.id !== "string" || !SEGMENT_ID.test(s.id) || segIds.has(s.id)) bad(`segment ${i} needs a unique id like "s1"`);
+    if (!isInt(s.startUs, 0) || !isInt(s.endUs, 1) || s.endUs! <= s.startUs!) bad(`segment ${i} needs integer startUs < endUs`);
+    if (s.startUs! < end) bad(`segment ${i} must start after the previous one ends`);
+    if (!LAYOUTS.includes(s.layout as string)) bad(`segment ${i}: unknown layout`);
+    if (!RESOLVED.includes(s.resolved as string)) bad(`segment ${i}: unknown resolved layout`);
+    if (!REASONS.includes(s.reason as string)) bad(`segment ${i}: unknown reason`);
+    if (typeof s.locked !== "boolean") bad(`segment ${i}: locked must be a boolean`);
+    const focus = known(s.focus, `segment ${i} focus`);
+    if (focus.length > 2) bad(`segment ${i}: focus names at most two people`);
+    if (s.window !== undefined && !s.locked) bad(`segment ${i}: only locked segments have a window`);
+    segIds.add(s.id!);
+    end = s.endUs!;
+    return {
+      id: s.id!,
+      startUs: s.startUs!,
+      endUs: s.endUs!,
+      speakers: known(s.speakers, `segment ${i} speakers`),
+      layout: s.layout!,
+      focus,
+      resolved: s.resolved!,
+      locked: s.locked!,
+      reason: s.reason!,
+      ...(s.window !== undefined ? { window: normalizeWindow(s.window, `Reframe track segment ${i} window`) } : {}),
+    };
+  });
+  return {
+    version: 1,
+    style: t!.style as number,
+    maxUpscalePct: t!.maxUpscalePct as number,
+    zoomPct: t!.zoomPct as number,
+    safeZone: "none",
+    ...(activeArea ? { activeArea } : {}),
+    people,
+    segments,
+  };
+}
+
+/**
+ * Check and copy the params of a `core/reframe` effect: `keys`, and `track` when present. With the
+ * asset's size, the track's active area must lie inside the frame. Throws INVALID_RANGE.
+ */
+export function normalizeReframeParams(params: Record<string, unknown>, asset?: Pick<Asset, "width" | "height">): { keys: ReframeKey[]; track?: ReframeTrack } {
+  const keys = normalizeReframeKeys(params.keys);
+  if (params.track === undefined) return { keys };
+  const track = normalizeReframeTrack(params.track);
+  const a = track.activeArea;
+  if (a && asset?.width && asset.height && (a.x + a.w > asset.width || a.y + a.h > asset.height)) {
+    throw new CutivaError("INVALID_RANGE", "Reframe track: activeArea must lie inside the source frame.");
+  }
+  return { keys, track };
+}
+
+/** The clip's Reframe Track, or null when it is framed by hand only. */
+export function reframeTrack(clip: Clip): ReframeTrack | null {
+  const track = clip.effects.find((e) => e.type === REFRAME_EFFECT)?.params.track;
+  return track ? (track as ReframeTrack) : null;
 }
 
 /** The clip's reframe keys, or null when it has none. */
@@ -48,13 +188,15 @@ const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.m
 /**
  * The crop rectangle of one key. Its aspect is the output's (`outW:outH`); it is as tall as `key.h`
  * allows while fitting inside the source, and centred on `(x, y)` but pushed back inside the frame.
+ * With an `area` (the active area, inside burned-in bars), it fits and stays inside that instead.
  */
-export function cropRect(key: ReframeKey, srcW: number, srcH: number, outW: number, outH: number): CropRect {
-  const maxH = Math.min(srcH, Math.floor((srcW * outH) / outW));
+export function cropRect(key: ReframeWindow, srcW: number, srcH: number, outW: number, outH: number, area?: CropRect): CropRect {
+  const a = area ?? { x: 0, y: 0, w: srcW, h: srcH };
+  const maxH = Math.min(a.h, Math.floor((a.w * outH) / outW));
   const h = clamp(key.h, 1, Math.max(1, maxH));
-  const w = clamp(divRound(h * outW, outH), 1, srcW);
-  const x = clamp(Math.floor((2 * key.x - w + 1) / 2), 0, srcW - w);
-  const y = clamp(Math.floor((2 * key.y - h + 1) / 2), 0, srcH - h);
+  const w = clamp(divRound(h * outW, outH), 1, a.w);
+  const x = clamp(Math.floor((2 * key.x - w + 1) / 2), a.x, a.x + a.w - w);
+  const y = clamp(Math.floor((2 * key.y - h + 1) / 2), a.y, a.y + a.h - h);
   return { x, y, w, h };
 }
 
@@ -62,7 +204,8 @@ export function cropRect(key: ReframeKey, srcW: number, srcH: number, outW: numb
 export function clipCropKeys(clip: Clip, asset: Asset, settings: ProjectSettings): CropKey[] | null {
   const keys = reframeKeys(clip);
   if (!keys || !asset.width || !asset.height) return null;
-  return keys.map((k) => ({ atUs: k.atUs, rect: cropRect(k, asset.width!, asset.height!, settings.width, settings.height), cut: k.cut === true }));
+  const area = reframeTrack(clip)?.activeArea;
+  return keys.map((k) => ({ atUs: k.atUs, rect: cropRect(k, asset.width!, asset.height!, settings.width, settings.height, area), cut: k.cut === true }));
 }
 
 /**

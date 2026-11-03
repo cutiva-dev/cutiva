@@ -1,0 +1,24 @@
+{
+  "_notes": [
+    "1080x1920 to 1080x1920: same shape, so no analysis: one key showing the whole frame (centre 540, 960; h 1920), no segments, no people."
+  ],
+  "track": {
+    "version": 1,
+    "style": 50,
+    "maxUpscalePct": 200,
+    "zoomPct": 100,
+    "safeZone": "none",
+    "people": [],
+    "segments": []
+  },
+  "keys": [
+    {
+      "atUs": 0,
+      "x": 540,
+      "y": 960,
+      "h": 1920,
+      "cut": true
+    }
+  ],
+  "passthrough": true
+}

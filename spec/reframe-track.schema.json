@@ -4,87 +4,324 @@
   "title": "Params of the core/reframe clip effect",
   "description": "Crop keys (what renderers read) and, for automatic framing, the Reframe Track they are derived from. See docs/adr/0005 and 0006. Times are integer microseconds in source time; positions are integer source pixels in display orientation.",
   "type": "object",
-  "required": ["keys"],
+  "required": [
+    "keys"
+  ],
   "additionalProperties": false,
   "properties": {
-    "keys": { "type": "array", "items": { "$ref": "#/$defs/key" } },
-    "track": { "$ref": "#/$defs/track" }
+    "keys": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/key"
+      }
+    },
+    "track": {
+      "$ref": "#/$defs/track"
+    }
   },
   "$defs": {
-    "us": { "type": "integer", "minimum": 0 },
-    "px": { "type": "integer", "minimum": 0 },
+    "us": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "px": {
+      "type": "integer",
+      "minimum": 0
+    },
     "window": {
       "description": "A crop window: its centre and height in source pixels. Its width follows the output aspect.",
       "type": "object",
-      "required": ["x", "y", "h"],
+      "required": [
+        "x",
+        "y",
+        "h"
+      ],
       "additionalProperties": false,
-      "properties": { "x": { "$ref": "#/$defs/px" }, "y": { "$ref": "#/$defs/px" }, "h": { "type": "integer", "minimum": 1 } }
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/px"
+        },
+        "y": {
+          "$ref": "#/$defs/px"
+        },
+        "h": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
     },
     "key": {
       "type": "object",
-      "required": ["atUs", "x", "y", "h"],
+      "required": [
+        "atUs",
+        "x",
+        "y",
+        "h"
+      ],
       "additionalProperties": false,
       "properties": {
-        "atUs": { "$ref": "#/$defs/us" },
-        "x": { "$ref": "#/$defs/px" },
-        "y": { "$ref": "#/$defs/px" },
-        "h": { "type": "integer", "minimum": 1 },
-        "cut": { "type": "boolean" },
-        "layout": { "enum": ["split", "wide"], "description": "Absent: one window (x, y, h). split: two regions, each with half the output's height. wide: the whole source over a blurred fill." },
-        "regions": { "type": "array", "items": { "$ref": "#/$defs/window" }, "minItems": 2, "maxItems": 2 }
+        "atUs": {
+          "$ref": "#/$defs/us"
+        },
+        "x": {
+          "$ref": "#/$defs/px"
+        },
+        "y": {
+          "$ref": "#/$defs/px"
+        },
+        "h": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cut": {
+          "type": "boolean"
+        },
+        "layout": {
+          "enum": [
+            "split",
+            "wide"
+          ],
+          "description": "Absent: one window (x, y, h). split: two regions, each with half the output's height. wide: the whole source over a blurred fill."
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/window"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
       },
       "allOf": [
-        { "if": { "required": ["layout"], "properties": { "layout": { "const": "split" } } }, "then": { "required": ["regions"] }, "else": { "not": { "required": ["regions"] } } }
+        {
+          "if": {
+            "required": [
+              "layout"
+            ],
+            "properties": {
+              "layout": {
+                "const": "split"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "regions"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "regions"
+              ]
+            }
+          }
+        }
       ]
     },
-    "personId": { "type": "string", "pattern": "^p[0-9]+$" },
+    "personId": {
+      "type": "string",
+      "pattern": "^p[0-9]+$"
+    },
     "person": {
       "type": "object",
-      "required": ["id", "label", "kind", "priority", "neverFocus"],
+      "required": [
+        "id",
+        "label",
+        "kind",
+        "priority",
+        "neverFocus"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "$ref": "#/$defs/personId" },
-        "label": { "type": "string", "minLength": 1, "maxLength": 60 },
-        "kind": { "enum": ["face", "voice"], "description": "voice: someone heard with no face on screen." },
-        "priority": { "type": "boolean" },
-        "neverFocus": { "type": "boolean" }
+        "id": {
+          "$ref": "#/$defs/personId"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "kind": {
+          "enum": [
+            "face",
+            "voice"
+          ],
+          "description": "voice: someone heard with no face on screen."
+        },
+        "priority": {
+          "type": "boolean"
+        },
+        "neverFocus": {
+          "type": "boolean"
+        },
+        "merged": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/personId"
+          },
+          "uniqueItems": true,
+          "description": "Ids of detected people the user merged into this one."
+        }
       }
     },
     "segment": {
       "type": "object",
-      "required": ["id", "startUs", "endUs", "speakers", "layout", "focus", "resolved", "locked", "reason"],
+      "required": [
+        "id",
+        "startUs",
+        "endUs",
+        "speakers",
+        "layout",
+        "focus",
+        "resolved",
+        "locked",
+        "reason"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "pattern": "^s[0-9]+$" },
-        "startUs": { "$ref": "#/$defs/us" },
-        "endUs": { "type": "integer", "minimum": 1 },
-        "speakers": { "type": "array", "items": { "$ref": "#/$defs/personId" }, "uniqueItems": true },
-        "layout": { "enum": ["auto", "single", "split", "wide"], "description": "What the user asked for; auto lets the core decide." },
-        "focus": { "type": "array", "items": { "$ref": "#/$defs/personId" }, "uniqueItems": true, "maxItems": 2 },
-        "resolved": { "enum": ["single", "split", "wide"], "description": "What the core decided." },
-        "locked": { "type": "boolean", "description": "Set by any user edit; re-analysis never changes a locked segment." },
-        "reason": { "enum": ["lips+voice", "overlap", "no-face", "voice-only", "never-focus", "low-quality", "user"] },
-        "window": { "$ref": "#/$defs/window", "description": "Framing dragged by hand; only on locked segments." }
+        "id": {
+          "type": "string",
+          "pattern": "^s[0-9]+$"
+        },
+        "startUs": {
+          "$ref": "#/$defs/us"
+        },
+        "endUs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "speakers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/personId"
+          },
+          "uniqueItems": true
+        },
+        "layout": {
+          "enum": [
+            "auto",
+            "single",
+            "split",
+            "wide"
+          ],
+          "description": "What the user asked for; auto lets the core decide."
+        },
+        "focus": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/personId"
+          },
+          "uniqueItems": true,
+          "maxItems": 2
+        },
+        "resolved": {
+          "enum": [
+            "single",
+            "split",
+            "wide"
+          ],
+          "description": "What the core decided."
+        },
+        "locked": {
+          "type": "boolean",
+          "description": "Set by any user edit; re-analysis never changes a locked segment."
+        },
+        "reason": {
+          "enum": [
+            "lips+voice",
+            "overlap",
+            "no-face",
+            "voice-only",
+            "never-focus",
+            "low-quality",
+            "user"
+          ]
+        },
+        "window": {
+          "$ref": "#/$defs/window",
+          "description": "Framing dragged by hand; only on locked segments."
+        }
       }
     },
     "track": {
       "type": "object",
-      "required": ["version", "style", "maxUpscalePct", "safeZone", "people", "segments"],
+      "required": [
+        "version",
+        "style",
+        "maxUpscalePct",
+        "zoomPct",
+        "safeZone",
+        "people",
+        "segments"
+      ],
       "additionalProperties": false,
       "properties": {
-        "version": { "const": 1 },
-        "style": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Camera style: 0 calm, 50 balanced, 100 dynamic." },
-        "maxUpscalePct": { "type": "integer", "minimum": 100, "description": "Largest upscale a crop may need before the segment falls back to wide (150 = 1.5x)." },
-        "safeZone": { "enum": ["none"], "description": "Platform presets come later; adding values is backward compatible." },
+        "version": {
+          "const": 1
+        },
+        "style": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Camera style: 0 calm, 50 balanced, 100 dynamic."
+        },
+        "maxUpscalePct": {
+          "type": "integer",
+          "minimum": 100,
+          "description": "Largest upscale a crop may need before the segment falls back to wide, in percent (200 = 2x; 1080p to a 1080x1920 output needs 178)."
+        },
+        "zoomPct": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 1000,
+          "description": "Extra zoom of single windows, in percent (100 = the full height of the active area)."
+        },
+        "safeZone": {
+          "enum": [
+            "none"
+          ],
+          "description": "Platform presets come later; adding values is backward compatible."
+        },
         "activeArea": {
           "description": "The picture inside burned-in bars, in source pixels. Absent: the whole frame.",
           "type": "object",
-          "required": ["x", "y", "w", "h"],
+          "required": [
+            "x",
+            "y",
+            "w",
+            "h"
+          ],
           "additionalProperties": false,
-          "properties": { "x": { "$ref": "#/$defs/px" }, "y": { "$ref": "#/$defs/px" }, "w": { "type": "integer", "minimum": 1 }, "h": { "type": "integer", "minimum": 1 } }
+          "properties": {
+            "x": {
+              "$ref": "#/$defs/px"
+            },
+            "y": {
+              "$ref": "#/$defs/px"
+            },
+            "w": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "h": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
         },
-        "people": { "type": "array", "items": { "$ref": "#/$defs/person" } },
-        "segments": { "type": "array", "items": { "$ref": "#/$defs/segment" } }
+        "people": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/person"
+          }
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/segment"
+          }
+        }
       }
     }
   }
