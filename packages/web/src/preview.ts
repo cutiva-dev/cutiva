@@ -74,7 +74,7 @@ export function createPreview(
       }
       ctx!.fillStyle = background;
       ctx!.fillRect(0, 0, canvas.width, canvas.height);
-      for (const { canvas: f, layer } of frames) drawLayer(ctx!, f, canvas.width, canvas.height, layer.crop, layer.asset.width, layer.asset.height);
+      for (const { canvas: f, layer } of frames) drawLayer(ctx!, f, canvas.width, canvas.height, layer.crop, layer.asset.width, layer.asset.height, layer.layout);
     } finally {
       drawing = false;
       if (pendingT !== null) {

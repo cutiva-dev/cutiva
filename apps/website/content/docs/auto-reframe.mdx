@@ -3,9 +3,9 @@ title: Auto-reframe
 description: Turn landscape footage into vertical video that follows whoever is talking.
 ---
 
-**Status: beta, needs testing.** E2E tests check, in Chrome and Firefox, that dragging the window changes both preview and export, and that the editor's reframe controls work on a synthetic two-speaker clip (with a stand-in face detector): lanes, clicking a face, layouts, people, camera style, undo, save and the analysis cache. A manual test (it needs the network) checks that MediaPipe loads and analyses a clip. How well it picks the speaker in real conversations has not been measured yet. Split and wide layouts are planned and stored, but preview and export still draw them as one centred window.
+**Status: beta, needs testing.** E2E tests check, in Chrome and Firefox, that dragging the window changes both preview and export, and that the editor's reframe controls work on a synthetic two-speaker clip (with a stand-in face detector): lanes, clicking a face, layouts, people, camera style, undo, save and the analysis cache. A manual test (it needs the network) checks that MediaPipe loads and analyses a clip. Another E2E test draws a single, a wide and a split segment and checks that the exported MP4 shows what the preview shows (colours and face edges within 2 output pixels, at three instants). How well it picks the speaker in real conversations has not been measured yet.
 
-Auto-reframe crops a landscape clip for a vertical (or square) project. It watches the clip, finds the people, works out who is talking from mouth movement and speech, and splits the clip into **segments**: who is framed, and how (one person, a split for two, or wide). The camera cuts to each new speaker and follows gently while they move. You fix what it gets wrong with a click: pick a face, a layout or a person's flags, and that segment stays as you set it.
+Auto-reframe crops a landscape clip for a vertical (or square) project. It watches the clip, finds the people, works out who is talking from mouth movement and speech, and splits the clip into **segments**: who is framed, and how (one person, a split for two, or wide). The camera cuts to each new speaker and follows gently while they move. You fix what it gets wrong with a click: pick a face, a layout or a person's flags, and that segment stays as you set it. A split shows one person in each half of the frame; wide shows the whole picture over a blurred copy of it.
 
 ## Web
 
@@ -168,6 +168,7 @@ Reports are how auto-reframe improves: each one attached to an issue replays thr
 
 - It reads mouths, so profiles, covered mouths, overlapping talk and off-screen voices fool it.
 - A person in two shots counts as two people (merge them in People).
-- Split and wide layouts preview and export as one centred window until the web renderer draws them.
+- The source monitor's window shows the single fallback window on split and wide segments, not the two regions or the whole picture.
+- Native engines (Android) still refuse reframed clips.
 - Changing the project's format reshapes the windows but doesn't re-plan the layouts; call `engine.reframe(clipId)` again, which re-plans from the cached analysis.
 - Cuts are found at the analysis rate (every 200 ms), so a framing change can land up to one sample late.

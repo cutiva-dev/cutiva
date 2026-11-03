@@ -5,6 +5,7 @@ import {
   audioSegments,
   autoReframe,
   cropAt,
+  layoutAt,
   detectActiveArea,
   detectCuts,
   parseProject,
@@ -15,6 +16,7 @@ import {
   stereoPan,
   type AutoReframeInput,
   type CropKey,
+  type CropLayout,
   type CropRect,
   type FrameHistogram,
   type LumaImage,
@@ -23,7 +25,7 @@ import {
 
 interface Expected {
   durationUs: number;
-  videoAt: { tUs: number; layers: { clipId: string; sourceTimeUs: number; crop?: CropRect }[] }[];
+  videoAt: { tUs: number; layers: { clipId: string; sourceTimeUs: number; crop?: CropRect; layout?: CropLayout }[] }[];
   audioSegments: number;
   /** Optional: every audio segment in order, field by field. */
   audio?: { clipId: string; startUs: number; sourceInUs: number; sourceOutUs: number; speed: number; volume: number; fadeInUs: number; fadeOutUs: number }[];
@@ -40,7 +42,7 @@ describe("conformance fixtures", () => {
       const expected = JSON.parse(readFileSync(join(dir, file.replace(".cpf.json", ".expected.json")), "utf8")) as Expected;
       expect(projectDurationUs(project)).toBe(expected.durationUs);
       for (const sample of expected.videoAt) {
-        const got = resolveVideoAt(project, sample.tUs).map((l) => ({ clipId: l.clip.id, sourceTimeUs: l.sourceTimeUs, ...(l.crop ? { crop: l.crop } : {}) }));
+        const got = resolveVideoAt(project, sample.tUs).map((l) => ({ clipId: l.clip.id, sourceTimeUs: l.sourceTimeUs, ...(l.crop ? { crop: l.crop } : {}), ...(l.layout ? { layout: l.layout } : {}) }));
         expect(got, `t=${sample.tUs}`).toEqual(sample.layers);
       }
       const audio = audioSegments(project);
@@ -73,7 +75,8 @@ describe("conformance fixtures", () => {
           .filter((v) => sample.tUs >= v.startUs && sample.tUs < v.endUs)
           .map((v) => {
             const sourceTimeUs = v.sourceInUs + Math.round((sample.tUs - v.startUs) * v.speed);
-            return { clipId: v.clipId, sourceTimeUs, ...(v.crop ? { crop: cropAt(v.crop, sourceTimeUs) } : {}) };
+            const layout = v.crop ? layoutAt(v.crop, sourceTimeUs) : null;
+            return { clipId: v.clipId, sourceTimeUs, ...(v.crop ? { crop: cropAt(v.crop, sourceTimeUs) } : {}), ...(layout ? { layout } : {}) };
           });
         expect(shown, `plan at t=${sample.tUs}`).toEqual(sample.layers);
       }

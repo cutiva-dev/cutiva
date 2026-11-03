@@ -19,7 +19,8 @@ export interface VideoSegment {
   speed: number;
   /**
    * When the clip is reframed: crop rectangles by source time. At a source time `s` the engine shows
-   * `cropAt(crop, s)`, scaled to fill the output frame. Without it, the frame is letterboxed.
+   * `cropAt(crop, s)`, scaled to fill the output frame, or `layoutAt(crop, s)` when that isn't null
+   * (split or wide). Without it, the frame is letterboxed.
    */
   crop?: CropKey[];
 }

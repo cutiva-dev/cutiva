@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "id": "prj_reframe_layouts",
+  "settings": { "width": 1080, "height": 1920, "fps": { "num": 30, "den": 1 }, "sampleRate": 48000 },
+  "assets": [
+    { "id": "ast_wide", "kind": "video", "name": "podcast.mp4", "uri": "file://podcast.mp4", "durationUs": 10000000, "width": 1920, "height": 1080, "hasAudio": false }
+  ],
+  "tracks": [
+    { "id": "trk_v", "kind": "video", "muted": false, "clips": [
+      { "id": "c1", "assetId": "ast_wide", "startUs": 0, "sourceInUs": 0, "sourceOutUs": 3000000, "speed": 1, "volume": 1, "effects": [
+        { "type": "core/reframe", "params": { "keys": [
+          { "atUs": 0, "x": 480, "y": 540, "h": 1080 },
+          { "atUs": 1000000, "x": 960, "y": 540, "h": 1080, "layout": "split", "regions": [{ "x": 480, "y": 400, "h": 540 }, { "x": 1440, "y": 500, "h": 600 }] },
+          { "atUs": 2000000, "x": 960, "y": 540, "h": 1080, "cut": true, "layout": "wide" }
+        ]}}
+      ]},
+      { "id": "c2", "assetId": "ast_wide", "startUs": 3000000, "sourceInUs": 0, "sourceOutUs": 1000000, "speed": 1, "volume": 1, "effects": [
+        { "type": "core/reframe", "params": {
+          "keys": [
+            { "atUs": 0, "x": 960, "y": 540, "h": 1080, "cut": true, "layout": "wide" },
+            { "atUs": 500000, "x": 960, "y": 540, "h": 1080, "cut": true, "layout": "split", "regions": [{ "x": 100, "y": 540, "h": 540 }, { "x": 1800, "y": 540, "h": 540 }] }
+          ],
+          "track": { "version": 1, "style": 50, "maxUpscalePct": 200, "zoomPct": 100, "safeZone": "none", "activeArea": { "x": 240, "y": 0, "w": 1440, "h": 1080 }, "people": [], "segments": [] }
+        }}
+      ]}
+    ]}
+  ]
+}

@@ -4,13 +4,24 @@ import type { Asset, Clip, CropRect, ProjectSettings, ReframeKey, ReframeTrack, 
 /** Effect type that holds a video clip's crop keys: `{ type: "core/reframe", params: { keys } }`. */
 export const REFRAME_EFFECT = "core/reframe";
 
+/**
+ * How a key fills the frame besides its single `rect`. `split`: two rectangles of the source, each
+ * filling half the output (the first the top half, the second the bottom). `wide`: the whole
+ * `area` (the active area, or the whole frame) fitted inside the output, over a blurred copy of it
+ * that covers the output.
+ */
+export type CropLayout = { kind: "split"; regions: [CropRect, CropRect] } | { kind: "wide"; area: CropRect };
+
 /** A reframe key turned into a crop rectangle for one source size and one output aspect. */
 export interface CropKey {
   /** Source time of the asset. */
   atUs: Us;
+  /** The single window; renderers that don't draw layouts show it. */
   rect: CropRect;
   /** Hold the previous rectangle until `atUs`, then jump here. */
   cut: boolean;
+  /** Absent: one window. Layouts never glide: they hold from their key to the next. */
+  layout?: CropLayout;
 }
 
 const isInt = (v: unknown, min: number): v is number => typeof v === "number" && Number.isInteger(v) && v >= min;
@@ -204,8 +215,32 @@ export function cropRect(key: ReframeWindow, srcW: number, srcH: number, outW: n
 export function clipCropKeys(clip: Clip, asset: Asset, settings: ProjectSettings): CropKey[] | null {
   const keys = reframeKeys(clip);
   if (!keys || !asset.width || !asset.height) return null;
+  const srcW = asset.width;
+  const srcH = asset.height;
   const area = reframeTrack(clip)?.activeArea;
-  return keys.map((k) => ({ atUs: k.atUs, rect: cropRect(k, asset.width!, asset.height!, settings.width, settings.height, area), cut: k.cut === true }));
+  const { width: outW, height: outH } = settings;
+  const layout = (k: ReframeKey): CropLayout | undefined =>
+    k.layout === "split"
+      ? // Each region fills half the output, so its aspect is outW : outH / 2, that is 2·outW : outH.
+        { kind: "split", regions: [cropRect(k.regions![0], srcW, srcH, 2 * outW, outH, area), cropRect(k.regions![1], srcW, srcH, 2 * outW, outH, area)] }
+      : k.layout === "wide"
+        ? { kind: "wide", area: area ? { ...area } : { x: 0, y: 0, w: srcW, h: srcH } }
+        : undefined;
+  return keys.map((k) => {
+    const l = layout(k);
+    return { atUs: k.atUs, rect: cropRect(k, srcW, srcH, outW, outH, area), cut: k.cut === true, ...(l ? { layout: l } : {}) };
+  });
+}
+
+const copyLayout = (l: CropLayout): CropLayout =>
+  l.kind === "split" ? { kind: "split", regions: [{ ...l.regions[0] }, { ...l.regions[1] }] } : { kind: "wide", area: { ...l.area } };
+
+/** The layout at a source time: the one of the key in effect (the last at or before it; before the first key, the first). Null for a single window. */
+export function layoutAt(keys: readonly CropKey[], sourceUs: Us): CropLayout | null {
+  let i = 0;
+  while (i + 1 < keys.length && keys[i + 1]!.atUs <= sourceUs) i++;
+  const l = keys[i]?.layout;
+  return l ? copyLayout(l) : null;
 }
 
 /**
@@ -235,5 +270,5 @@ export function cropKeysInRange(keys: readonly CropKey[], sourceInUs: Us, source
   while (from + 1 < keys.length && keys[from + 1]!.atUs <= sourceInUs) from++;
   let to = from;
   while (to + 1 < keys.length && keys[to]!.atUs < sourceOutUs) to++;
-  return keys.slice(from, to + 1).map((k) => ({ atUs: k.atUs, rect: { ...k.rect }, cut: k.cut }));
+  return keys.slice(from, to + 1).map((k) => ({ atUs: k.atUs, rect: { ...k.rect }, cut: k.cut, ...(k.layout ? { layout: copyLayout(k.layout) } : {}) }));
 }

@@ -13,12 +13,16 @@ class ActiveVideoLayer {
   /// Part of the source frame to show, in source pixels, when the clip is reframed. Engines scale it
   /// to fill the whole output frame. Without it, the frame is drawn whole and letterboxed.
   final CropRect? crop;
+
+  /// With [crop], when the key in effect has a split or wide layout. Engines that draw it ignore [crop].
+  final CropLayout? layout;
   const ActiveVideoLayer({
     required this.track,
     required this.clip,
     required this.asset,
     required this.sourceTimeUs,
     this.crop,
+    this.layout,
   });
 }
 
@@ -54,6 +58,7 @@ List<ActiveVideoLayer> resolveVideoAt(Project project, Us t) {
         asset: asset,
         sourceTimeUs: sourceTimeUs,
         crop: keys == null ? null : cropAt(keys, sourceTimeUs),
+        layout: keys == null ? null : layoutAt(keys, sourceTimeUs),
       ),
     );
   }

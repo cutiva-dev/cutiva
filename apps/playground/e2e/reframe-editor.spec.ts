@@ -2,39 +2,29 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { installFakeDetector } from "./fake-detector";
 
 // fixtures/talk.mp4: 6 s, 1920x1080, 25 fps, no audio (so every frame counts as voiced). Two "faces":
 // a red square (x 390–690) and a blue one (x 1230–1530), both y 300–600, on grey. A white "mouth"
 // box flickers inside the red one for the first 3 s and inside the blue one after. A fake detector
-// (below) reads the mouths from the pixels, so the planner sees Speaker A talking, then Speaker B.
+// (fake-detector.ts) reads the mouths from the pixels, so the planner sees Speaker A talking, then Speaker B.
 // A 9:16 window (607x1080) centred on a face shows only that face's colour at 30% height.
 const fixture = join(dirname(fileURLToPath(import.meta.url)), "fixtures/talk.mp4");
 
 type Rgb = [number, number, number];
-const colorOf = ([r, g, b]: Rgb): "red" | "blue" | "grey" | "other" =>
-  r > 180 && g < 80 && b < 80 ? "red" : b > 180 && r < 80 && g < 100 ? "blue" : Math.abs(r - 128) < 30 && Math.abs(g - 128) < 30 && Math.abs(b - 128) < 30 ? "grey" : "other";
+const near = (v: number, want: number) => Math.abs(v - want) < 30;
+const colorOf = ([r, g, b]: Rgb): "red" | "blue" | "grey" | "dim" | "other" =>
+  r > 180 && g < 80 && b < 80
+    ? "red"
+    : b > 180 && r < 80 && g < 100
+      ? "blue"
+      : near(r, 128) && near(g, 128) && near(b, 128)
+        ? "grey"
+        : near(r, 83) && near(g, 83) && near(b, 83)
+          ? "dim" // the wide layout's blurred, darkened background
+          : "other";
 const shown = (page: Page) =>
   page.getByLabel("Video preview").evaluate((c: HTMLCanvasElement) => Array.from(c.getContext("2d")!.getImageData(Math.floor(c.width / 2), Math.floor(c.height * 0.3), 1, 1).data.slice(0, 3)) as Rgb).then(colorOf);
-
-/** The playground uses `window.__cutivaFaceDetector` instead of MediaPipe when it is set. */
-function installFakeDetector() {
-  const faces = [
-    { x: 390, mouthX: 540 },
-    { x: 1230, mouthX: 1380 },
-  ];
-  (window as unknown as { __cutivaFaceDetector: unknown }).__cutivaFaceDetector = {
-    detect(frame: HTMLCanvasElement | OffscreenCanvas) {
-      const s = frame.width / 1920;
-      const copy = new OffscreenCanvas(frame.width, frame.height);
-      const ctx = copy.getContext("2d")!;
-      ctx.drawImage(frame, 0, 0);
-      return faces.map((f) => {
-        const px = ctx.getImageData(Math.round(f.mouthX * s), Math.round(532 * s), 1, 1).data;
-        return { x: f.x * s, y: 300 * s, w: 300 * s, h: 300 * s, mouth: px[1]! > 200 ? 0.4 : 0.1 };
-      });
-    },
-  };
-}
 
 test("reframe editor: analyse, lanes, click a face, layouts, people, camera style, undo and save", async ({ page }) => {
   const errors: string[] = [];
@@ -81,10 +71,10 @@ test("reframe editor: analyse, lanes, click a face, layouts, people, camera styl
   await expect.poll(() => shown(page)).toBe("blue");
   await expect(page.getByRole("radio", { name: "Auto" })).toHaveAttribute("aria-checked", "true");
 
-  // Wide: the whole picture (until wide + blur is drawn, the preview shows the centred window: grey).
+  // Wide: the whole picture over a blurred copy; 30% down is the darkened background.
   await page.getByRole("radio", { name: "Wide" }).click();
   await expect(camera.getByRole("button").nth(1)).toHaveAccessibleName(/^Camera: Wide \(locked\)/);
-  await expect.poll(() => shown(page)).toBe("grey");
+  await expect.poll(() => shown(page)).toBe("dim");
   await page.getByRole("radio", { name: "Auto" }).click();
   await expect.poll(() => shown(page)).toBe("blue");
 

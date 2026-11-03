@@ -107,6 +107,21 @@ void main() {
       });
     });
 
+    test('layouts hold from their key and use the first key before it starts', () {
+      const wide = WideLayout(CropRect(0, 0, 10, 10));
+      const keys = [
+        CropKey(1000, CropRect(1, 2, 3, 4), cut: false, layout: wide),
+        CropKey(2000, CropRect(1, 2, 3, 4), cut: false),
+      ];
+      expect(layoutAt(keys, 0)?.toJson(), wide.toJson());
+      expect(layoutAt(keys, 1999)?.toJson(), {
+        'kind': 'wide',
+        'area': {'x': 0, 'y': 0, 'w': 10, 'h': 10},
+      });
+      expect(layoutAt(keys, 2000), isNull);
+      expect(layoutAt([], 0), isNull);
+    });
+
     test('needs the asset size', () {
       final clip = Clip(
         id: 'c',

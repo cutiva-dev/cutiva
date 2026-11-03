@@ -1,4 +1,4 @@
-import { clipCropKeys, cropAt } from "./reframe.js";
+import { clipCropKeys, cropAt, layoutAt, type CropLayout } from "./reframe.js";
 import { clipEndUs, sourceTimeAt } from "./time.js";
 import type { Asset, Clip, CropRect, Project, Track, Us } from "./types.js";
 
@@ -13,6 +13,8 @@ export interface ActiveVideoLayer {
    * to fill the whole output frame. Without it, the frame is drawn whole and letterboxed.
    */
   crop?: CropRect;
+  /** With `crop`, when the key in effect has a split or wide layout. Engines that draw it ignore `crop`. */
+  layout?: CropLayout;
 }
 
 /**
@@ -29,7 +31,8 @@ export function resolveVideoAt(project: Project, t: Us): ActiveVideoLayer[] {
     if (!asset) continue;
     const sourceTimeUs = sourceTimeAt(clip, t);
     const keys = clipCropKeys(clip, asset, project.settings);
-    layers.push({ track, clip, asset, sourceTimeUs, ...(keys ? { crop: cropAt(keys, sourceTimeUs) } : {}) });
+    const layout = keys ? layoutAt(keys, sourceTimeUs) : null;
+    layers.push({ track, clip, asset, sourceTimeUs, ...(keys ? { crop: cropAt(keys, sourceTimeUs) } : {}), ...(layout ? { layout } : {}) });
   }
   return layers;
 }

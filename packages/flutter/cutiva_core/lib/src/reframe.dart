@@ -68,16 +68,55 @@ class CropRect {
 }
 
 /// A reframe key turned into a crop rectangle for one source size and one output aspect.
+/// How a key fills the frame besides its single `rect`. `split`: two rectangles of the source, each
+/// filling half the output (the first the top half, the second the bottom). `wide`: the whole
+/// `area` (the active area, or the whole frame) fitted inside the output, over a blurred copy of it
+/// that covers the output.
+sealed class CropLayout {
+  const CropLayout();
+  Map<String, Object?> toJson();
+}
+
+class SplitLayout extends CropLayout {
+  final CropRect top;
+  final CropRect bottom;
+  const SplitLayout(this.top, this.bottom);
+
+  @override
+  Map<String, Object?> toJson() => {
+    'kind': 'split',
+    'regions': [top.toJson(), bottom.toJson()],
+  };
+}
+
+class WideLayout extends CropLayout {
+  final CropRect area;
+  const WideLayout(this.area);
+
+  @override
+  Map<String, Object?> toJson() => {'kind': 'wide', 'area': area.toJson()};
+}
+
 class CropKey {
   /// Source time of the asset.
   final Us atUs;
+
+  /// The single window; renderers that don't draw layouts show it.
   final CropRect rect;
 
   /// Hold the previous rectangle until [atUs], then jump here.
   final bool cut;
-  const CropKey(this.atUs, this.rect, {required this.cut});
 
-  Map<String, Object?> toJson() => {'atUs': atUs, 'rect': rect.toJson(), 'cut': cut};
+  /// Null: one window. Layouts never glide: they hold from their key to the next.
+  final CropLayout? layout;
+  const CropKey(this.atUs, this.rect, {required this.cut, this.layout});
+
+  Map<String, Object?> toJson() => {
+    'atUs': atUs,
+    'rect': rect.toJson(),
+    'cut': cut,
+    if (layout != null) 'layout': layout!.toJson(),
+  };
 }
 
 Never _bad(String message) => throw CutivaError(CutivaErrorCode.invalidRange, message);
@@ -504,10 +543,31 @@ List<CropKey>? clipCropKeys(Clip clip, Asset asset, ProjectSettings settings) {
   final srcH = asset.height;
   if (keys == null || srcW == null || srcH == null || srcW == 0 || srcH == 0) return null;
   final area = reframeTrack(clip)?.activeArea;
+  final outW = settings.width;
+  final outH = settings.height;
+  // Each split region fills half the output, so its aspect is outW : outH / 2, that is 2·outW : outH.
+  CropRect region(ReframeWindow r) =>
+      cropRect(ReframeKey(atUs: 0, x: r.x, y: r.y, h: r.h), srcW, srcH, 2 * outW, outH, area: area);
+  CropLayout? layout(ReframeKey k) => switch (k.layout) {
+    'split' => SplitLayout(region(k.regions![0]), region(k.regions![1])),
+    'wide' => WideLayout(area ?? CropRect(0, 0, srcW, srcH)),
+    _ => null,
+  };
   return [
     for (final k in keys)
-      CropKey(k.atUs, cropRect(k, srcW, srcH, settings.width, settings.height, area: area), cut: k.cut),
+      CropKey(k.atUs, cropRect(k, srcW, srcH, outW, outH, area: area), cut: k.cut, layout: layout(k)),
   ];
+}
+
+/// The layout at a source time: the one of the key in effect (the last at or before it; before the
+/// first key, the first). Null for a single window.
+CropLayout? layoutAt(List<CropKey> keys, Us sourceUs) {
+  if (keys.isEmpty) return null;
+  var i = 0;
+  while (i + 1 < keys.length && keys[i + 1].atUs <= sourceUs) {
+    i++;
+  }
+  return keys[i].layout;
 }
 
 /// The crop rectangle at a source time. Before the first key it is the first key's; after the last,

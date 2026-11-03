@@ -4,6 +4,7 @@ import {
   clipCropKeys,
   createEditor,
   cropAt,
+  layoutAt,
   cropRect,
   CutivaError,
   detectCuts,
@@ -69,6 +70,19 @@ describe("reframe keys", () => {
   it("uses the first key before it starts", () => {
     const keys = [{ atUs: 1000, rect: { x: 1, y: 2, w: 3, h: 4 }, cut: false }];
     expect(cropAt(keys, 0)).toEqual({ x: 1, y: 2, w: 3, h: 4 });
+  });
+
+  it("layouts hold from their key, use the first key before it starts and copy their rectangles", () => {
+    const wide = { kind: "wide" as const, area: { x: 0, y: 0, w: 10, h: 10 } };
+    const keys = [
+      { atUs: 1000, rect: { x: 1, y: 2, w: 3, h: 4 }, cut: false, layout: wide },
+      { atUs: 2000, rect: { x: 1, y: 2, w: 3, h: 4 }, cut: false },
+    ];
+    expect(layoutAt(keys, 0)).toEqual(wide);
+    expect(layoutAt(keys, 1999)).toEqual(wide);
+    expect(layoutAt(keys, 1999)).not.toBe(wide);
+    expect(layoutAt(keys, 2000)).toBeNull();
+    expect(layoutAt([], 0)).toBeNull();
   });
 
   it("needs the asset's size", () => {
