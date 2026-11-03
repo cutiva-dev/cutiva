@@ -50,6 +50,9 @@ export function FormatPicker({ editor, project }: { editor: Editor; project: Pro
   );
 }
 
+/** "16:9 landscape" for a size in FORMATS, else "1920×1080". */
+const formatName = (width: number, height: number) => FORMATS.find((f) => f.width === width && f.height === height)?.label ?? `${width}×${height}`;
+
 /** The source time the playhead shows in a clip (clamped inside it). */
 export const clipSourceUs = (clip: Clip, timeUs: Us): Us => sourceTimeAt(clip, Math.min(Math.max(timeUs, clip.startUs), clipEndUs(clip) - 1));
 
@@ -307,9 +310,12 @@ export function AutoReframePanel({ engine, editor, project, clip, timeUs, plan, 
       <p className="muted small">Finds who is talking and frames them for the project's format. Detection runs on this device.</p>
       {sameShape && (
         <div className="notice small" role="note">
-          <p>Already {width > height ? "landscape" : width < height ? "vertical" : "square"}: this clip has the project's shape, so it exports as is.</p>
-          <button type="button" className="link" onClick={() => editor.dispatch({ type: "project.setSize", width: 1080, height: 1920 })}>
-            Switch to 9:16 to reframe
+          <p>
+            The project is {formatName(width, height)}, the same shape as this clip, so there is nothing to reframe. To make a{" "}
+            {width >= height ? "vertical" : "landscape"} version, change the project's format.
+          </p>
+          <button type="button" className="primary" onClick={() => editor.dispatch({ type: "project.setSize", width: width >= height ? 1080 : 1920, height: width >= height ? 1920 : 1080 })}>
+            {width >= height ? "Switch to 9:16 vertical" : "Switch to 16:9 landscape"}
           </button>
         </div>
       )}

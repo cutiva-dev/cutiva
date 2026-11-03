@@ -1,5 +1,6 @@
 import { CutivaError, type PlanFace } from "@cutiva/core";
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
+import { faceTiles, mergeFaces, type Box } from "./face-tiles.js";
 import type { FaceDetector } from "./reframe.js";
 
 /** The `@mediapipe/tasks-vision` version this adapter is built and tested against. */
@@ -23,7 +24,14 @@ export interface MediaPipeFaceDetectorOptions {
   maxFaces?: number;
   /** Model download progress, 0 to 1. Not called when the model comes from the cache. */
   onProgress?: (ratio: number) => void;
+  /**
+   * Also look for faces in overlapping square tiles, each two thirds of the frame's shorter side.
+   * MediaPipe shrinks every image to 192 px before finding faces, so in a wide shot (a table of
+   * three, faces about a tenth of the height) it finds none in the whole frame. Default true.
+   */
+  tiles?: boolean;
 }
+
 
 export interface MediaPipeFaceDetector extends FaceDetector {
   close(): void;
@@ -96,7 +104,8 @@ export async function loadModel(url: string, expectedSha256: string, onProgress?
  * A face detector on MediaPipe Face Landmarker (Apache-2.0). Install `@mediapipe/tasks-vision`
  * yourself; it is an optional peer dependency. The model (about 3.7 MB) downloads on first use, is
  * checked against a pinned SHA-256 and kept in Cache Storage; video frames never leave the device.
- * Mouth openness is the `jawOpen` blendshape; MediaPipe gives no per-face confidence. Throws
+ * Mouth openness is the gap between the inner lips over the face's height (0 closed, about 0.3
+ * wide open); MediaPipe gives no per-face confidence. Throws
  * MODEL_LOAD_FAILED when the model or the WASM runtime can't be loaded.
  */
 export async function createMediaPipeFaceDetector(options: MediaPipeFaceDetectorOptions = {}): Promise<MediaPipeFaceDetector> {
@@ -110,29 +119,50 @@ export async function createMediaPipeFaceDetector(options: MediaPipeFaceDetector
         baseOptions: { modelAssetBuffer: model.slice(), delegate },
         runningMode: "IMAGE",
         numFaces: options.maxFaces ?? 6,
-        outputFaceBlendshapes: true,
+        outputFaceBlendshapes: false,
       });
     landmarker = await create("GPU").catch(() => create("CPU"));
   } catch (e) {
     throw new CutivaError("MODEL_LOAD_FAILED", `MediaPipe didn't start: ${(e as Error).message}`);
   }
+  /** Faces in one image, placed at (ox, oy) in the frame. */
+  const facesIn = (image: HTMLCanvasElement | OffscreenCanvas, ox: number, oy: number): Box[] => {
+    const result = landmarker.detect(image);
+    return result.faceLandmarks.map((points) => {
+      let minX = 1;
+      let minY = 1;
+      let maxX = 0;
+      let maxY = 0;
+      for (const p of points) {
+        minX = Math.min(minX, p.x);
+        minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x);
+        maxY = Math.max(maxY, p.y);
+      }
+      const h = (maxY - minY) * image.height;
+      // Inner lips: landmark 13 (upper) and 14 (lower). Their distance over the face's height moves
+      // clearly with speech even on small faces, where the jawOpen blendshape stays near zero.
+      const upper = points[13];
+      const lower = points[14];
+      const gap = upper && lower ? Math.hypot((upper.x - lower.x) * image.width, (upper.y - lower.y) * image.height) : 0;
+      return { x: ox + minX * image.width, y: oy + minY * image.height, w: (maxX - minX) * image.width, h, mouth: h > 0 ? Math.min(1, gap / h) : 0 };
+    });
+  };
+  let tile: OffscreenCanvas | HTMLCanvasElement | null = null;
   return {
     detect(frame) {
-      const result = landmarker.detect(frame);
-      return result.faceLandmarks.map((points, i): PlanFace => {
-        let minX = 1;
-        let minY = 1;
-        let maxX = 0;
-        let maxY = 0;
-        for (const p of points) {
-          minX = Math.min(minX, p.x);
-          minY = Math.min(minY, p.y);
-          maxX = Math.max(maxX, p.x);
-          maxY = Math.max(maxY, p.y);
+      const boxes = facesIn(frame, 0, 0);
+      if (options.tiles !== false) {
+        for (const t of faceTiles(frame.width, frame.height)) {
+          tile ??= typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(t.size, t.size) : Object.assign(document.createElement("canvas"), { width: t.size, height: t.size });
+          if (tile.width !== t.size) Object.assign(tile, { width: t.size, height: t.size });
+          const ctx = tile.getContext("2d") as CanvasRenderingContext2D | null;
+          if (!ctx) break;
+          ctx.drawImage(frame, t.x, t.y, t.size, t.size, 0, 0, t.size, t.size);
+          boxes.push(...facesIn(tile, t.x, t.y));
         }
-        const jaw = result.faceBlendshapes[i]?.categories.find((c) => c.categoryName === "jawOpen")?.score ?? 0;
-        return { x: minX * frame.width, y: minY * frame.height, w: (maxX - minX) * frame.width, h: (maxY - minY) * frame.height, mouth: jaw };
-      });
+      }
+      return mergeFaces(boxes).map((b): PlanFace => ({ ...b }));
     },
     close: () => landmarker.close(),
   };
