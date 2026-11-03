@@ -131,9 +131,9 @@ Values in between are linear (times rounded half up to whole µs). The constants
 
 ## Feedback from the playground
 
-After an auto-reframe, the [playground](/play) lists each framing change. Mark each one right or wrong, fix the wrong ones by dragging the window, rate the result and send it. The report holds numbers only: face boxes, mouth movement, speech levels, the keys auto-reframe made and the keys after your fixes. No video, images or file names. It goes to `/api/reframe-feedback`; where that isn't available (local `npm run dev`) the report downloads as a JSON file instead.
+After an auto-reframe, the [playground](/play) lists each framing change. Mark each one right or wrong, fix the wrong ones by dragging the window, rate the result and press **Report on GitHub**. The report downloads as a JSON file and a GitHub issue opens with a summary filled in; drag the file into the issue and submit it (you need a GitHub account, and the issue is public). The report holds numbers only: face boxes, mouth movement, speech levels, the keys auto-reframe made and the keys after your fixes. No video, images or file names.
 
-Reports are how auto-reframe improves: each one replays through `autoReframe` offline, so a change to the rules can be measured against real corrections before it ships, and bad cases become regression tests.
+Reports are how auto-reframe improves: each one attached to an issue replays through `autoReframe` offline, so a change to the rules can be measured against real corrections before it ships, and bad cases become regression tests.
 
 ## Known limits
 
