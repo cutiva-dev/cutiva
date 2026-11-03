@@ -24,7 +24,7 @@ export default function Home() {
           <div className="wrap hero__inner">
             <p className="pill"><span className="dot"></span>Open source · Apache-2.0 · In early development</p>
             <h1>Add video editing to any app you build.</h1>
-            <p className="lead">The open-source video editing SDK for React, React Native and Flutter. Trim, split, add audio and export MP4 right on the device.</p>
+            <p className="lead">The open-source video editing SDK for React, React Native and Flutter. Trim, split, add audio, reframe to vertical and export MP4 right on the device.</p>
             <div className="row">
               <a className="btn btn--primary" href="#waitlist">Get early access</a>
               <a className="btn" href="/play">Try the playground</a>
@@ -104,6 +104,13 @@ editor.undo();
               <article className="card"><h3>One portable project format</h3><p>A versioned JSON schema with integer timings. Save on the web, open in React Native or Flutter.</p></article>
               <article className="card"><h3>Undo and redo, built in</h3><p>Every edit is a command the core validates and records. Nothing is ever left half applied.</p></article>
               <article className="card"><h3>Headless or drop-in UI</h3><p>Use the timeline component, or build your own interface on the core.</p></article>
+              <article className="card card--wide">
+                <div>
+                  <h3>Auto-reframe to 9:16 <span className="tag" style={{ verticalAlign: "middle" }}>Beta</span></h3>
+                  <p className="muted">Turn a landscape podcast or interview into vertical video that follows whoever is talking. Faces are found on the device, and any shot can be fixed with a click: pick a face, a split for two people or the wide shot. Every change is undoable and saved in the project.</p>
+                </div>
+                <div className="tags"><span className="chip">Speaker detection</span><span className="chip">Split and wide</span><span className="chip">Same in preview and export</span></div>
+              </article>
             </div>
           </div>
         </section>
@@ -125,13 +132,13 @@ editor.undo();
               <span className="tag tag--track" style={{ alignSelf: "flex-start" }}>Free forever</span>
               <h2>Open source SDK</h2>
               <p>Everything you need to edit locally, under Apache-2.0. The cloud is never required.</p>
-              <ul><li>Core SDK and project format</li><li>Timeline, trim, split and audio</li><li>UI components and local MP4 export</li><li>Docs and examples</li></ul>
+              <ul><li>Core SDK and project format</li><li>Timeline, trim, split and audio</li><li>Auto-reframe to 9:16 on the device (beta)</li><li>UI components and local MP4 export</li><li>Docs and examples</li></ul>
             </div>
             <div id="waitlist" className="card card--accent">
               <span className="tag tag--cut" style={{ alignSelf: "flex-start" }}>Planned</span>
               <h2>Cutiva Cloud</h2>
               <p>Optional AI automation that returns edits you can review, change and undo, not a finished video you can&apos;t touch.</p>
-              <ul><li>Silence removal and automatic subtitles</li><li>Reframing from 16:9 to 9:16</li><li>Highlights, cloud rendering and batch jobs</li></ul>
+              <ul><li>Silence removal and automatic subtitles</li><li>Automatic reframing in pipelines: whole libraries, no editor open</li><li>Highlights, cloud rendering and batch jobs</li></ul>
               <WaitlistForm />
             </div>
           </div>
@@ -144,8 +151,8 @@ editor.undo();
               <p className="lead">Each phase opens only when the one before passes its gate. Nothing is marked done until it ships.</p>
             </div>
             <ol className="roadmap">
-              <li className="now"><span>Phase 0 · now</span><strong>Foundations</strong><small>Core, CI and an in-browser export spike</small></li>
-              <li><span>Phase 1</span><strong>Web pilot</strong><small>React SDK, online playground, npm v0.1</small></li>
+              <li><span>Phase 0 · done</span><strong>Foundations</strong><small>Core, CI and an in-browser export spike</small></li>
+              <li className="now"><span>Phase 1 · now</span><strong>Web pilot</strong><small>React SDK, online playground, auto-reframe, npm v0.1</small></li>
               <li><span>Phase 2</span><strong>Mobile pilot</strong><small>React Native and Flutter on one native engine</small></li>
               <li><span>Phase 3</span><strong>Full web editing</strong><small>Firefox, Safari, text, transitions</small></li>
               <li><span>Phase 4–5</span><strong>Native, desktop, cloud</strong><small>Swift, Kotlin, desktop and Cutiva Cloud</small></li>

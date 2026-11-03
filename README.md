@@ -14,7 +14,7 @@
 
 > **Status:** early development. v0.1 is prepared but not on npm yet, and the API may still change before 1.0. Nothing below is marked as working unless it is.
 
-Cutiva lets you add trimming, splitting, audio and MP4 export to your app without building a video editor from scratch. Edits run on the user's device; no render servers required.
+Cutiva lets you add trimming, splitting, audio, auto-reframe to vertical and MP4 export to your app without building a video editor from scratch. Edits run on the user's device; no render servers required.
 
 ## What exists today
 
@@ -51,6 +51,22 @@ localStorage.setItem("project", JSON.stringify(editor.toJSON())); // CPF v0.1
 ```
 
 All times are **integer microseconds**. Every edit is a serializable command, so undo/redo is built in and projects open the same way on every platform.
+
+## Auto-reframe to 9:16 (beta)
+
+Turn landscape footage into vertical video that follows whoever is talking. Faces and speech are analysed on the device (MediaPipe, an optional peer dependency); the plan is a set of segments you can fix with a click: frame another person, split the frame for two, or show the whole picture over a blurred copy. Preview and export draw the same thing.
+
+```ts
+import { createMediaPipeFaceDetector } from "@cutiva/web/mediapipe";
+
+editor.dispatch({ type: "project.setSize", width: 1080, height: 1920 }); // 9:16
+const result = await engine.reframe(clipId!, { detector: await createMediaPipeFaceDetector() });
+
+const seg = result.track.segments[1]!;
+await engine.editReframe(clipId!, { type: "segment", segmentId: seg.id, focus: ["p2"], layout: "single" }); // one undo step
+```
+
+Status: beta. E2E-tested in Chrome and Firefox with a synthetic clip, and checked on one real three-person podcast clip; it needs more real footage. Try it in the [playground](https://cutiva.ngstudios.co/play) and read the [auto-reframe docs](https://cutiva.ngstudios.co/docs/auto-reframe). On-device reframing is part of the free SDK; the optional Cutiva Cloud will run it in automated pipelines.
 
 ## Run it locally
 
