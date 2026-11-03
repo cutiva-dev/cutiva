@@ -21,7 +21,7 @@ void main() {
           jsonDecode(File(file.path.replaceFirst('.input.json', '.expected.json')).readAsStringSync())
                 as Map<String, Object?>
             ..remove('_notes');
-      final frames = input['frames'] as List<Object?>;
+      final frames = (input['frames'] as List<Object?>?) ?? const [];
       switch (fixture['function']) {
         case 'autoReframe':
           final result = autoReframe(
@@ -55,6 +55,23 @@ void main() {
               FrameHistogram(f['atUs'] as int, (f['bins'] as List<Object?>).cast<num>()),
           ]);
           expect({'cuts': cuts}, expected);
+        case 'detectActiveArea':
+          final peak = input['peak'] as Map<String, Object?>;
+          final area = detectActiveArea(
+            LumaImage(peak['width'] as int, peak['height'] as int, (peak['luma'] as List<Object?>).cast<int>()),
+            input['sourceWidth'] as int,
+            input['sourceHeight'] as int,
+          );
+          expect({'area': area?.toJson()}, expected);
+        case 'stereoPan':
+          List<double> samples(String key) => [for (final v in input[key] as List<Object?>) (v as num).toDouble()];
+          final pan = stereoPan(
+            samples('left'),
+            samples('right'),
+            input['sampleRate'] as int,
+            (input['timesUs'] as List<Object?>).cast<int>(),
+          );
+          expect({'pan': pan}, expected);
         default:
           fail('Unknown fixture function ${fixture['function']}');
       }

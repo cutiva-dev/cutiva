@@ -30,6 +30,7 @@ export {
   type ReframePlanResult,
   type ReframeEdit,
 } from "./reframe-plan.js";
+export { detectActiveArea, stereoPan, type LumaImage } from "./reframe-signals.js";
 export {
   autoReframe,
   detectCuts,

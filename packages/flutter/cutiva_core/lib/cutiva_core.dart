@@ -13,6 +13,7 @@ export 'src/project.dart' show createProject, parseProject, findClip, findTrack,
 export 'src/plan.dart';
 export 'src/reframe.dart';
 export 'src/reframe_plan.dart';
+export 'src/reframe_signals.dart';
 export 'src/resolve.dart';
 export 'src/time.dart';
 export 'src/types.dart';

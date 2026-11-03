@@ -1,0 +1,18 @@
+{
+ "_notes": [
+  "10 samples per second: half window = floor((100000 * 10 + 500000) / 1e6) = 1 sample, so each time reads samples [mid - 1, mid + 1).",
+  "Left plays 0.5 for samples 0-9, right plays 0.25 for samples 10-19. Mono check: difference energy 3.125 equals total energy 3.125, so stereo.",
+  "t=0: mid 0, samples [0,1): L 0.25, R 0 -> (0 - 0.25) / 0.25 = -1.",
+  "t=0.5 s: mid 5, samples 4-5: L 0.5, R 0 -> -1.",
+  "t=1 s: mid 10, samples 9-10: L 0.25, R 0.0625 -> (0.0625 - 0.25) / 0.3125 = -0.6.",
+  "t=1.5 s: mid 15, samples 14-15: L 0, R 0.125 -> 1.",
+  "t=2 s: mid 20, samples [19, 20) (clipped at the end): L 0, R 0.0625 -> 1."
+ ],
+ "pan": [
+  -1,
+  -1,
+  -0.6,
+  1,
+  1
+ ]
+}

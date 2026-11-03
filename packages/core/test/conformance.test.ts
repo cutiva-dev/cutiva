@@ -5,16 +5,19 @@ import {
   audioSegments,
   autoReframe,
   cropAt,
+  detectActiveArea,
   detectCuts,
   parseProject,
   planReframe,
   projectDurationUs,
   renderPlan,
   resolveVideoAt,
+  stereoPan,
   type AutoReframeInput,
   type CropKey,
   type CropRect,
   type FrameHistogram,
+  type LumaImage,
   type ReframePlanInput,
 } from "../src/index.js";
 
@@ -87,7 +90,13 @@ describe("auto-reframe fixtures", () => {
       const { _notes: _, ...expected } = JSON.parse(readFileSync(join(autoDir, file.replace(".input.json", ".expected.json")), "utf8")) as Record<string, unknown>;
       if (fn === "autoReframe") expect(autoReframe(input as AutoReframeInput)).toEqual(expected);
       else if (fn === "planReframe") expect(planReframe(input as ReframePlanInput)).toEqual(expected);
-      else if (fn === "detectCuts") expect({ cuts: detectCuts((input as { frames: FrameHistogram[] }).frames) }).toEqual(expected);
+      else if (fn === "detectActiveArea") {
+        const { peak, sourceWidth, sourceHeight } = input as { peak: LumaImage; sourceWidth: number; sourceHeight: number };
+        expect({ area: detectActiveArea(peak, sourceWidth, sourceHeight) }).toEqual(expected);
+      } else if (fn === "stereoPan") {
+        const { left, right, sampleRate, timesUs } = input as { left: number[]; right: number[]; sampleRate: number; timesUs: number[] };
+        expect({ pan: stereoPan(left, right, sampleRate, timesUs) }).toEqual(expected);
+      } else if (fn === "detectCuts") expect({ cuts: detectCuts((input as { frames: FrameHistogram[] }).frames) }).toEqual(expected);
       else throw new Error(`Unknown fixture function ${fn}`);
     });
   }
