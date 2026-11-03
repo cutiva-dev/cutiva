@@ -1,0 +1,117 @@
+{
+  "_notes": [
+    "No audio and the mouth is never visible: every frame counts as voiced, lips are null, so the only person is the speaker for the whole clip.",
+    "Face x: 400 on frames 0-4, then +50 per frame to 800 (frame 12), then still. IoU between steps is 0.6, so one track. Target centre x = face x + 100.",
+    "Balanced: dead zone 0.04 * 608 = 24.32 px, One Euro min cutoff 0.8 Hz, beta 1, derivative cutoff 1 Hz, top speed 0.25 * 608 * 0.2 s = 30.4 px per frame. alpha(fc) = 1 / (1 + 1 / (2 pi fc 0.2)).",
+    "Frame 5: target 550 is 50 px away (> 24.32): start moving. speed = 50 / 0.2 / 608 = 0.411184, filtered 0.556863 * 0.411184 = 0.228973, cutoff 1.028973, alpha 0.563899, step 28.1949 -> 528.1949, key 528.",
+    "Frames 6-14: every step reaches the 30.4 px limit: 558.59, 588.99, 619.39, 649.79, 680.19, 710.59, 740.99, 771.39, 801.79 -> 559, 589, 619, 650, 680, 711, 741, 771, 802 (still 98 px short of 900, catching up at top speed).",
+    "Before the first move a hold key at 0.8 s keeps 500 until then, so the window doesn't glide from 0 s."
+  ],
+  "track": {
+    "version": 1,
+    "style": 50,
+    "maxUpscalePct": 200,
+    "zoomPct": 100,
+    "safeZone": "none",
+    "people": [
+      {
+        "id": "p1",
+        "label": "Speaker A",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      }
+    ],
+    "segments": [
+      {
+        "id": "s1",
+        "startUs": 0,
+        "endUs": 3000000,
+        "speakers": [
+          "p1"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "single",
+        "locked": false,
+        "reason": "lips+voice"
+      }
+    ]
+  },
+  "keys": [
+    {
+      "atUs": 0,
+      "x": 500,
+      "y": 540,
+      "h": 1080,
+      "cut": true
+    },
+    {
+      "atUs": 800000,
+      "x": 500,
+      "y": 540,
+      "h": 1080
+    },
+    {
+      "atUs": 1000000,
+      "x": 528,
+      "y": 540,
+      "h": 1080
+    },
+    {
+      "atUs": 1200000,
+      "x": 559,
+      "y": 540,
+      "h": 1080
+    },
+    {
+      "atUs": 1400000,
+      "x": 589,
+      "y": 540,
+      "h": 1080
+    },
+    {
+      "atUs": 1600000,
+      "x": 619,
+      "y": 540,
+      "h": 1080
+    },
+    {
+      "atUs": 1800000,
+      "x": 650,
+      "y": 540,
+      "h": 1080
+    },
+    {
+      "atUs": 2000000,
+      "x": 680,
+      "y": 540,
+      "h": 1080
+    },
+    {
+      "atUs": 2200000,
+      "x": 711,
+      "y": 540,
+      "h": 1080
+    },
+    {
+      "atUs": 2400000,
+      "x": 741,
+      "y": 540,
+      "h": 1080
+    },
+    {
+      "atUs": 2600000,
+      "x": 771,
+      "y": 540,
+      "h": 1080
+    },
+    {
+      "atUs": 2800000,
+      "x": 802,
+      "y": 540,
+      "h": 1080
+    }
+  ],
+  "passthrough": false
+}

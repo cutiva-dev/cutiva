@@ -201,7 +201,7 @@ export function autoReframe(input: AutoReframeInput): AutoReframeResult {
 
   const shotStartsUs = [0, ...new Set((input.cuts ?? []).filter((c) => c > 0 && c < durationUs))].sort((a, b) => a - b);
   const h = Math.max(1, Math.floor(srcH / zoom));
-  const win = cropRect({ atUs: 0, x: 0, y: 0, h }, srcW, srcH, outW, outH);
+  const win = cropRect({ x: 0, y: 0, h }, srcW, srcH, outW, outH);
   const keyAt = (atUs: Us, x: number, y: number, cut?: boolean): ReframeKey => ({
     atUs,
     x: Math.round(x),

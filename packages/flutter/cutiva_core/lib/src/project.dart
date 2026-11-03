@@ -143,7 +143,13 @@ Project parseProject(Object? input) {
             effects is List<Object?>
                 ? [
                   for (final (k, e) in effects.whereType<_Json>().indexed)
-                    _parseEffect(e, '$cp.effects[$k]', video: kind == TrackKind.video),
+                    _parseEffect(
+                      e,
+                      '$cp.effects[$k]',
+                      video: kind == TrackKind.video,
+                      width: assets.firstWhere((a) => a.id == assetId).width,
+                      height: assets.firstWhere((a) => a.id == assetId).height,
+                    ),
                 ]
                 : [],
       );
@@ -211,19 +217,14 @@ void sortClips(List<Clip> clips) {
   }
 }
 
-Effect _parseEffect(_Json e, String path, {required bool video}) {
+Effect _parseEffect(_Json e, String path, {required bool video, int? width, int? height}) {
   final type = '${e['type']}';
   final params = e['params'] is _Json ? copyJson(e['params']) as _Json : <String, Object?>{};
   if (type != reframeEffect) return Effect(type: type, params: params);
   if (!video) _fail(path, 'a reframe only on video clips');
   try {
-    return Effect(
-      type: type,
-      params: {
-        'keys': [for (final k in normalizeReframeKeys(params['keys'])) k.toJson()],
-      },
-    );
+    return Effect(type: type, params: reframeParamsJson(normalizeReframeParams(params, width: width, height: height)));
   } on CutivaError catch (err) {
-    _fail('$path.params.keys', 'valid reframe keys (${err.message})');
+    _fail('$path.params', 'valid reframe params (${err.message})');
   }
 }

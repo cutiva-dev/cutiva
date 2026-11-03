@@ -8,8 +8,11 @@ import {
   CutivaError,
   detectCuts,
   normalizeReframeKeys,
+  normalizeReframeParams,
+  normalizeReframeTrack,
   parseProject,
   reframeKeys,
+  reframeTrack,
   renderPlan,
   resolveVideoAt,
   sequentialIds,
@@ -239,5 +242,103 @@ describe("detectCuts", () => {
     expect(detectCuts([{ atUs: 0, bins: [0, 0] }, { atUs: 2_000_000, bins: [0, 0] }])).toEqual([]);
     expect(detectCuts([{ atUs: 0, bins: [1, 0] }, { atUs: 100, bins: [0, 1] }], { minShotUs: 0, threshold: 1 })).toEqual([100]);
     expect(codeOf(() => detectCuts([{ atUs: 0, bins: [1] }, { atUs: 1, bins: [1, 2] }]))).toBe("INVALID_RANGE");
+  });
+});
+
+describe("reframe track in the project (ADR 0006)", () => {
+  const track = {
+    version: 1,
+    style: 50,
+    maxUpscalePct: 200,
+    zoomPct: 100,
+    safeZone: "none",
+    activeArea: { x: 240, y: 0, w: 1440, h: 1080 },
+    people: [
+      { id: "p1", label: "Ana", kind: "face", priority: false, neverFocus: false, merged: ["p3"] },
+      { id: "p2", label: "Voice", kind: "voice", priority: false, neverFocus: false },
+    ],
+    segments: [
+      { id: "s1", startUs: 0, endUs: 1_000_000, speakers: ["p1"], layout: "auto", focus: [], resolved: "single", locked: false, reason: "lips+voice" },
+      { id: "s2", startUs: 1_000_000, endUs: 2_000_000, speakers: ["p1"], layout: "single", focus: ["p1"], resolved: "single", locked: true, reason: "user", window: { x: 700, y: 540, h: 1080 } },
+    ],
+  } as const;
+  const keys = [
+    { atUs: 0, x: 500, y: 540, h: 1080, cut: true },
+    { atUs: 1_000_000, x: 960, y: 540, h: 1080, cut: true, layout: "split", regions: [{ x: 500, y: 500, h: 571 }, { x: 1400, y: 500, h: 571 }] },
+    { atUs: 2_000_000, x: 960, y: 540, h: 1080, cut: true, layout: "wide" },
+  ];
+
+  it("validates keys with layouts", () => {
+    expect(normalizeReframeKeys(keys)).toEqual(keys);
+    expect(codeOf(() => normalizeReframeKeys([{ atUs: 0, x: 1, y: 1, h: 1, layout: "grid" }]))).toBe("INVALID_RANGE");
+    expect(codeOf(() => normalizeReframeKeys([{ atUs: 0, x: 1, y: 1, h: 1, layout: "split" }]))).toBe("INVALID_RANGE");
+    expect(codeOf(() => normalizeReframeKeys([{ atUs: 0, x: 1, y: 1, h: 1, regions: [] }]))).toBe("INVALID_RANGE");
+    expect(codeOf(() => normalizeReframeKeys([{ atUs: 0, x: 1, y: 1, h: 1, layout: "split", regions: [{ x: 1, y: 1, h: 1 }] }]))).toBe("INVALID_RANGE");
+    expect(codeOf(() => normalizeReframeKeys([{ atUs: 0, x: 1, y: 1, h: 1, layout: "split", regions: [{ x: 1, y: 1, h: 0 }, { x: 1, y: 1, h: 1 }] }]))).toBe("INVALID_RANGE");
+  });
+
+  it("validates a track", () => {
+    expect(normalizeReframeTrack(track)).toEqual(track);
+    const bad = (patch: Record<string, unknown>) => codeOf(() => normalizeReframeTrack({ ...track, ...patch }));
+    const seg = (patch: Record<string, unknown>) => bad({ segments: [{ ...track.segments[0], ...patch }] });
+    const person = (patch: Record<string, unknown>) => bad({ people: [{ ...track.people[0], ...patch }], segments: [] });
+    expect(codeOf(() => normalizeReframeTrack(null))).toBe("INVALID_RANGE");
+    expect(codeOf(() => normalizeReframeTrack([]))).toBe("INVALID_RANGE");
+    for (const patch of [{ version: 2 }, { style: 101 }, { style: 1.5 }, { maxUpscalePct: 99 }, { zoomPct: 1001 }, { safeZone: "tiktok" }, { activeArea: { x: 0, y: 0, w: 0, h: 1 } }, { activeArea: null }, { people: {} }, { segments: {} }]) {
+      expect(bad(patch), JSON.stringify(patch)).toBe("INVALID_RANGE");
+    }
+    for (const patch of [{ id: "x1" }, { label: "" }, { kind: "robot" }, { priority: "yes" }, { merged: ["p1"] }, { merged: "p3" }]) expect(person(patch), JSON.stringify(patch)).toBe("INVALID_RANGE");
+    expect(bad({ people: [track.people[0], track.people[0]], segments: [] })).toBe("INVALID_RANGE");
+    expect(bad({ people: [null], segments: [] })).toBe("INVALID_RANGE");
+    expect(bad({ people: [track.people[0], { ...track.people[1], merged: ["p3"] }], segments: [] })).toBe("INVALID_RANGE");
+    for (const patch of [{ id: "t1" }, { startUs: 5, endUs: 5 }, { layout: "grid" }, { resolved: "auto" }, { reason: "magic" }, { locked: 1 }, { focus: ["p9"] }, { speakers: ["p1", "p1"] }, { focus: ["p1", "p2", "p1"] }, { window: { x: 1, y: 1, h: 1 } }]) {
+      expect(seg(patch), JSON.stringify(patch)).toBe("INVALID_RANGE");
+    }
+    expect(bad({ segments: [null] })).toBe("INVALID_RANGE");
+    expect(bad({ segments: [track.segments[1], track.segments[0]] })).toBe("INVALID_RANGE");
+    expect(bad({ segments: [track.segments[0], { ...track.segments[1], id: "s1" }] })).toBe("INVALID_RANGE");
+    const { activeArea: _, ...noArea } = track;
+    expect(normalizeReframeTrack(noArea)).toEqual(noArea);
+  });
+
+  it("checks the active area against the asset", () => {
+    expect(codeOf(() => normalizeReframeParams({ keys, track: { ...track, activeArea: { x: 1000, y: 0, w: 1440, h: 1080 } } }, wide))).toBe("INVALID_RANGE");
+    expect(normalizeReframeParams({ keys }, wide)).toEqual({ keys });
+    expect(normalizeReframeParams({ keys, track }).track).toEqual(track);
+  });
+
+  it("stores, keeps and removes the track with clip.setReframe, and saves it in the project", () => {
+    const { editor, clipId } = setup();
+    editor.dispatch({ type: "clip.setReframe", clipId, keys, track: track as never });
+    const clip = () => editor.project.tracks[0]!.clips[0]!;
+    expect(reframeTrack(clip())).toEqual(track);
+    // Keys alone keep the track.
+    editor.dispatch({ type: "clip.setReframe", clipId, keys: [keys[0]!] });
+    expect(reframeTrack(clip())).toEqual(track);
+    // The active area keeps windows inside it: x 500 is pushed to 240 + 304.
+    const [first] = clipCropKeys(clip(), wide, editor.project.settings)!;
+    expect(first!.rect).toEqual({ x: 240, y: 0, w: 608, h: 1080 });
+    // Save and open: the track survives.
+    const reopened = parseProject(JSON.parse(JSON.stringify(editor.toJSON())));
+    expect(reframeTrack(reopened.tracks[0]!.clips[0]!)).toEqual(track);
+    editor.dispatch({ type: "clip.setReframe", clipId, keys: [keys[0]!], track: null });
+    expect(reframeTrack(clip())).toBeNull();
+    editor.undo();
+    expect(reframeTrack(clip())).toEqual(track);
+    expect(codeOf(() => editor.dispatch({ type: "clip.setReframe", clipId, keys, track: { ...track, version: 9 } as never }))).toBe("INVALID_RANGE");
+  });
+
+  it("refuses a broken track when opening a project", () => {
+    const { editor, clipId } = setup();
+    editor.dispatch({ type: "clip.setReframe", clipId, keys, track: track as never });
+    const json = JSON.parse(JSON.stringify(editor.toJSON()));
+    json.tracks[0].clips[0].effects[0].params.track.segments[0].reason = "magic";
+    expect(codeOf(() => parseProject(json))).toBe("INVALID_PROJECT");
+  });
+
+  it("clamps crops inside an active area", () => {
+    const area = { x: 240, y: 0, w: 1440, h: 1080 };
+    expect(cropRect({ x: 1700, y: 540, h: 2000 }, 1920, 1080, 1080, 1920, area)).toEqual({ x: 1072, y: 0, w: 608, h: 1080 });
+    expect(cropRect({ x: 960, y: 540, h: 1080 }, 1920, 1080, 1080, 1080, area)).toEqual({ x: 420, y: 0, w: 1080, h: 1080 });
   });
 });

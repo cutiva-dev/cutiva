@@ -15,6 +15,10 @@ export type CutivaErrorCode =
   | "EXPORT_FAILED"
   | "EXPORT_CANCELLED"
   | "ANALYSIS_CANCELLED"
+  /** A reframe edit names a segment the clip's track doesn't have. */
+  | "SEGMENT_NOT_FOUND"
+  /** A reframe edit names a person the clip's track doesn't have. */
+  | "PERSON_NOT_FOUND"
   | "NOTHING_TO_EXPORT";
 
 /** Every error thrown by Cutiva carries a stable, machine-readable code. */

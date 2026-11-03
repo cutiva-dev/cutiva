@@ -1,5 +1,5 @@
 import { CutivaError } from "./errors.js";
-import { normalizeReframeKeys, REFRAME_EFFECT } from "./reframe.js";
+import { normalizeReframeParams, REFRAME_EFFECT } from "./reframe.js";
 import { clipEndUs } from "./time.js";
 import type { IdFactory } from "./ids.js";
 import { randomId } from "./ids.js";
@@ -89,6 +89,7 @@ export function parseProject(input: unknown): Project {
   };
 
   const assetKinds = new Map<string, AssetKind>();
+  const assetSizes = new Map<string, { width?: number; height?: number }>();
   const assets = arr(raw, "assets", "$").map((a, i) => {
     const p = `$.assets[${i}]`;
     if (!isObj(a)) fail(p, "an object");
@@ -96,6 +97,7 @@ export function parseProject(input: unknown): Project {
     if (kind !== "video" && kind !== "audio") fail(`${p}.kind`, '"video" or "audio"');
     const id = str(a, "id", p);
     assetKinds.set(id, kind);
+    assetSizes.set(id, { ...(typeof a.width === "number" ? { width: a.width } : {}), ...(typeof a.height === "number" ? { height: a.height } : {}) });
     const fp = a.fingerprint;
     return {
       id,
@@ -143,9 +145,9 @@ export function parseProject(input: unknown): Project {
               if (type !== REFRAME_EFFECT) return { type, params };
               if (kind !== "video") fail(`${cp}.effects[${k}]`, "a reframe only on video clips");
               try {
-                return { type, params: { keys: normalizeReframeKeys(params.keys) } };
+                return { type, params: normalizeReframeParams(params, assetSizes.get(assetId)) };
               } catch (err) {
-                return fail(`${cp}.effects[${k}].params.keys`, `valid reframe keys (${(err as Error).message})`);
+                return fail(`${cp}.effects[${k}].params`, `valid reframe params (${(err as Error).message})`);
               }
             })
           : [],

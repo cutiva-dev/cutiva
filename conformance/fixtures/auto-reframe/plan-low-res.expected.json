@@ -1,0 +1,48 @@
+{
+  "_notes": [
+    "854x480 to 9:16: window h = min(480, floor(854*1920/1080) = 1518) = 480, w = 270. Filling a 1920 px tall output needs 1920 / 480 = 4x, over maxUpscalePct 200.",
+    "So the speaker's segment goes wide with reason low-quality; the wide key sits at the frame's centre (floor(854/2) = 427, 240) with h 480."
+  ],
+  "track": {
+    "version": 1,
+    "style": 50,
+    "maxUpscalePct": 200,
+    "zoomPct": 100,
+    "safeZone": "none",
+    "people": [
+      {
+        "id": "p1",
+        "label": "Speaker A",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      }
+    ],
+    "segments": [
+      {
+        "id": "s1",
+        "startUs": 0,
+        "endUs": 2000000,
+        "speakers": [
+          "p1"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "wide",
+        "locked": false,
+        "reason": "low-quality"
+      }
+    ]
+  },
+  "keys": [
+    {
+      "atUs": 0,
+      "x": 427,
+      "y": 240,
+      "h": 480,
+      "cut": true,
+      "layout": "wide"
+    }
+  ],
+  "passthrough": false
+}

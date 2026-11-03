@@ -1,0 +1,25 @@
+{
+ "function": "planReframe",
+ "input": {
+  "sourceWidth": 1080,
+  "sourceHeight": 1920,
+  "outputWidth": 1080,
+  "outputHeight": 1920,
+  "durationUs": 1000000,
+  "frames": [
+   {
+    "atUs": 0,
+    "voice": 0.5,
+    "faces": [
+     {
+      "x": 400,
+      "y": 300,
+      "w": 200,
+      "h": 200,
+      "mouth": 0.2
+     }
+    ]
+   }
+  ]
+ }
+}

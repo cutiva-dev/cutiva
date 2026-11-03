@@ -7,6 +7,7 @@ import {
   cropAt,
   detectCuts,
   parseProject,
+  planReframe,
   projectDurationUs,
   renderPlan,
   resolveVideoAt,
@@ -14,6 +15,7 @@ import {
   type CropKey,
   type CropRect,
   type FrameHistogram,
+  type ReframePlanInput,
 } from "../src/index.js";
 
 interface Expected {
@@ -84,6 +86,7 @@ describe("auto-reframe fixtures", () => {
       const { function: fn, input } = JSON.parse(readFileSync(join(autoDir, file), "utf8")) as { function: string; input: unknown };
       const { _notes: _, ...expected } = JSON.parse(readFileSync(join(autoDir, file.replace(".input.json", ".expected.json")), "utf8")) as Record<string, unknown>;
       if (fn === "autoReframe") expect(autoReframe(input as AutoReframeInput)).toEqual(expected);
+      else if (fn === "planReframe") expect(planReframe(input as ReframePlanInput)).toEqual(expected);
       else if (fn === "detectCuts") expect({ cuts: detectCuts((input as { frames: FrameHistogram[] }).frames) }).toEqual(expected);
       else throw new Error(`Unknown fixture function ${fn}`);
     });
