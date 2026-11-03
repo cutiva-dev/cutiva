@@ -1,6 +1,7 @@
 import 'errors.dart';
 import 'ids.dart';
 import 'project.dart';
+import 'reframe.dart';
 import 'time.dart';
 import 'types.dart';
 
@@ -23,6 +24,17 @@ class AssetAdd extends Command<AssetAddResult> {
   String get type => 'asset.add';
   @override
   Map<String, Object?> _fields() => {'asset': asset.toJson()};
+}
+
+/// Change the output frame size. Reframed clips follow the new aspect ratio.
+class ProjectSetSize extends Command<CommandResult> {
+  final int width;
+  final int height;
+  const ProjectSetSize({required this.width, required this.height});
+  @override
+  String get type => 'project.setSize';
+  @override
+  Map<String, Object?> _fields() => {'width': width, 'height': height};
 }
 
 class TrackAdd extends Command<TrackAddResult> {
@@ -157,6 +169,20 @@ class ClipSetFade extends Command<CommandResult> {
   Map<String, Object?> _fields() => {'clipId': clipId, 'inUs': inUs, 'outUs': outUs};
 }
 
+/// Replace a video clip's crop keys (source times). An empty list removes the reframe.
+class ClipSetReframe extends Command<CommandResult> {
+  final String clipId;
+  final List<ReframeKey> keys;
+  const ClipSetReframe(this.clipId, this.keys);
+  @override
+  String get type => 'clip.setReframe';
+  @override
+  Map<String, Object?> _fields() => {
+    'clipId': clipId,
+    'keys': [for (final k in keys) k.toJson()],
+  };
+}
+
 /// What a command returns. Commands that create things return a subclass with the new ids.
 class CommandResult {
   final String type;
@@ -251,6 +277,7 @@ void _pack(Track track) {
 R applyCommand<R extends CommandResult>(Project project, Command<R> cmd, IdFactory ids) {
   final CommandResult result = switch (cmd as Command) {
     final AssetAdd c => _assetAdd(project, c),
+    final ProjectSetSize c => _projectSetSize(project, c),
     final TrackAdd c => _trackAdd(project, c, ids),
     final TrackSetMuted c => _trackSetMuted(project, c),
     final ClipAdd c => _clipAdd(project, c, ids),
@@ -262,6 +289,7 @@ R applyCommand<R extends CommandResult>(Project project, Command<R> cmd, IdFacto
     final ClipSetVolume c => _clipSetVolume(project, c),
     final ClipSetSpeed c => _clipSetSpeed(project, c),
     final ClipSetFade c => _clipSetFade(project, c),
+    final ClipSetReframe c => _clipSetReframe(project, c),
   };
   return result as R;
 }
@@ -415,6 +443,42 @@ CommandResult _clipSetFade(Project project, ClipSetFade cmd) {
   clip.effects.removeWhere((e) => e.type == 'core/fade');
   if (cmd.inUs > 0 || cmd.outUs > 0) {
     clip.effects.add(Effect(type: 'core/fade', params: {'inUs': cmd.inUs, 'outUs': cmd.outUs}));
+  }
+  return CommandResult(cmd.type);
+}
+
+CommandResult _projectSetSize(Project project, ProjectSetSize cmd) {
+  if (cmd.width < 2 || cmd.height < 2) {
+    throw const CutivaError(CutivaErrorCode.invalidRange, 'width and height must be integers >= 2.');
+  }
+  project.settings.width = cmd.width;
+  project.settings.height = cmd.height;
+  return CommandResult(cmd.type);
+}
+
+CommandResult _clipSetReframe(Project project, ClipSetReframe cmd) {
+  final (track: _, :clip, index: _) = findClip(project, cmd.clipId);
+  final asset = _findAsset(project, clip.assetId);
+  final keys = normalizeReframeKeys(cmd.keys);
+  if (asset.kind != AssetKind.video) {
+    throw CutivaError(CutivaErrorCode.trackKindMismatch, 'Only video clips can be reframed ("${clip.id}" is audio).');
+  }
+  if (keys.isNotEmpty && (asset.width == null || asset.height == null || asset.width == 0 || asset.height == 0)) {
+    throw CutivaError(
+      CutivaErrorCode.assetSizeUnknown,
+      'Asset "${asset.id}" has no width and height, so its clips can\'t be reframed.',
+    );
+  }
+  clip.effects.removeWhere((e) => e.type == reframeEffect);
+  if (keys.isNotEmpty) {
+    clip.effects.add(
+      Effect(
+        type: reframeEffect,
+        params: {
+          'keys': [for (final k in keys) k.toJson()],
+        },
+      ),
+    );
   }
   return CommandResult(cmd.type);
 }

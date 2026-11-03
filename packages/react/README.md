@@ -1,6 +1,6 @@
 # @cutiva/react
 
-React bindings for [Cutiva](https://github.com/cutiva-dev/cutiva), the open-source video editing SDK: `useCutiva`, `useProject`, `usePreview` and a `<Timeline>` with drag to reorder, trim handles and thumbnails.
+React bindings for [Cutiva](https://github.com/cutiva-dev/cutiva), the open-source video editing SDK: `useCutiva`, `useProject`, `usePreview`, a `<Timeline>` with drag to reorder, trim handles, thumbnails and framing-change marks, and `<ReframeBox>` to drag a reframed clip's crop window.
 
 ```bash
 npm install @cutiva/core @cutiva/web @cutiva/react

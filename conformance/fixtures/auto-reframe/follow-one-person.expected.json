@@ -1,0 +1,24 @@
+{
+  "_notes": [
+    "One face walking right 100 px per frame from frame 5 (under 0.75 * 200 = 150 px, so it stays one track). Centre x by frame: 480 x5, 580, 680, 780, 880 x3.",
+    "Mouth never moves: nobody talks, so the most visible person (the only one) holds the frame for the whole shot.",
+    "Positions average over frames within 500 ms (2 frames each side). Dead zone: 0.05 * 608 = 30.4 px.",
+    "Frame 3: 2500/5 = 500, moved 20, no key. Frame 4 (0.8 s): 2700/5 = 540, moved 60: hold key at the previous frame (0.6 s) with x 480, then a glide key to 540.",
+    "Frame 5: 600 (no hold: the previous frame has a key). Frame 6: 680. Frame 7: 760. Frame 8: 820. Frame 9: 3420/4 = 855 (moved 35). Frame 10: 880, moved 25, no key.",
+    "y = 400 + 0.15 * 1080 = 562 throughout. The avatar is the first sighting (all have the same area)."
+  ],
+  "keys": [
+    { "atUs": 0, "x": 480, "y": 562, "h": 1080, "cut": true },
+    { "atUs": 600000, "x": 480, "y": 562, "h": 1080 },
+    { "atUs": 800000, "x": 540, "y": 562, "h": 1080 },
+    { "atUs": 1000000, "x": 600, "y": 562, "h": 1080 },
+    { "atUs": 1200000, "x": 680, "y": 562, "h": 1080 },
+    { "atUs": 1400000, "x": 760, "y": 562, "h": 1080 },
+    { "atUs": 1600000, "x": 820, "y": 562, "h": 1080 },
+    { "atUs": 1800000, "x": 855, "y": 562, "h": 1080 }
+  ],
+  "people": [
+    { "id": "s0p0", "shot": 0, "speakingUs": 2200000, "face": { "x": 380, "y": 300, "w": 200, "h": 200, "mouth": 0, "atUs": 0 } }
+  ],
+  "shotStartsUs": [0]
+}

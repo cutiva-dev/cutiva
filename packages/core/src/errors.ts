@@ -6,9 +6,11 @@ export type CutivaErrorCode =
   | "INVALID_RANGE"
   | "OVERLAP"
   | "INVALID_PROJECT"
+  | "ASSET_SIZE_UNKNOWN"
   | "UNSUPPORTED_VERSION"
   | "UNSUPPORTED_CODEC"
   | "EXPORT_CANCELLED"
+  | "ANALYSIS_CANCELLED"
   | "NOTHING_TO_EXPORT";
 
 /** Every error thrown by Cutiva carries a stable, machine-readable code. */

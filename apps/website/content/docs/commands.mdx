@@ -20,6 +20,8 @@ editor.redo();
 | `clip.reorder` | Move a clip to an index and close gaps |
 | `clip.remove` | Delete a clip, optionally closing the gap |
 | `clip.setVolume`, `clip.setSpeed`, `clip.setFade` | Adjust a clip |
+| `clip.setReframe` | Replace a video clip's crop keys; an empty list removes the reframe |
+| `project.setSize` | Change the output size, such as 1080x1920 for vertical video |
 | `track.add`, `track.setMuted` | Manage tracks |
 
 `editor.batch([...])` applies several commands as one undo step, all or nothing. Errors are `CutivaError` objects with a stable `code`, such as `OVERLAP` or `INVALID_RANGE`.

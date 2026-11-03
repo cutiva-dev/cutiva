@@ -1,4 +1,5 @@
 import { CutivaError } from "./errors.js";
+import { normalizeReframeKeys, REFRAME_EFFECT } from "./reframe.js";
 import { clipEndUs } from "./time.js";
 import type { IdFactory } from "./ids.js";
 import { randomId } from "./ids.js";
@@ -136,7 +137,17 @@ export function parseProject(input: unknown): Project {
         speed: c.speed === undefined ? 1 : num(c, "speed", cp, { min: 0.1, max: 16 }),
         volume: c.volume === undefined ? 1 : num(c, "volume", cp, { min: 0, max: 4 }),
         effects: Array.isArray(c.effects)
-          ? c.effects.filter(isObj).map((e) => ({ type: String(e.type), params: isObj(e.params) ? e.params : {} }))
+          ? c.effects.filter(isObj).map((e, k) => {
+              const type = String(e.type);
+              const params = isObj(e.params) ? e.params : {};
+              if (type !== REFRAME_EFFECT) return { type, params };
+              if (kind !== "video") fail(`${cp}.effects[${k}]`, "a reframe only on video clips");
+              try {
+                return { type, params: { keys: normalizeReframeKeys(params.keys) } };
+              } catch (err) {
+                return fail(`${cp}.effects[${k}].params.keys`, `valid reframe keys (${(err as Error).message})`);
+              }
+            })
           : [],
       };
       if (clip.sourceOutUs <= clip.sourceInUs) fail(`${cp}.sourceOutUs`, "a value greater than sourceInUs");

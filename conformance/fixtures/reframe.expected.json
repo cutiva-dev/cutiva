@@ -1,0 +1,38 @@
+{
+  "_notes": [
+    "Source 1920x1080, output 9:16. maxH = min(1080, floor(1920*1920/1080)) = 1080.",
+    "h 1080 -> w = round(1080*1080/1920 = 607.5) = 608; h 540 -> w = round(303.75) = 304.",
+    "c1 key0: x = floor((960-608+1)/2) = 176, y = 0. key1 (cut): x = floor((2880-608+1)/2) = 1136. key2: x = floor((3600-304+1)/2) = 1648, clamped to 1920-304 = 1616; y = floor((1080-540+1)/2) = 270.",
+    "c1 holds key0 until the cut at 2 s, then glides key1 -> key2 by edges (left, top, right, bottom).",
+    "t=2.5 s: left (1136+1616)/2 = 1376, top 135, right (1744+1920)/2 = 1832, bottom (1080+810)/2 = 945 -> 1376,135,456,810.",
+    "t=2333333 (u=333333, v=666667, dt=1e6): left floor((2*(1136*666667+1616*333333)+1e6)/2e6) = floor(1296.49984) = 1296; top floor(90.49991) = 90; right floor(1803.166608) = 1803; bottom floor(990.50009) = 990 -> 1296,90,507,900.",
+    "c2 key0: h 5000 clamps to 1080, x and y clamp to 0. key1: x = floor((1920-608+1)/2) = 656. key2 (cut): x clamps to 1312, y to 0. key3 at 9.5 s is past the next key after sourceOut 8 s, so the plan drops it.",
+    "c2 at 2x: t=4 s shows source 6 s, between key0 and key1 (u=6e6, v=1e6, dt=7e6): left floor((2*656*6e6+7e6)/14e6) = floor(562.7857) = 562, right floor((2*(608*1e6+1264*6e6)+7e6)/14e6) = floor(1170.7857) = 1170.",
+    "c2 at t=4.5 s shows source 7 s = key1, held until the cut at 9 s."
+  ],
+  "durationUs": 5000000,
+  "videoAt": [
+    { "tUs": 0, "layers": [{ "clipId": "c1", "sourceTimeUs": 0, "crop": { "x": 176, "y": 0, "w": 608, "h": 1080 } }] },
+    { "tUs": 1999999, "layers": [{ "clipId": "c1", "sourceTimeUs": 1999999, "crop": { "x": 176, "y": 0, "w": 608, "h": 1080 } }] },
+    { "tUs": 2000000, "layers": [{ "clipId": "c1", "sourceTimeUs": 2000000, "crop": { "x": 1136, "y": 0, "w": 608, "h": 1080 } }] },
+    { "tUs": 2333333, "layers": [{ "clipId": "c1", "sourceTimeUs": 2333333, "crop": { "x": 1296, "y": 90, "w": 507, "h": 900 } }] },
+    { "tUs": 2500000, "layers": [{ "clipId": "c1", "sourceTimeUs": 2500000, "crop": { "x": 1376, "y": 135, "w": 456, "h": 810 } }] },
+    { "tUs": 3500000, "layers": [{ "clipId": "c1", "sourceTimeUs": 3500000, "crop": { "x": 1616, "y": 270, "w": 304, "h": 540 } }] },
+    { "tUs": 4000000, "layers": [{ "clipId": "c2", "sourceTimeUs": 6000000, "crop": { "x": 562, "y": 0, "w": 608, "h": 1080 } }] },
+    { "tUs": 4500000, "layers": [{ "clipId": "c2", "sourceTimeUs": 7000000, "crop": { "x": 656, "y": 0, "w": 608, "h": 1080 } }] },
+    { "tUs": 4999999, "layers": [{ "clipId": "c2", "sourceTimeUs": 7999998, "crop": { "x": 656, "y": 0, "w": 608, "h": 1080 } }] }
+  ],
+  "audioSegments": 0,
+  "videoSegments": [
+    { "layer": 0, "clipId": "c1", "startUs": 0, "endUs": 4000000, "sourceInUs": 0, "sourceOutUs": 4000000, "speed": 1, "crop": [
+      { "atUs": 0, "rect": { "x": 176, "y": 0, "w": 608, "h": 1080 }, "cut": false },
+      { "atUs": 2000000, "rect": { "x": 1136, "y": 0, "w": 608, "h": 1080 }, "cut": true },
+      { "atUs": 3000000, "rect": { "x": 1616, "y": 270, "w": 304, "h": 540 }, "cut": false }
+    ]},
+    { "layer": 0, "clipId": "c2", "startUs": 4000000, "endUs": 5000000, "sourceInUs": 6000000, "sourceOutUs": 8000000, "speed": 2, "crop": [
+      { "atUs": 0, "rect": { "x": 0, "y": 0, "w": 608, "h": 1080 }, "cut": false },
+      { "atUs": 7000000, "rect": { "x": 656, "y": 0, "w": 608, "h": 1080 }, "cut": false },
+      { "atUs": 9000000, "rect": { "x": 1312, "y": 0, "w": 608, "h": 1080 }, "cut": true }
+    ]}
+  ]
+}

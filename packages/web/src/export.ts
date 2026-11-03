@@ -3,6 +3,7 @@ import {
   clipEndUs,
   CutivaError,
   projectDurationUs,
+  reframeKeys,
   resolveVideoAt,
   type Clip,
   type Project,
@@ -21,7 +22,7 @@ import {
   type WrappedCanvas,
 } from "mediabunny";
 import { scheduleSegments } from "./audio.js";
-import { drawContain } from "./draw.js";
+import { drawLayer } from "./draw.js";
 import { encoderDelay, type ExportAudioCodec } from "./encoder-delay.js";
 import type { MediaRegistry } from "./media.js";
 
@@ -172,10 +173,16 @@ export function exportProject(project: Project, media: MediaRegistry, options: E
       if (existing) return existing;
       const entry = media.get(assetId);
       if (!entry?.video) return null;
-      let sink = sinks.get(assetId);
+      // A reframed clip shows part of the source, so it decodes at full size and crops when drawing;
+      // other clips decode already letterboxed to the output size.
+      const cropped = reframeKeys(clip) !== null;
+      const sinkKey = `${assetId}${cropped ? ":full" : ""}`;
+      let sink = sinks.get(sinkKey);
       if (!sink) {
-        sink = new CanvasSink(entry.video, { width, height, fit: "contain", poolSize: 1 });
-        sinks.set(assetId, sink);
+        sink = cropped
+          ? new CanvasSink(entry.video, { width: entry.video.displayWidth, height: entry.video.displayHeight, fit: "fill", poolSize: 1 })
+          : new CanvasSink(entry.video, { width, height, fit: "contain", poolSize: 1 });
+        sinks.set(sinkKey, sink);
       }
       const times: number[] = [];
       for (let i = 0; i < totalFrames; i++) {
@@ -201,7 +208,7 @@ export function exportProject(project: Project, media: MediaRegistry, options: E
         const it = iteratorFor(layer.clip, layer.asset.id);
         if (!it) continue;
         const next = await it.next();
-        if (!next.done && next.value) drawContain(ctx, next.value.canvas, width, height);
+        if (!next.done && next.value) drawLayer(ctx, next.value.canvas, width, height, layer.crop, layer.asset.width, layer.asset.height);
       }
       await videoSource.add(t / 1e6, 1 / fps);
       if (i % 5 === 0 || i === totalFrames - 1) {

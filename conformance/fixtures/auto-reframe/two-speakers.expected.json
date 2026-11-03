@@ -1,0 +1,18 @@
+{
+  "_notes": [
+    "A and B are 960 px apart, far more than 0.75 * 200, so they are two tracks. The 50 px face seen once (frame 5) is under max(2, ceil(0.2*21)) = 5 sightings and is dropped.",
+    "Mouth motion: A moves 1 per frame at frames 1-9, B at frames 10-20. Activity averages motion over frames within 400 ms (5 frames).",
+    "Frame 9 (1.8 s): A 3/5 vs B 2/5 -> A. Frame 10 (2.0 s): A 2/5 vs B 3/5 -> B. Runs: A [0, 2 s), B [2 s, 4.2 s), both >= 1.5 s.",
+    "Window: h = 1080, w = 608. Key y = face centre 400 + 0.15 * 1080 = 562. Faces never move, so there are no follow keys.",
+    "Speaking time: A 2 000 000, B 4 200 000 - 2 000 000 = 2 200 000. Every sighting has the same area, so the avatar face is the first one (frame 0)."
+  ],
+  "keys": [
+    { "atUs": 0, "x": 480, "y": 562, "h": 1080, "cut": true },
+    { "atUs": 2000000, "x": 1440, "y": 562, "h": 1080, "cut": true }
+  ],
+  "people": [
+    { "id": "s0p0", "shot": 0, "speakingUs": 2000000, "face": { "x": 380, "y": 300, "w": 200, "h": 200, "mouth": 0, "atUs": 0 } },
+    { "id": "s0p1", "shot": 0, "speakingUs": 2200000, "face": { "x": 1340, "y": 300, "w": 200, "h": 200, "mouth": 0, "atUs": 0 } }
+  ],
+  "shotStartsUs": [0]
+}

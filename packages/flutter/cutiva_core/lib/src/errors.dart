@@ -6,9 +6,11 @@ enum CutivaErrorCode {
   invalidRange('INVALID_RANGE'),
   overlap('OVERLAP'),
   invalidProject('INVALID_PROJECT'),
+  assetSizeUnknown('ASSET_SIZE_UNKNOWN'),
   unsupportedVersion('UNSUPPORTED_VERSION'),
   unsupportedCodec('UNSUPPORTED_CODEC'),
   exportCancelled('EXPORT_CANCELLED'),
+  analysisCancelled('ANALYSIS_CANCELLED'),
   nothingToExport('NOTHING_TO_EXPORT');
 
   /// The same string every Cutiva SDK uses for this error.

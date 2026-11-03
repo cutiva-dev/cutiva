@@ -7,3 +7,23 @@ export { applyCommand, type Command, type CommandType, type CommandResult } from
 export { createEditor, type Editor, type EditorChange, type EditorOptions, type ResultOf } from "./editor.js";
 export { resolveVideoAt, audioSegments, type ActiveVideoLayer, type AudioSegment } from "./resolve.js";
 export { renderPlan, type RenderPlan, type VideoSegment, type PlanAudioSegment } from "./plan.js";
+export {
+  REFRAME_EFFECT,
+  cropAt,
+  cropRect,
+  clipCropKeys,
+  cropKeysInRange,
+  normalizeReframeKeys,
+  reframeKeys,
+  type CropKey,
+} from "./reframe.js";
+export {
+  autoReframe,
+  detectCuts,
+  type AutoReframeInput,
+  type AutoReframeResult,
+  type FaceObservation,
+  type FrameHistogram,
+  type FrameObservation,
+  type ReframePerson,
+} from "./auto-reframe.js";

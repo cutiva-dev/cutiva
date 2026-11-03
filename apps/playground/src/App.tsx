@@ -1,7 +1,8 @@
-import { clipDurationUs, CutivaError, findClip, formatTimecode, type Us } from "@cutiva/core";
+import { clipDurationUs, CutivaError, findClip, formatTimecode, reframeKeys, type Us } from "@cutiva/core";
 import { Timeline, useCutiva, usePreview, useProject } from "@cutiva/react";
 import type { Capabilities, ExportJob } from "@cutiva/web";
 import { useEffect, useRef, useState } from "react";
+import { AutoReframePanel, FormatPicker, SourceMonitor } from "./Reframe";
 
 const MEDIA_ACCEPT = "video/*,audio/*";
 
@@ -38,6 +39,14 @@ export function App() {
       return null;
     }
   })();
+
+  const selectedVideo = selectedClip && project.assets.find((a) => a.id === selectedClip.assetId)?.kind === "video" ? selectedClip : null;
+
+  /** Whether an asset already has the project's aspect ratio, so there is nothing to reframe. */
+  const sameShape = (assetId: string) => {
+    const a = project.assets.find((x) => x.id === assetId);
+    return !a?.width || !a.height || Math.abs(a.width / a.height - project.settings.width / project.settings.height) < 0.01;
+  };
 
   const fail = (e: unknown) => setMessage({ tone: "error", text: e instanceof Error ? e.message : String(e) });
   const run = (fn: () => void) => {
@@ -145,6 +154,8 @@ export function App() {
           <button type="button" onClick={() => editor.undo()} disabled={!editor.canUndo}>Undo</button>
           <button type="button" onClick={() => editor.redo()} disabled={!editor.canRedo}>Redo</button>
           <span className="sep" />
+          <FormatPicker editor={editor} project={project} />
+          <span className="sep" />
           <button type="button" onClick={() => projectInput.current?.click()}>Open project</button>
           <button
             type="button"
@@ -176,17 +187,22 @@ export function App() {
 
       <main className="stage">
         <section className="viewer">
-          <div className="screen" style={{ aspectRatio: `${project.settings.width} / ${project.settings.height}` }}>
-            <canvas ref={setCanvas} aria-label="Video preview" />
-            {empty && (
-              <div className="empty">
-                <p>Import video or audio to start editing.</p>
-                <button type="button" className="primary" onClick={() => mediaInput.current?.click()} disabled={busy}>
-                  {busy ? "Importing…" : "Import media"}
-                </button>
-                <p className="hint">Files stay on this device.</p>
-              </div>
+          <div className="screens">
+            {selectedVideo && (reframeKeys(selectedVideo) || !sameShape(selectedVideo.assetId)) && (
+              <SourceMonitor engine={engine} editor={editor} clip={selectedVideo} project={project} timeUs={timeUs} />
             )}
+            <div className="screen screen--output" style={{ aspectRatio: `${project.settings.width} / ${project.settings.height}` }}>
+              <canvas ref={setCanvas} aria-label="Video preview" />
+              {empty && (
+                <div className="empty">
+                  <p>Import video or audio to start editing.</p>
+                  <button type="button" className="primary" onClick={() => mediaInput.current?.click()} disabled={busy}>
+                    {busy ? "Importing…" : "Import media"}
+                  </button>
+                  <p className="hint">Files stay on this device.</p>
+                </div>
+              )}
+            </div>
           </div>
           <div className="transport">
             <button type="button" className="play" onClick={() => (playing ? preview?.pause() : void preview?.play())} disabled={empty} aria-label={playing ? "Pause" : "Play"}>
@@ -245,13 +261,16 @@ export function App() {
                   ))}
                 </select>
               </label>
+              {selectedVideo && (
+                <AutoReframePanel engine={engine} editor={editor} project={project} clip={selectedVideo} onSeek={(t) => preview?.seek(t)} onError={fail} />
+              )}
               <FadeControls
                 key={selectedClip.id}
                 onApply={(inUs, outUs) => run(() => editor.dispatch({ type: "clip.setFade", clipId: selectedClip.id, inUs, outUs }))}
               />
             </>
           ) : (
-            <p className="muted">Select a clip on the timeline to adjust volume, speed and fades.</p>
+            <p className="muted">Select a clip on the timeline to adjust volume, speed and fades, or to auto-reframe it.</p>
           )}
           <p className="shortcuts muted">Space play · S split · Delete remove · Ctrl/⌘ Z undo</p>
         </aside>
