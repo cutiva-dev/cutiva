@@ -19,10 +19,12 @@ test("auto-reframe runs MediaPipe over a clip and applies the result", async ({ 
   await page.getByRole("button", { name: "Analyze", exact: true }).click();
   await expect(page.getByText("0 people · 1 segment")).toBeVisible({ timeout: 60_000 });
   await expect(page.getByText("No faces here, so the whole picture shows (wide).")).toBeVisible();
-  // No faces: wide; until wide + blur is drawn the preview shows the centred window, on the green stripe.
-  const pixel = () =>
-    page.getByLabel("Video preview").evaluate((c: HTMLCanvasElement) => Array.from(c.getContext("2d")!.getImageData(540, 100, 1, 1).data.slice(0, 3)));
-  await expect.poll(async () => ((p) => p[0]! < 60 && p[1]! > 200 && p[2]! < 60)(await pixel())).toBe(true);
+  // No faces: wide. The whole picture is letterboxed in the middle (red stripe on its left) over a
+  // blurred, darkened copy of its centre (the green stripe) at the top.
+  const pixel = (x: number, y: number) =>
+    page.getByLabel("Video preview").evaluate((c: HTMLCanvasElement, [px, py]) => Array.from(c.getContext("2d")!.getImageData(px!, py!, 1, 1).data.slice(0, 3)), [x, y]);
+  await expect.poll(async () => ((p) => p[0]! < 60 && p[1]! > 120 && p[1]! < 210 && p[2]! < 60)(await pixel(540, 100))).toBe(true);
+  expect(((p) => p[0]! > 200 && p[1]! < 60 && p[2]! < 60)(await pixel(100, 960))).toBe(true);
 
   // Feedback: rate the one framing, report. The report downloads and a prefilled GitHub issue opens.
   await page.context().route("https://github.com/**", (route) => route.fulfill({ body: "" }));

@@ -1,0 +1,44 @@
+{
+  "_notes": [
+    "Source 1920x1080, output 1080x1920 (9:16). Single windows: h 1080 -> w = divRound(1080*1080, 1920) = 608 (607.5 rounds half up).",
+    "c1 k0: x = floor((960-608+1)/2) = 176 -> 176,0,608,1080. k1 and k2 (x 960): x = floor((1920-608+1)/2) = 656 -> 656,0,608,1080.",
+    "Split regions fill half the output each, so their aspect is 1080:960, computed as cropRect with output 2160x1920. maxH = min(1080, floor(1920*1920/2160) = 1706) = 1080.",
+    "c1 k1 region 0 (480,400,h540): w = divRound(540*2160, 1920) = 608 (607.5); x = floor((960-608+1)/2) = 176; y = floor((800-540+1)/2) = 130 -> 176,130,608,540.",
+    "c1 k1 region 1 (1440,500,h600): w = 2160*600/1920 = 675; x = floor((2880-675+1)/2) = 1103 (max 1245); y = floor((1000-600+1)/2) = 200 (max 480) -> 1103,200,675,600.",
+    "c1 k2 wide without a track: the area is the whole frame, 0,0,1920,1080.",
+    "Layouts don't glide: k1 isn't a cut, so between 0 and 1 s the rect glides from k0 to k1 but k0's layout (none) holds until 1 s.",
+    "t=0.5 s: u = v = 500000, dt = 1e6. left floor((2*(176*5e5+656*5e5)+1e6)/2e6) = floor(416.5) = 416; right floor((2*(784*5e5+1264*5e5)+1e6)/2e6) = floor(1024.5) = 1024 -> 416,0,608,1080, no layout.",
+    "t=1.5 s: k1 in effect, the next key is a cut so the rect holds 656,0,608,1080; layout split. t=2.5 s: k2, wide.",
+    "c2 has a track with activeArea 240,0,1440,1080: windows fit and stay inside it. k0 rect: maxH = min(1080, floor(1440*1920/1080) = 2560) = 1080, w 608, x = clamp(656, 240, 240+1440-608 = 1072) = 656 -> 656,0,608,1080; wide area is the active area.",
+    "c2 k1 split regions in the area: maxH = min(1080, floor(1440*1920/2160) = 1280) = 1080; h 540 -> w 608. Region 0 x = clamp(floor((200-608+1)/2) = -204, 240, 1072) = 240; y = clamp(floor((1080-540+1)/2) = 270, 0, 540) = 270 -> 240,270,608,540. Region 1 x = clamp(floor((3600-608+1)/2) = 1496, 240, 1072) = 1072 -> 1072,270,608,540.",
+    "c2 starts at 3 s with source 0: t=3.25 s shows source 250000 (k0, wide); t=3.75 s shows source 750000 (k1, split).",
+    "The plan keeps every key of both clips: c1's last key (2 s) is before sourceOut 3 s, c2's keys are both inside [0, 1 s)."
+  ],
+  "durationUs": 4000000,
+  "videoAt": [
+    { "tUs": 0, "layers": [{ "clipId": "c1", "sourceTimeUs": 0, "crop": { "x": 176, "y": 0, "w": 608, "h": 1080 } }] },
+    { "tUs": 500000, "layers": [{ "clipId": "c1", "sourceTimeUs": 500000, "crop": { "x": 416, "y": 0, "w": 608, "h": 1080 } }] },
+    { "tUs": 1500000, "layers": [{ "clipId": "c1", "sourceTimeUs": 1500000, "crop": { "x": 656, "y": 0, "w": 608, "h": 1080 },
+      "layout": { "kind": "split", "regions": [{ "x": 176, "y": 130, "w": 608, "h": 540 }, { "x": 1103, "y": 200, "w": 675, "h": 600 }] } }] },
+    { "tUs": 2500000, "layers": [{ "clipId": "c1", "sourceTimeUs": 2500000, "crop": { "x": 656, "y": 0, "w": 608, "h": 1080 },
+      "layout": { "kind": "wide", "area": { "x": 0, "y": 0, "w": 1920, "h": 1080 } } }] },
+    { "tUs": 3250000, "layers": [{ "clipId": "c2", "sourceTimeUs": 250000, "crop": { "x": 656, "y": 0, "w": 608, "h": 1080 },
+      "layout": { "kind": "wide", "area": { "x": 240, "y": 0, "w": 1440, "h": 1080 } } }] },
+    { "tUs": 3750000, "layers": [{ "clipId": "c2", "sourceTimeUs": 750000, "crop": { "x": 656, "y": 0, "w": 608, "h": 1080 },
+      "layout": { "kind": "split", "regions": [{ "x": 240, "y": 270, "w": 608, "h": 540 }, { "x": 1072, "y": 270, "w": 608, "h": 540 }] } }] }
+  ],
+  "audioSegments": 0,
+  "videoSegments": [
+    { "layer": 0, "clipId": "c1", "startUs": 0, "endUs": 3000000, "sourceInUs": 0, "sourceOutUs": 3000000, "speed": 1, "crop": [
+      { "atUs": 0, "rect": { "x": 176, "y": 0, "w": 608, "h": 1080 }, "cut": false },
+      { "atUs": 1000000, "rect": { "x": 656, "y": 0, "w": 608, "h": 1080 }, "cut": false,
+        "layout": { "kind": "split", "regions": [{ "x": 176, "y": 130, "w": 608, "h": 540 }, { "x": 1103, "y": 200, "w": 675, "h": 600 }] } },
+      { "atUs": 2000000, "rect": { "x": 656, "y": 0, "w": 608, "h": 1080 }, "cut": true, "layout": { "kind": "wide", "area": { "x": 0, "y": 0, "w": 1920, "h": 1080 } } }
+    ] },
+    { "layer": 0, "clipId": "c2", "startUs": 3000000, "endUs": 4000000, "sourceInUs": 0, "sourceOutUs": 1000000, "speed": 1, "crop": [
+      { "atUs": 0, "rect": { "x": 656, "y": 0, "w": 608, "h": 1080 }, "cut": true, "layout": { "kind": "wide", "area": { "x": 240, "y": 0, "w": 1440, "h": 1080 } } },
+      { "atUs": 500000, "rect": { "x": 656, "y": 0, "w": 608, "h": 1080 }, "cut": true,
+        "layout": { "kind": "split", "regions": [{ "x": 240, "y": 270, "w": 608, "h": 540 }, { "x": 1072, "y": 270, "w": 608, "h": 540 }] } }
+    ] }
+  ]
+}

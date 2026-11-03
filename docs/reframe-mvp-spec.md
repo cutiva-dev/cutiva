@@ -419,8 +419,8 @@ El MVP se construye en 7 fases (0 a 6), cada una cerrada por una condición veri
 
 **Fase 5 — Export web**
 
-- [ ] Extender el Export MP4 existente para aplicar `cropAt` por frame y los layouts split y wide + blur.
-- [ ] **Condición:** el MP4 exportado coincide con la preview frame a frame (tolerancia de 1 px en el recorte).
+- [x] Extender el Export MP4 existente para aplicar `cropAt` por frame y los layouts split y wide + blur. *`layoutAt` en el core (TS + Dart, fixture `reframe-layouts`) y `drawLayer` en `draw.ts`, el mismo para preview y export (regla 4). El blur reduce el área a 32 px y la vuelve a ampliar, sin `filter` del canvas, para que se vea igual en todos los navegadores.*
+- [x] **Condición:** el MP4 exportado coincide con la preview frame a frame (tolerancia de 1 px en el recorte). *E2E `reframe-export.spec.ts` en Chrome y Firefox (macOS): en tres instantes (single, wide, split) coinciden los colores en cinco puntos y los bordes de las caras en cuatro filas dentro de 2 px de salida (~1 px de la fuente a 1,78×); medido: 1 px en Chrome, 0 px en Firefox. No compara todos los frames.*
 
 **Fase 6 — Móvil (análisis + preview)**
 

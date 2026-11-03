@@ -208,7 +208,7 @@ export function exportProject(project: Project, media: MediaRegistry, options: E
         const it = iteratorFor(layer.clip, layer.asset.id);
         if (!it) continue;
         const next = await it.next();
-        if (!next.done && next.value) drawLayer(ctx, next.value.canvas, width, height, layer.crop, layer.asset.width, layer.asset.height);
+        if (!next.done && next.value) drawLayer(ctx, next.value.canvas, width, height, layer.crop, layer.asset.width, layer.asset.height, layer.layout);
       }
       await videoSource.add(t / 1e6, 1 / fps);
       if (i % 5 === 0 || i === totalFrames - 1) {

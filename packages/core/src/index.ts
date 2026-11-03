@@ -10,6 +10,7 @@ export { renderPlan, type RenderPlan, type VideoSegment, type PlanAudioSegment }
 export {
   REFRAME_EFFECT,
   cropAt,
+  layoutAt,
   cropRect,
   clipCropKeys,
   cropKeysInRange,
@@ -19,6 +20,7 @@ export {
   reframeKeys,
   reframeTrack,
   type CropKey,
+  type CropLayout,
 } from "./reframe.js";
 export {
   planReframe,

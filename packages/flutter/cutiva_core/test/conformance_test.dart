@@ -98,7 +98,12 @@ void main() {
         final s = sample as Map<String, Object?>;
         final got = [
           for (final l in resolveVideoAt(project, s['tUs'] as int))
-            {'clipId': l.clip.id, 'sourceTimeUs': l.sourceTimeUs, if (l.crop != null) 'crop': l.crop!.toJson()},
+            {
+              'clipId': l.clip.id,
+              'sourceTimeUs': l.sourceTimeUs,
+              if (l.crop != null) 'crop': l.crop!.toJson(),
+              if (l.layout != null) 'layout': l.layout!.toJson(),
+            },
         ];
         expect(got, s['layers'], reason: 't=${s['tUs']}');
       }
@@ -141,4 +146,5 @@ Map<String, Object?> _shown(VideoSegment v, int sourceTimeUs) => {
   'clipId': v.clipId,
   'sourceTimeUs': sourceTimeUs,
   if (v.crop != null) 'crop': cropAt(v.crop!, sourceTimeUs).toJson(),
+  if (v.crop != null && layoutAt(v.crop!, sourceTimeUs) != null) 'layout': layoutAt(v.crop!, sourceTimeUs)!.toJson(),
 };
