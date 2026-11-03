@@ -107,12 +107,14 @@ const _minTrackShare = 0.2;
 const _voiceLevel = 0.1;
 const _voiceMinUs = 250000;
 const _voiceGapUs = 300000;
-const _lipsWindowUs = 250000;
+// Five samples at 5 fps; three (250 ms) were too noisy on real faces to keep a speaker for a second.
+const _lipsWindowUs = 500000;
 const _lipsFull = 0.05;
 const _lipsCandidate = 0.3;
 const _wLips = 0.6;
 const _wPan = 0.25;
-const _wContinuity = 0.15;
+// Small: the hold time and the switch margin already keep the camera steady.
+const _wContinuity = 0.05;
 const _switchMargin = 0.15;
 const _overlapScore = 0.5;
 const _overlapMinUs = 1500000;
@@ -555,7 +557,7 @@ ReframePlanResult planReframe({
       final talking = visible.where((i) => neverFocusOf(i) && (lips(i, fi) ?? 0) >= _lipsCandidate).toList();
       labels.add(talking.isNotEmpty ? _Label(_Kind.never, talking[0]) : const _Label(_Kind.voice));
       speakerOf.add(current);
-      challenger = null;
+      // A pause in someone's lip movement doesn't end their claim to the frame.
       continue;
     }
     final scores = {for (final i in focusable) i: score(i, fi, current)};
@@ -569,19 +571,27 @@ ReframePlanResult planReframe({
     if (current == null || !present(current, fi) || neverFocusOf(current)) {
       current = best;
       challenger = null;
-    } else if (best != current && scores[best]! > (scores[current] ?? 0) + _switchMargin) {
-      final ch = challenger != null && challenger.$1 == best ? challenger : (best, fi);
-      challenger = ch;
-      if (at(fi) - at(ch.$2) >= params.holdUs) {
-        for (var g = ch.$2; g < fi; g++) {
-          speakerOf[g] = best;
-          if (labels[g].kind == _Kind.speak) labels[g] = _Label(_Kind.speak, best);
+    } else {
+      final cur = scores[current] ?? 0;
+      // A challenger claims the frame by beating the current speaker by the margin, and keeps the
+      // claim while it still scores higher than them; it wins once the claim lasts the hold time.
+      final keeps = challenger != null && (scores[challenger.$1] ?? 0) > cur;
+      final claims = best != current && scores[best]! > cur + _switchMargin;
+      if (keeps || claims) {
+        final ch = keeps ? challenger : (best, fi);
+        challenger = ch;
+        if (at(fi) - at(ch.$2) >= params.holdUs) {
+          // Cut where the new speaker started, as an editor would.
+          for (var g = ch.$2; g < fi; g++) {
+            speakerOf[g] = ch.$1;
+            if (labels[g].kind == _Kind.speak) labels[g] = _Label(_Kind.speak, ch.$1);
+          }
+          current = ch.$1;
+          challenger = null;
         }
-        current = best;
+      } else {
         challenger = null;
       }
-    } else {
-      challenger = null;
     }
     final over = ranked.where((i) => scores[i]! > _overlapScore && (lips(i, fi) ?? 0) >= _lipsCandidate).toList();
     speakerOf.add(current);

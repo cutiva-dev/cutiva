@@ -1,9 +1,9 @@
 {
   "_notes": [
     "Frames of plan-two-speakers. The previous track names p1 Ana and p2 Ben, marks Ben never-focus, and has a locked segment [4 s, 5 s) framing Ana.",
-    "Ben is never a candidate. Frames 0-14: Ana talks. Frames 15-29: Ana's lips are 0 and the only one talking is Ben (never focus), so never-focus: wide, speaker p2.",
-    "Segments: Ana [0, 3 s), never-focus [3 s, 6 s); the locked segment cuts the latter into [3 s, 4 s) and [5 s, 6 s), each exactly the 1 s minimum, and passes through unchanged except its id (s3, by time order).",
-    "Locked single focus p1: Ana's window, centre 500. Names and flags carry over."
+    "Ben is never a candidate. With lips over 500 ms, Ana has lips 1 on frames 0-15 (frame 15's window reaches frame 13), 0 from 16. From frame 16 (3.2 s) the only one talking is Ben (never focus), so never-focus: wide, speaker p2.",
+    "Segments: Ana [0, 3.2 s), never-focus [3.2 s, 6 s); the locked segment cuts the latter into [3.2 s, 4 s) and [5 s, 6 s). [3.2 s, 4 s) is 0.8 s, under the 1 s minimum, so it folds into the segment before it: Ana [0, 4 s). [5 s, 6 s) is exactly the minimum and stays.",
+    "The locked segment passes through unchanged except its id (s2, by time order). Locked single focus p1: Ana's window, centre 500, with its own cut key at 4 s. Names and flags carry over."
   ],
   "track": {
     "version": 1,
@@ -31,7 +31,7 @@
       {
         "id": "s1",
         "startUs": 0,
-        "endUs": 3000000,
+        "endUs": 4000000,
         "speakers": [
           "p1"
         ],
@@ -43,19 +43,6 @@
       },
       {
         "id": "s2",
-        "startUs": 3000000,
-        "endUs": 4000000,
-        "speakers": [
-          "p2"
-        ],
-        "layout": "auto",
-        "focus": [],
-        "resolved": "wide",
-        "locked": false,
-        "reason": "never-focus"
-      },
-      {
-        "id": "s3",
         "startUs": 4000000,
         "endUs": 5000000,
         "speakers": [
@@ -70,7 +57,7 @@
         "reason": "user"
       },
       {
-        "id": "s4",
+        "id": "s3",
         "startUs": 5000000,
         "endUs": 6000000,
         "speakers": [
@@ -91,14 +78,6 @@
       "y": 540,
       "h": 1080,
       "cut": true
-    },
-    {
-      "atUs": 3000000,
-      "x": 960,
-      "y": 540,
-      "h": 1080,
-      "cut": true,
-      "layout": "wide"
     },
     {
       "atUs": 4000000,
