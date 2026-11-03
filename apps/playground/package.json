@@ -13,6 +13,7 @@
     "@cutiva/core": "0.1.0",
     "@cutiva/react": "0.1.0",
     "@cutiva/web": "0.1.0",
+    "@mediapipe/tasks-vision": "1.1.1",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

@@ -119,3 +119,15 @@ a:hover { color: var(--ink); }
 .footer__cols a { color: var(--muted); text-decoration: none; }
 .footer__cols a:hover { color: var(--ink); }
 .footer__bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-top: 20px; padding-bottom: 32px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+.hero__inner--short { padding-bottom: 96px; }
+.grid--four { grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
+.card--link { text-decoration: none; color: var(--ink); }
+.card--link:hover { color: var(--ink); border-color: var(--muted); }
+.founder { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 48px; max-width: 1000px; margin: 0 auto; }
+.person { width: min(100%, 280px); align-items: center; text-align: center; }
+.story { flex: 1 1 420px; display: flex; flex-direction: column; gap: 20px; font-size: 18px; line-height: 1.7; }
+.story p { margin: 0; color: var(--muted); }
+.story p:first-child { color: var(--ink); }
+.person a { font-size: 15px; }
+.avatar { width: 112px; height: 112px; border-radius: 56px; display: grid; place-items: center; background: var(--cut-tint); border: 1px solid var(--cut); color: var(--cut-strong); font: 600 34px var(--mono); margin-bottom: 8px; }

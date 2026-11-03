@@ -41,7 +41,7 @@ fun interface ExportTask {
  * Exports a [RenderPlan] to an MP4 (H.264 + AAC) with Media3 Transformer and the device's encoders.
  *
  * Supported today: one video layer (gaps show black), any number of audio segments mixed together,
- * speed, volume and fades. Plans with more than one video layer fail with `UNSUPPORTED_FEATURE`.
+ * speed, volume and fades. Plans with more than one video layer or with reframed clips fail with `UNSUPPORTED_FEATURE`.
  */
 @UnstableApi
 class CutivaExporter(context: Context, private val looper: Looper = Looper.getMainLooper()) {
@@ -130,6 +130,9 @@ class CutivaExporter(context: Context, private val looper: Looper = Looper.getMa
             if (plan.durationUs <= 0 || plan.video.isEmpty()) throw CutivaException("NOTHING_TO_EXPORT", "The project has no video to export.")
             if (plan.video.any { it.layer != plan.video[0].layer }) {
                 throw CutivaException("UNSUPPORTED_FEATURE", "The Android engine exports one video layer for now; this project has several.")
+            }
+            if (plan.video.any { it.cropped }) {
+                throw CutivaException("UNSUPPORTED_FEATURE", "The Android engine can't draw reframed clips yet.")
             }
 
             // Media3 takes a whole frame rate as a maximum: sped-up clips drop frames down to it, like the web export.

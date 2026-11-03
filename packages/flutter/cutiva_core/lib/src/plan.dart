@@ -1,3 +1,4 @@
+import 'reframe.dart';
 import 'resolve.dart';
 import 'time.dart';
 import 'types.dart';
@@ -18,6 +19,10 @@ class VideoSegment {
   final Us sourceInUs;
   final Us sourceOutUs;
   final double speed;
+
+  /// When the clip is reframed: crop rectangles by source time. At a source time `s` the engine shows
+  /// `cropAt(crop, s)`, scaled to fill the output frame. Without it, the frame is letterboxed.
+  final List<CropKey>? crop;
   const VideoSegment({
     required this.layer,
     required this.trackId,
@@ -29,6 +34,7 @@ class VideoSegment {
     required this.sourceInUs,
     required this.sourceOutUs,
     required this.speed,
+    this.crop,
   });
 
   Map<String, Object?> toJson() => {
@@ -42,6 +48,7 @@ class VideoSegment {
     'sourceInUs': sourceInUs,
     'sourceOutUs': sourceOutUs,
     'speed': jsonNumber(speed),
+    if (crop != null) 'crop': [for (final k in crop!) k.toJson()],
   };
 }
 
@@ -81,6 +88,7 @@ class RenderPlan {
 
 RenderPlan renderPlan(Project project) {
   final uris = {for (final a in project.assets) a.id: a.uri};
+  final assets = {for (final a in project.assets) a.id: a};
   final video = <VideoSegment>[];
   var layer = 0;
   for (final track in project.tracks) {
@@ -88,6 +96,7 @@ RenderPlan renderPlan(Project project) {
     for (final clip in track.clips) {
       final uri = uris[clip.assetId];
       if (uri == null) continue;
+      final keys = clipCropKeys(clip, assets[clip.assetId]!, project.settings);
       video.add(
         VideoSegment(
           layer: layer,
@@ -100,6 +109,7 @@ RenderPlan renderPlan(Project project) {
           sourceInUs: clip.sourceInUs,
           sourceOutUs: clip.sourceOutUs,
           speed: clip.speed,
+          crop: keys == null ? null : cropKeysInRange(keys, clip.sourceInUs, clip.sourceOutUs),
         ),
       );
     }

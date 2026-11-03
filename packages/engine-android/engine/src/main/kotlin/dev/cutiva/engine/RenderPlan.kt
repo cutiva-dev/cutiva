@@ -22,6 +22,8 @@ data class VideoSegment(
     val sourceInUs: Long,
     val sourceOutUs: Long,
     val speed: Double,
+    /** True when the clip is reframed (the plan carries `crop` keys). This engine can't draw crops yet. */
+    val cropped: Boolean = false,
 )
 
 /** One piece of sound on the timeline. Fades are in timeline time. */
@@ -80,6 +82,7 @@ data class RenderPlan(
                         sourceInUs = v.getLong("sourceInUs"),
                         sourceOutUs = v.getLong("sourceOutUs"),
                         speed = v.getDouble("speed"),
+                        cropped = v.has("crop"),
                     )
                 },
                 audio = List(audio.length()) { i ->

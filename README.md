@@ -20,12 +20,12 @@ Cutiva lets you add trimming, splitting, audio and MP4 export to your app withou
 
 | Package | Status | What it does |
 | --- | --- | --- |
-| [`@cutiva/core`](packages/core) | Working, tested (100% coverage, 5 conformance fixtures) | Project format (CPF), edit commands, undo/redo, timeline resolution. Pure TypeScript, no DOM. |
-| [`@cutiva/web`](packages/web) | Working in Chrome, Edge, Firefox and WebKit (E2E in CI on macOS, Windows, Linux); real Safari and mobile need testing | Import with Mediabunny, real-time preview on a canvas with a frame cache, timeline thumbnails, audio mixing, MP4 (H.264 + AAC) export with WebCodecs. Covered by E2E tests in CI. |
-| [`@cutiva/react`](packages/react) | Working in Chrome, Edge, Firefox and WebKit (E2E in CI on macOS, Windows, Linux); real Safari and mobile need testing | `useCutiva`, `useProject`, `usePreview` and a `<Timeline>` with drag to reorder, trim handles and thumbnails. |
+| [`@cutiva/core`](packages/core) | Working, tested (100% line coverage, 6 conformance fixtures plus 3 auto-reframe fixtures) | Project format (CPF), edit commands, undo/redo, timeline resolution, crop keys and the auto-reframe planner. Pure TypeScript, no DOM. |
+| [`@cutiva/web`](packages/web) | Working in Chrome, Edge, Firefox and WebKit (E2E in CI on macOS, Windows, Linux); real Safari and mobile need testing | Import with Mediabunny, real-time preview on a canvas with a frame cache, timeline thumbnails, audio mixing, MP4 (H.264 + AAC) export with WebCodecs. Covered by E2E tests in CI. Reframed (cropped) preview and export: E2E-tested in Chrome and Firefox on macOS. Auto-reframe with MediaPipe: beta, needs testing on real footage. |
+| [`@cutiva/react`](packages/react) | Working in Chrome, Edge, Firefox and WebKit (E2E in CI on macOS, Windows, Linux); real Safari and mobile need testing | `useCutiva`, `useProject`, `usePreview`, a `<Timeline>` with drag to reorder, trim handles, thumbnails and framing-change marks, and `<ReframeBox>` to drag a crop window. |
 | [`apps/playground`](apps/playground) | Working in Chrome, Edge, Firefox and WebKit (E2E in CI on macOS, Windows, Linux); real Safari and mobile need testing | A small editor built on the three packages, served by the website at `/play`. |
 | [`apps/website`](apps/website) | Deployed at [cutiva.ngstudios.co](https://cutiva.ngstudios.co) | The landing at `/`, docs at `/docs` (Next.js + Fumadocs), the playground at `/play`, and the waitlist endpoint. |
-| [`cutiva_core`](packages/flutter/cutiva_core) (Dart) | Working, tested (99.8% coverage, same 5 conformance fixtures); not on pub.dev | The core ported to Dart for Flutter: project format, commands, undo/redo, timeline resolution. |
+| [`cutiva_core`](packages/flutter/cutiva_core) (Dart) | Working, tested (99.9% coverage, same conformance and auto-reframe fixtures); not on pub.dev | The core ported to Dart for Flutter: project format, commands, undo/redo, timeline resolution, crop keys and the auto-reframe planner. |
 | [`engine-android`](packages/engine-android) | Export working on the Android emulator (one video layer); real devices need testing; preview planned | Renders the core's render plan with Media3: MP4 export with speed, gaps, mixing, volume and fades, audio within 5 ms of the picture. |
 | Flutter preview and export, React Native | Planned | One native engine per OS ([ADR 0004](docs/adr/0004-mobile-engine-render-plan.md)). See the [roadmap](ROADMAP.md). |
 
@@ -90,6 +90,10 @@ The core answers one question: *what is visible and audible at time t?* The prev
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Decisions are recorded in [docs/adr](docs/adr).
+
+## Maintainer
+
+Cutiva was created and is maintained by [Wilfredo Noyola](https://github.com/wilfredonoyola). Read why on the [about page](https://cutiva.ngstudios.co/about).
 
 ## License
 

@@ -13,3 +13,12 @@ export {
   type Resolution,
 } from "./export.js";
 export type { ExportAudioCodec } from "./encoder-delay.js";
+export {
+  analyzeAsset,
+  autoReframeClip,
+  type AnalyzeOptions,
+  type AutoReframeClipResult,
+  type AutoReframeOptions,
+  type FaceDetector,
+  type ReframeAnalysis,
+} from "./reframe.js";

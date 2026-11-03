@@ -46,3 +46,15 @@ These rules define what a project means. The conformance fixtures in `conformanc
 **Render plan.** `renderPlan(project)` lists the same thing flat, for native engines: every video clip as a segment with its layer (its position among the video tracks, 0 at the bottom), its timeline range `[startUs, endUs)`, its source range and speed; the audio segments above with their asset URIs; the duration and settings. Clips whose asset is missing are left out.
 
 **Audio.** Every clip on a track that is not muted plays its sound, except clips of a video asset with `hasAudio: false` and clips with `volume` 0. Each one is an audio segment with the clip's start, source range, speed and volume, listed in track order and then clip order. A `core/fade` effect adds `inUs` and `outUs` fades, in timeline time; without one, both are 0.
+
+**Reframe.** A video clip may carry a `core/reframe` effect whose `params.keys` is a list of crop keys `{ atUs, x, y, h, cut? }`, sorted by strictly increasing `atUs`. All values are integers; `x`, `y` and `atUs` are at least 0 and `h` at least 1. `atUs` is a **source** time of the asset; `(x, y)` is the centre of the crop window and `h` its height, in source pixels. Its width follows the project's aspect ratio (`width:height`). Reframing needs the asset's `width` and `height`.
+
+For a source of `W x H` pixels and an output of `OW x OH`, a key becomes a rectangle, where `floor` rounds down and *round* rounds half up:
+
+- `h' = min(max(h, 1), max(1, min(H, floor(W * OH / OW))))`, the tallest window that fits.
+- `w' = min(max(round(h' * OW / OH), 1), W)`.
+- `x' = min(max(floor((2x - w' + 1) / 2), 0), W - w')` and `y' = min(max(floor((2y - h' + 1) / 2), 0), H - h')`: centred on the key, pushed back inside the frame.
+
+At source time `s`, the window is the rectangle of the last key at or before `s` (of the first key, before it starts). If the next key has `cut: true`, that rectangle holds until the next key's time and then jumps. Otherwise it glides towards the next key: with `dt` the time between the two keys, `u = s - t0` and `v = t1 - s`, each of the left, top, right and bottom edges is `floor((2 * (a * v + b * u) + dt) / (2 * dt))` for edge values `a` and `b`, and the width and height are right minus left and bottom minus top. Engines scale the window to fill the output frame. A clip without a reframe is drawn whole and letterboxed. In the render plan, a reframed segment has `crop`: the rectangles of the keys that matter for its source range (the last key at or before `sourceInUs` through the first key at or after `sourceOutUs`), with their `atUs` and `cut`.
+
+**Auto-reframe** (`autoReframe`) is also a shared rule, so every SDK frames the same observations the same way. Its steps and constants are in the [auto-reframe guide](/docs/auto-reframe#how-it-decides).

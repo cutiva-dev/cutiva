@@ -4,6 +4,12 @@
   "description": "Web engine for Cutiva: import, preview and MP4 export with WebCodecs and Mediabunny.",
   "license": "Apache-2.0",
   "author": "Cutiva contributors",
+  "contributors": [
+    {
+      "name": "Wilfredo Noyola",
+      "url": "https://github.com/wilfredonoyola"
+    }
+  ],
   "homepage": "https://cutiva.dev",
   "repository": {
     "type": "git",
@@ -26,6 +32,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./mediapipe": {
+      "types": "./dist/mediapipe.d.ts",
+      "import": "./dist/mediapipe.js"
     }
   },
   "files": [
@@ -43,6 +53,17 @@
   "dependencies": {
     "@cutiva/core": "0.1.0",
     "mediabunny": "1.61.3"
+  },
+  "peerDependencies": {
+    "@mediapipe/tasks-vision": "1.1.1"
+  },
+  "peerDependenciesMeta": {
+    "@mediapipe/tasks-vision": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@mediapipe/tasks-vision": "1.1.1"
   },
   "publishConfig": {
     "access": "public"

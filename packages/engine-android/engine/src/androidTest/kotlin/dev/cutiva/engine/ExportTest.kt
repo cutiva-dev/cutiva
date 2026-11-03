@@ -158,6 +158,9 @@ class ExportTest {
     fun refusesWhatItCannotExportYet() {
         val two = plan(1_000_000, videoSeg(0, 1_000_000, 0, 1_000_000) + "," + videoSeg(0, 1_000_000, 0, 1_000_000).replace("\"layer\": 0", "\"layer\": 1"), "")
         assertEquals("UNSUPPORTED_FEATURE", codeOf { CutivaExporter.buildComposition(two) })
+        val cropped = plan(1_000_000, videoSeg(0, 1_000_000, 0, 1_000_000).replace("\"speed\": 1.0 }", "\"speed\": 1.0, \"crop\": [] }"), "")
+        assertEquals(true, cropped.video[0].cropped)
+        assertEquals("UNSUPPORTED_FEATURE", codeOf { CutivaExporter.buildComposition(cropped) })
         assertEquals("NOTHING_TO_EXPORT", codeOf { CutivaExporter.buildComposition(plan(0, "", "")) })
         assertEquals("INVALID_PROJECT", codeOf { RenderPlan.fromJson("{}") })
     }

@@ -1,4 +1,4 @@
-import { clipDurationUs, clipEndUs, CutivaError, formatTimecode, type Editor, type Us } from "@cutiva/core";
+import { clipDurationUs, clipEndUs, CutivaError, formatTimecode, reframeKeys, type Clip, type Editor, type Us } from "@cutiva/core";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useProject } from "./hooks.js";
 
@@ -189,6 +189,19 @@ export function Timeline({ editor, timeUs, onSeek, selectedClipId, onSelect, pxP
                       }}
                     />
                     <span className="cutiva-clip__name">{asset?.name ?? clip.assetId}</span>
+                    {track.kind === "video" &&
+                      reframeCuts(clip).map((atUs) => (
+                        <button
+                          key={atUs}
+                          type="button"
+                          className="cutiva-clip__reframe"
+                          style={{ left: (atUs - clip.startUs) * pxPerUs }}
+                          aria-label={`Framing change at ${formatTimecode(atUs)}`}
+                          title={`Framing change at ${formatTimecode(atUs)}`}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={() => onSeek(atUs)}
+                        />
+                      ))}
                     <span
                       className="cutiva-clip__handle cutiva-clip__handle--out"
                       onPointerDown={(e) => {
@@ -254,4 +267,18 @@ function ClipThumbnails({ assetId, aspect, sourceInUs, speed, widthPx, pxPerUs, 
   }, [assetId, aspect, sourceInUs, speed, widthPx, pxPerUs]);
 
   return <canvas ref={ref} className="cutiva-clip__thumbs" aria-hidden="true" />;
+}
+
+/** Timeline times inside the clip where its framing jumps (reframe cuts). */
+function reframeCuts(clip: Clip): Us[] {
+  const keys = reframeKeys(clip);
+  if (!keys) return [];
+  const end = clipEndUs(clip);
+  const out: Us[] = [];
+  for (const k of keys) {
+    if (!k.cut || k.atUs < clip.sourceInUs) continue;
+    const t = clip.startUs + Math.round((k.atUs - clip.sourceInUs) / clip.speed);
+    if (t > clip.startUs && t < end) out.push(t);
+  }
+  return out;
 }

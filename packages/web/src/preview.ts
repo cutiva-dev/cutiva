@@ -1,5 +1,5 @@
-import { audioSegments, resolveVideoAt, type Editor, type Us } from "@cutiva/core";
-import { drawContain } from "./draw.js";
+import { audioSegments, resolveVideoAt, type ActiveVideoLayer, type Editor, type Us } from "@cutiva/core";
+import { drawLayer } from "./draw.js";
 import type { MediaRegistry } from "./media.js";
 import { scheduleSegments } from "./audio.js";
 
@@ -64,17 +64,17 @@ export function createPreview(
     drawing = true;
     try {
       fitCanvas();
-      const frames: (HTMLCanvasElement | OffscreenCanvas)[] = [];
+      const frames: { canvas: HTMLCanvasElement | OffscreenCanvas; layer: ActiveVideoLayer }[] = [];
       for (const layer of resolveVideoAt(editor.project, t)) {
         const entry = media.get(layer.asset.id);
         const server = entry && media.previewFrames(entry, maxWidth);
         if (!server) continue;
         const wrapped = await server.frameAt(layer.sourceTimeUs / 1_000_000);
-        if (wrapped) frames.push(wrapped.canvas);
+        if (wrapped) frames.push({ canvas: wrapped.canvas, layer });
       }
       ctx!.fillStyle = background;
       ctx!.fillRect(0, 0, canvas.width, canvas.height);
-      for (const f of frames) drawContain(ctx!, f, canvas.width, canvas.height);
+      for (const { canvas: f, layer } of frames) drawLayer(ctx!, f, canvas.width, canvas.height, layer.crop, layer.asset.width, layer.asset.height);
     } finally {
       drawing = false;
       if (pendingT !== null) {
