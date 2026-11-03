@@ -1,8 +1,9 @@
-import type { Editor, Us } from "@cutiva/core";
+import type { Editor, ReframeEdit, Us } from "@cutiva/core";
 import { capabilities, exportProject, type ExportJob, type ExportOptions } from "./export.js";
 import { importFile, MediaRegistry } from "./media.js";
 import { createPreview, type Preview, type PreviewOptions } from "./preview.js";
 import { analyzeAsset, autoReframeClip, type AnalyzeOptions, type AutoReframeClipResult, type AutoReframeOptions, type ReframeAnalysis } from "./reframe.js";
+import { AnalysisCache, clipReframePlan, editClipReframe, reframeClip, type ReframeClipResult, type ReframeOptions } from "./reframe-track.js";
 import type { Thumbnail } from "./thumbnails.js";
 
 export interface WebEngine {
@@ -24,14 +25,27 @@ export interface WebEngine {
   sourceFrame(assetId: string, sourceUs: Us): Promise<HTMLCanvasElement | OffscreenCanvas | null>;
   /** Record faces, speech and camera cuts of a video asset (see `autoReframe`). */
   analyze(assetId: string, options: AnalyzeOptions): Promise<ReframeAnalysis>;
-  /** Frame a clip on whoever is talking, for the project's aspect ratio. One undo step. */
+  /** Frame a clip on whoever is talking with the older `autoReframe` planner (keys only, no Reframe Track). One undo step. */
   autoReframe(clipId: string, options: AutoReframeOptions): Promise<AutoReframeClipResult>;
+  /**
+   * Frame a clip with the reframe planner: segments, people, layouts and the Reframe Track. Analyses
+   * the clip (or reuses the cached analysis) and applies the plan as one undo step.
+   */
+  reframe(clipId: string, options?: ReframeOptions): Promise<ReframeClipResult>;
+  /** Apply edits to a reframed clip's track and re-plan from the cached analysis, as one undo step. */
+  editReframe(clipId: string, edits: ReframeEdit | ReframeEdit[]): Promise<ReframeClipResult>;
+  /**
+   * The plan of a reframed clip (with `sightings`), optionally after `edits`, without changing the
+   * project. Null when it has no track or no cached analysis.
+   */
+  reframePlan(clipId: string, edits?: ReframeEdit | ReframeEdit[]): Promise<ReframeClipResult | null>;
   export(options?: ExportOptions): ExportJob;
   capabilities: typeof capabilities;
 }
 
 export function createWebEngine(editor: Editor): WebEngine {
   const media = new MediaRegistry();
+  const analyses = new AnalysisCache();
   return {
     media,
     importFile: (file, options) => importFile(editor, media, file, options),
@@ -49,6 +63,9 @@ export function createWebEngine(editor: Editor): WebEngine {
     },
     analyze: (assetId, options) => analyzeAsset(media, assetId, options),
     autoReframe: (clipId, options) => autoReframeClip(editor, media, clipId, options),
+    reframe: (clipId, options) => reframeClip(editor, media, analyses, clipId, options),
+    editReframe: (clipId, edits) => editClipReframe(editor, analyses, clipId, edits),
+    reframePlan: (clipId, edits) => clipReframePlan(editor, analyses, clipId, edits),
     export: (options) => exportProject(editor.project, media, options),
     capabilities,
   };

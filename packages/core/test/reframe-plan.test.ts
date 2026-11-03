@@ -242,6 +242,25 @@ describe("planReframe rules", () => {
     ]);
   });
 
+  it("lists where each person was seen, by time then person, with merges applied and noise dropped", () => {
+    // Two people side by side; a tiny face (under 4% of the height) and an unsure one are dropped.
+    const fs = frames(3, (i) => ({ voice: 0.5, faces: [face(B, talk(i)), face(A, 0.1), face(900, 0.1, { h: 20 }), face(1700, 0.1, { conf: 0.2 })] }));
+    const r = planReframe(input(fs));
+    const box = (personId: string, atUs: number, x: number) => ({ personId, atUs, x, y: 300, w: 200, h: 200 });
+    expect(r.sightings).toEqual([box("p1", 0, A), box("p2", 0, B), box("p1", STEP, A), box("p2", STEP, B), box("p1", 2 * STEP, A), box("p2", 2 * STEP, B)]);
+
+    const merged = planReframe(input(fs, { track: editReframeTrack(r.track, { type: "merge", personId: "p2", intoId: "p1" }) }));
+    expect(merged.sightings.map((x) => [x.personId, x.atUs, x.x])).toEqual([
+      ["p1", 0, A],
+      ["p1", 0, B],
+      ["p1", STEP, A],
+      ["p1", STEP, B],
+      ["p1", 2 * STEP, A],
+      ["p1", 2 * STEP, B],
+    ]);
+    expect(planReframe(input([], { sourceWidth: 1080, sourceHeight: 1920, durationUs: 1_000_000 })).sightings).toEqual([]);
+  });
+
   it("keeps the off-camera voice's id and anyone a locked segment still names", () => {
     const fs = frames(10, (i) => ({ voice: 0.5, faces: [face(A, 0.1)] }));
     void talk;
