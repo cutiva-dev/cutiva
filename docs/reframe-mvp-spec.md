@@ -377,7 +377,7 @@ El MVP se construye en 7 fases (0 a 6), cada una cerrada por una condición veri
 - [x] Escribir el JSON Schema del Reframe Track v0.1 en `spec/reframe-track.schema.json` y generar tipos TS y structs Rust desde él. *Hecho: el schema describe los params de `core/reframe` (`keys` + `track` v1); los tipos siguen escritos a mano en `types.ts` y `types.dart`, como el resto de CPF.*
 - [x] Extender el CI existente con `cargo test`, golden files y validación del schema. *Hecho: `packages/core/test/reframe-schema.test.ts` corre en `npm test` (job `check`) y valida los ejemplos de `spec/examples/` y cada efecto `core/reframe` de `conformance/fixtures`. Sin `cargo test`; los golden files de vídeo real pasan a ser un benchmark por umbrales (mapa, conflicto 10).*
 - [x] Script `fixtures/fetch.sh` que descarga los videos de prueba (con licencia libre) y sus tracks esperados. *Hecho, con hash SHA-256 fijado; el manifiesto está vacío hasta que el maintainer aporte los vídeos.*
-- [ ] **Condición:** el mapa de integración está revisado antes de escribir código de UI, y el CI pasa con un track de ejemplo que valida contra el schema.
+- [x] **Condición:** el mapa de integración está revisado antes de escribir código de UI, y el CI pasa con un track de ejemplo que valida contra el schema. *Cumplida el 2026-11-03: mapa revisado (decisiones en el mapa) y job `check` del PR #31 en verde con `reframe-schema.test.ts`.*
 
 **Fase 1 — Core en Rust (sin video)**
 
