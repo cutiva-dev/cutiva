@@ -6,8 +6,8 @@ type Verdict = "good" | "wrong";
 
 /**
  * What a feedback report holds. Numbers only: face boxes, mouth openness, speech levels and crop
- * keys. No video, no images, no file names. The maintainer replays these through `autoReframe` to
- * tune it and to turn bad cases into regression tests.
+ * keys. No video, no images, no file names. People attach it to a GitHub issue; the maintainer replays
+ * it through `autoReframe` to tune it and to turn bad cases into regression tests.
  */
 export interface ReframeFeedbackReport {
   version: 1;
@@ -25,14 +25,37 @@ export interface ReframeFeedbackReport {
   ratings: { atUs: Us; verdict: Verdict }[];
 }
 
-/** Served by the website next to /play. Local dev has no API, so sending falls back to a file. */
-const ENDPOINT = "/api/reframe-feedback";
+const NEW_ISSUE = "https://github.com/cutiva-dev/cutiva/issues/new";
+/** GitHub drops prefilled issue URLs past ~8 KB, so the issue carries a summary and the file the rest. */
+const MAX_COMMENT_IN_URL = 1000;
 
-function downloadJson(report: ReframeFeedbackReport) {
+function downloadJson(report: ReframeFeedbackReport, name: string) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(report)], { type: "application/json" }));
-  const a = Object.assign(document.createElement("a"), { href: url, download: `reframe-feedback-${Date.now()}.json` });
+  const a = Object.assign(document.createElement("a"), { href: url, download: name });
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+const OVERALL = { good: "Good", ok: "Needs fixes", bad: "Bad" } as const;
+
+/** A new-issue link with a short summary; the full report goes in the attached file. */
+export function issueUrl(report: ReframeFeedbackReport, fileName: string): string {
+  const s = report.settings;
+  const wrong = report.ratings.filter((r) => r.verdict === "wrong").length;
+  const comment = report.comment.trim();
+  const body = [
+    `**Overall:** ${OVERALL[report.overall]}`,
+    `**Framing changes rated:** ${report.ratings.length} (${wrong} wrong)`,
+    `**Source:** ${s.sourceWidth}×${s.sourceHeight} → **output:** ${s.outputWidth}×${s.outputHeight}, zoom ${s.zoom}`,
+    `**Browser:** ${report.userAgent}`,
+    "",
+    "**What went wrong:**",
+    comment ? (comment.length > MAX_COMMENT_IN_URL ? `${comment.slice(0, MAX_COMMENT_IN_URL)}… (full text in the file)` : comment) : "_(nothing written)_",
+    "",
+    `**Report:** drag \`${fileName}\` (just downloaded) into this box. It holds numbers only: face boxes, mouth movement, speech levels and crop keys. No video, images or file names.`,
+  ].join("\n");
+  const q = new URLSearchParams({ title: `Auto-reframe feedback: ${OVERALL[report.overall].toLowerCase()}`, body });
+  return `${NEW_ISSUE}?${q}`;
 }
 
 interface Props {
@@ -48,7 +71,7 @@ export function ReframeFeedback({ project, clip, result, zoom, onSeek }: Props) 
   const [ratings, setRatings] = useState<Record<number, Verdict>>({});
   const [overall, setOverall] = useState<ReframeFeedbackReport["overall"] | null>(null);
   const [comment, setComment] = useState("");
-  const [state, setState] = useState<"idle" | "sending" | "sent" | "saved">("idle");
+  const [state, setState] = useState<"idle" | "opened">("idle");
 
   useEffect(() => {
     setRatings({});
@@ -62,7 +85,7 @@ export function ReframeFeedback({ project, clip, result, zoom, onSeek }: Props) 
   const atStart = cuts.filter((k) => k.atUs <= clip.sourceInUs).pop();
   const segments = [...(atStart ? [atStart] : []), ...cuts.filter((k) => k.atUs > clip.sourceInUs)];
 
-  async function send() {
+  function send() {
     if (!overall) return;
     const report: ReframeFeedbackReport = {
       version: 1,
@@ -84,16 +107,10 @@ export function ReframeFeedback({ project, clip, result, zoom, onSeek }: Props) 
       final: reframeKeys(clip) ?? [],
       ratings: Object.entries(ratings).map(([atUs, verdict]) => ({ atUs: Number(atUs), verdict })),
     };
-    setState("sending");
-    try {
-      const res = await fetch(ENDPOINT, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(report) });
-      if (!res.ok) throw new Error(String(res.status));
-      setState("sent");
-    } catch {
-      // No server (local dev) or no database yet: keep the report as a file instead.
-      downloadJson(report);
-      setState("saved");
-    }
+    const name = `reframe-feedback-${Date.now()}.json`;
+    downloadJson(report, name);
+    window.open(issueUrl(report, name), "_blank", "noopener");
+    setState("opened");
   }
 
   return (
@@ -134,12 +151,20 @@ export function ReframeFeedback({ project, clip, result, zoom, onSeek }: Props) 
         What went wrong? <span className="muted">(optional)</span>
         <textarea rows={2} maxLength={2000} value={comment} onChange={(e) => setComment(e.target.value)} />
       </label>
-      <button type="button" disabled={!overall || state === "sending" || state === "sent"} onClick={() => void send()}>
-        {state === "sending" ? "Sending…" : state === "sent" ? "Thanks, sent" : "Send feedback"}
+      <button type="button" disabled={!overall} onClick={send}>
+        Report on GitHub
       </button>
-      {state === "saved" && <p className="small" role="status">Couldn't reach the server, so the report was saved as a file. Send it to the maintainer.</p>}
+      {state === "opened" && (
+        <p className="small" role="status">
+          The report downloaded and a GitHub issue opened in a new tab. Drag the file into the issue and submit it. Blocked pop-up?{" "}
+          <a href={NEW_ISSUE} target="_blank" rel="noreferrer">
+            Open a new issue
+          </a>
+          .
+        </p>
+      )}
       <p className="muted small">
-        Sends face positions, mouth movement, speech levels and the framing, as numbers. No video, images or file names. Fix a framing by dragging the window first: your fixes are part of the report.
+        Downloads a report of face positions, mouth movement, speech levels and the framing, as numbers, then opens a public GitHub issue for it (you need a GitHub account). No video, images or file names. Fix a framing by dragging the window first: your fixes are part of the report.
       </p>
     </div>
   );
