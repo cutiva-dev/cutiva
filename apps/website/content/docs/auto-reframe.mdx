@@ -3,7 +3,7 @@ title: Auto-reframe
 description: Turn landscape footage into vertical video that follows whoever is talking.
 ---
 
-**Status: beta, needs testing.** E2E tests check, in Chrome and Firefox, that dragging the window changes both preview and export, and that the editor's reframe controls work on a synthetic two-speaker clip (with a stand-in face detector): lanes, clicking a face, layouts, people, camera style, undo, save and the analysis cache. A manual test (it needs the network) checks that MediaPipe loads and analyses a clip. Another E2E test draws a single, a wide and a split segment and checks that the exported MP4 shows what the preview shows (colours and face edges within 2 output pixels, at three instants). How well it picks the speaker in real conversations has not been measured yet.
+**Status: beta, needs testing.** E2E tests check, in Chrome and Firefox, that dragging the window changes both preview and export, and that the editor's reframe controls work on a synthetic two-speaker clip (with a stand-in face detector): lanes, clicking a face, layouts, people, camera style, undo, save and the analysis cache. A manual test (it needs the network) checks that MediaPipe loads and analyses a clip. Another E2E test draws a single, a wide and a split segment and checks that the exported MP4 shows what the preview shows (colours and face edges within 2 output pixels, at three instants). On one real 48 s clip (a podcast, three people side by side, 1080p) the detector finds all three in 223 of 242 analysed frames; who it frames still sticks to one person too long and is being tuned against labelled footage. Analysis of that clip takes about 58 s in Chrome on an M-series Mac, more than the clip's length.
 
 Auto-reframe crops a landscape clip for a vertical (or square) project. It watches the clip, finds the people, works out who is talking from mouth movement and speech, and splits the clip into **segments**: who is framed, and how (one person, a split for two, or wide). The camera cuts to each new speaker and follows gently while they move. You fix what it gets wrong with a click: pick a face, a layout or a person's flags, and that segment stays as you set it. A split shows one person in each half of the frame; wide shows the whole picture over a blurred copy of it.
 
@@ -58,6 +58,8 @@ Segment edits lock the segment: re-planning (after a person edit, a style change
 Observations stay out of the project ([ADR 0006](https://github.com/cutiva-dev/cutiva/blob/main/docs/adr/0006-reframe-track-in-cpf.md)): the engine keeps each analysis in memory and in IndexedDB, keyed by the file's size and the SHA-256 of its first 64 KiB, so it survives a reload. Without it (another device, cleared storage) `editReframe` throws `ANALYSIS_NEEDED`: analyse again with `engine.reframe(clipId, { detector, reanalyze: true })`. The track keeps names, flags and locked segments either way, and the clip still previews and exports.
 
 The MediaPipe detector downloads its WASM files from jsDelivr and its model (about 3.7 MB) from Google the first time. The model is checked against a pinned SHA-256 (`MEDIAPIPE_MODEL_SHA256`) and kept in Cache Storage, so later loads don't download it again; a cached copy with the wrong hash is thrown away. Pass `wasmBaseUrl` and `modelAssetPath` to host the files yourself, `modelSha256` if you host a different model, and `onProgress` to show the download. A failed download, a hash mismatch or a runtime that doesn't start throws `MODEL_LOAD_FAILED`. Video frames never leave the device.
+
+MediaPipe shrinks every image to 192 px before it looks for faces, so in a wide shot (three people at a table, faces a tenth of the frame's height) it finds none in the whole frame. The detector therefore also looks in overlapping square tiles, two thirds of the frame's shorter side each (4 × 2 on a 16:9 frame), and keeps one box per face: boxes that overlap (IoU 0.3, or half of the smaller inside the larger) are the same face, and the largest wins. Pass `tiles: false` to look at the whole frame only, which is about nine times faster and fine for close-ups. Mouth openness is the gap between the inner lips (landmarks 13 and 14) over the face's height: 0 closed, about 0.3 wide open. The `jawOpen` blendshape stays near zero on small faces.
 
 `analyzeAsset` throws `NO_VIDEO_TRACK` for an asset without video and `ANALYSIS_CANCELLED` when its `signal` aborts.
 
@@ -167,6 +169,7 @@ Reports are how auto-reframe improves: each one attached to an issue replays thr
 ## Known limits
 
 - It reads mouths, so profiles, covered mouths, overlapping talk and off-screen voices fool it.
+- With tiles, analysis runs at about the clip's real time (a 3-minute clip takes about 3 minutes).
 - A person in two shots counts as two people (merge them in People).
 - The source monitor's window shows the single fallback window on split and wide segments, not the two regions or the whole picture.
 - Native engines (Android) still refuse reframed clips.
