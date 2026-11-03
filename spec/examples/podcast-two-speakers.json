@@ -1,0 +1,31 @@
+{
+  "keys": [
+    { "atUs": 0, "x": 520, "y": 470, "h": 1080, "cut": true },
+    { "atUs": 6900000, "x": 1340, "y": 450, "h": 1080, "cut": true },
+    { "atUs": 16000000, "x": 520, "y": 470, "h": 1080, "cut": true },
+    { "atUs": 22000000, "x": 960, "y": 540, "h": 1080, "cut": true, "layout": "split", "regions": [{ "x": 520, "y": 420, "h": 600 }, { "x": 1340, "y": 400, "h": 600 }] },
+    { "atUs": 29000000, "x": 1340, "y": 450, "h": 1080, "cut": true },
+    { "atUs": 43000000, "x": 960, "y": 540, "h": 1080, "cut": true, "layout": "wide" },
+    { "atUs": 48000000, "x": 1300, "y": 460, "h": 1080, "cut": true }
+  ],
+  "track": {
+    "version": 1,
+    "style": 50,
+    "maxUpscalePct": 150,
+    "safeZone": "none",
+    "people": [
+      { "id": "p1", "label": "Speaker A", "kind": "face", "priority": true, "neverFocus": false },
+      { "id": "p2", "label": "Speaker B", "kind": "face", "priority": false, "neverFocus": false },
+      { "id": "p3", "label": "Off-camera voice", "kind": "voice", "priority": false, "neverFocus": true }
+    ],
+    "segments": [
+      { "id": "s1", "startUs": 0, "endUs": 6900000, "speakers": ["p1"], "layout": "auto", "focus": [], "resolved": "single", "locked": false, "reason": "lips+voice" },
+      { "id": "s2", "startUs": 6900000, "endUs": 16000000, "speakers": ["p2"], "layout": "auto", "focus": [], "resolved": "single", "locked": false, "reason": "lips+voice" },
+      { "id": "s3", "startUs": 16000000, "endUs": 22000000, "speakers": ["p1"], "layout": "auto", "focus": [], "resolved": "single", "locked": false, "reason": "lips+voice" },
+      { "id": "s4", "startUs": 22000000, "endUs": 29000000, "speakers": ["p1", "p2"], "layout": "auto", "focus": [], "resolved": "split", "locked": false, "reason": "overlap" },
+      { "id": "s5", "startUs": 29000000, "endUs": 43000000, "speakers": ["p2"], "layout": "auto", "focus": [], "resolved": "single", "locked": false, "reason": "lips+voice" },
+      { "id": "s6", "startUs": 43000000, "endUs": 48000000, "speakers": ["p3"], "layout": "auto", "focus": [], "resolved": "wide", "locked": false, "reason": "voice-only" },
+      { "id": "s7", "startUs": 48000000, "endUs": 58000000, "speakers": ["p2"], "layout": "single", "focus": ["p2"], "resolved": "single", "locked": true, "reason": "user", "window": { "x": 1300, "y": 460, "h": 1080 } }
+    ]
+  }
+}

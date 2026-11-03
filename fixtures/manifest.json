@@ -1,0 +1,4 @@
+{
+  "comment": "Real test videos for the reframe benchmark (docs/reframe-mvp-spec.md, fixture set). Each entry: name, url, sha256, license, and consent (who agreed to be in it). Empty until the maintainer provides the clips.",
+  "videos": []
+}

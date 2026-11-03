@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cutiva Reframe — web editor</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0E0F12}
+a{color:#FF8F6B}a:hover{color:#FFB396}
+</style>
+</helmet>
+<div style="min-height: 980px; box-sizing: border-box; background: #0E0F12; color: #EDEEF0; font-family: 'Geist', 'Helvetica Neue', Arial, sans-serif; font-size: 14px; line-height: 20px; display: flex; flex-direction: column">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; border-bottom: 1px solid #2A2D33">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+<div style="display: flex; align-items: center; gap: 8px">
+<div aria-hidden="true" style="display: flex; flex-direction: column; gap: 3px; width: 24px">
+<div style="display: flex; gap: 3px"><div style="flex: 3; height: 8px; border-radius: 2px; background: #FF6A3D"></div><div style="flex: 2; height: 8px; border-radius: 2px; background: #FF6A3D"></div></div>
+<div style="height: 4px; border-radius: 2px; background: #34D399"></div>
+</div>
+<span style="font-weight: 600; font-size: 18px; letter-spacing: -0.02em">cutiva</span>
+</div>
+<span style="font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 12px; padding: 2px 8px; border: 1px solid #2A2D33; border-radius: 4px; color: #9BA1AC">@cutiva/reframe</span>
+<span style="color: #9BA1AC">[Episode title] · Clip 3 · 00:58</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #2A2D33; background: #17191E; color: #EDEEF0; font: inherit; font-weight: 500; cursor: pointer">Re-analyze</button>
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #FF6A3D; background: #FF6A3D; color: #14161A; font: inherit; font-weight: 600; cursor: pointer">Export 9:16</button>
+</div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; flex: 1">
+
+<aside style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<div>
+<h2 style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600">People</h2>
+<p style="margin: 4px 0 0; color: #9BA1AC; font-size: 13px">3 detected in this video</p>
+</div>
+<sc-for list="{{people}}" as="p" hint-placeholder-count="3">
+<div style="border: 1px solid #2A2D33; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 10px; background: #17191E">
+<div style="display: flex; align-items: center; gap: 10px">
+<div aria-hidden="true" style="width: 36px; height: 36px; flex: none; border-radius: 50%; background: {{p.color}}; color: {{p.ink}}; display: flex; align-items: center; justify-content: center; font-weight: 600">{{p.id}}</div>
+<div style="display: flex; flex-direction: column; min-width: 0">
+<span style="font-weight: 500">{{p.name}}</span>
+<span style="font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 12px; color: #9BA1AC">{{p.meta}}</span>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" aria-pressed="{{p.priority}}" onClick="{{p.togglePriority}}" style="min-height: 44px; padding: 0 12px; border-radius: 8px; font: inherit; font-size: 13px; cursor: pointer; {{p.priorityStyle}}">Priority</button>
+<button type="button" aria-pressed="{{p.never}}" onClick="{{p.toggleNever}}" style="min-height: 44px; padding: 0 12px; border-radius: 8px; font: inherit; font-size: 13px; cursor: pointer; {{p.neverStyle}}">Never focus</button>
+</div>
+</div>
+</sc-for>
+<div style="border: 1px solid #2A2D33; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 6px">
+<span style="font-weight: 500">Analysis</span>
+<span style="color: #9BA1AC; font-size: 13px">Ran on this device. Nothing uploaded.</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 12px; color: #9BA1AC; margin-top: 4px">
+<span>faces</span><span style="color: #EDEEF0">YuNet</span>
+<span>lips</span><span style="color: #EDEEF0">Face Mesh</span>
+<span>voice</span><span style="color: #EDEEF0">Silero VAD</span>
+<span>sample</span><span style="color: #EDEEF0">5 fps</span>
+</div>
+</div>
+</aside>
+
+<main style="flex: 999 1 560px; min-width: 0; display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+<div style="flex: 999 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; color: #9BA1AC; font-size: 13px"><span>Source · 16:9 · click a face to focus it</span><span style="font-family: 'Geist Mono', ui-monospace, Menlo, monospace">1920×1080</span></div>
+<div style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #1E2026; border-radius: 8px; overflow: hidden; border: 1px solid #2A2D33">
+<div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 22%; background: #26292F"></div>
+<div aria-hidden="true" style="position: absolute; left: 19%; top: 22%; width: 16%; height: 78%">
+<div style="width: 56%; aspect-ratio: 1; margin: 0 auto; border-radius: 50%; background: #5A5F6A"></div>
+<div style="width: 100%; height: 60%; margin-top: 6%; border-radius: 40% 40% 8px 8px; background: #444851"></div>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 62%; top: 22%; width: 16%; height: 78%">
+<div style="width: 56%; aspect-ratio: 1; margin: 0 auto; border-radius: 50%; background: #5A5F6A"></div>
+<div style="width: 100%; height: 60%; margin-top: 6%; border-radius: 40% 40% 8px 8px; background: #444851"></div>
+</div>
+<sc-for list="{{rects}}" as="r" hint-placeholder-count="1">
+<div aria-hidden="true" style="position: absolute; box-sizing: border-box; border: 2px solid {{r.color}}; border-radius: 4px; {{r.pos}}"></div>
+</sc-for>
+<button type="button" aria-label="Focus Speaker A" onClick="{{pickA}}" style="position: absolute; left: 22.5%; top: 21%; width: 9%; aspect-ratio: 1; border-radius: 8px; border: 2px dashed #FF6A3D; background: transparent; cursor: pointer; padding: 0"></button>
+<span aria-hidden="true" style="position: absolute; left: 22.5%; top: 13%; font-size: 12px; font-weight: 600; padding: 0 6px; border-radius: 4px; background: #FF6A3D; color: #14161A">A</span>
+<button type="button" aria-label="Focus Speaker B" onClick="{{pickB}}" style="position: absolute; left: 65.5%; top: 21%; width: 9%; aspect-ratio: 1; border-radius: 8px; border: 2px dashed #7DB8FF; background: transparent; cursor: pointer; padding: 0"></button>
+<span aria-hidden="true" style="position: absolute; left: 65.5%; top: 13%; font-size: 12px; font-weight: 600; padding: 0 6px; border-radius: 4px; background: #7DB8FF; color: #14161A">B</span>
+</div>
+</div>
+
+<div style="flex: 0 0 270px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; color: #9BA1AC; font-size: 13px"><span>Output · 9:16</span><span style="font-family: 'Geist Mono', ui-monospace, Menlo, monospace">1080×1920</span></div>
+<div style="position: relative; width: 270px; height: 480px; border-radius: 16px; overflow: hidden; background: #1E2026; border: 1px solid #2A2D33">
+<sc-if value="{{isSingle}}" hint-placeholder-val="{{false}}">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: #26292F"></div>
+<div aria-hidden="true" style="position: absolute; left: 35px; top: 110px; width: 200px; height: 370px">
+<div style="width: 120px; height: 120px; margin: 0 auto; border-radius: 50%; background: #5A5F6A"></div>
+<div style="width: 200px; height: 240px; margin-top: 14px; border-radius: 90px 90px 0 0; background: #444851"></div>
+</div>
+<span style="position: absolute; left: 12px; top: 12px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: {{singleColor}}; color: #14161A">{{singleName}}</span>
+</sc-if>
+<sc-if value="{{isSplit}}" hint-placeholder-val="{{false}}">
+<div aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 0; height: 239px; background: #26292F; overflow: hidden">
+<div style="position: absolute; left: 75px; top: 40px; width: 120px; height: 200px">
+<div style="width: 76px; height: 76px; margin: 0 auto; border-radius: 50%; background: #5A5F6A"></div>
+<div style="width: 120px; height: 140px; margin-top: 10px; border-radius: 56px 56px 0 0; background: #444851"></div>
+</div>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 239px; background: #26292F; overflow: hidden">
+<div style="position: absolute; left: 75px; top: 40px; width: 120px; height: 200px">
+<div style="width: 76px; height: 76px; margin: 0 auto; border-radius: 50%; background: #5A5F6A"></div>
+<div style="width: 120px; height: 140px; margin-top: 10px; border-radius: 56px 56px 0 0; background: #444851"></div>
+</div>
+</div>
+<span style="position: absolute; left: 12px; top: 12px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #FF6A3D; color: #14161A">Speaker A</span>
+<span style="position: absolute; left: 12px; top: 253px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #7DB8FF; color: #14161A">Speaker B</span>
+</sc-if>
+<sc-if value="{{isWide}}" hint-placeholder-val="{{false}}">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: #17191E"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 164px; height: 152px; background: #1E2026; overflow: hidden">
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 33px; background: #26292F"></div>
+<div style="position: absolute; left: 51px; top: 34px; width: 43px; height: 118px">
+<div style="width: 24px; height: 24px; margin: 0 auto; border-radius: 50%; background: #5A5F6A"></div>
+<div style="width: 43px; height: 70px; margin-top: 3px; border-radius: 18px 18px 0 0; background: #444851"></div>
+</div>
+<div style="position: absolute; left: 167px; top: 34px; width: 43px; height: 118px">
+<div style="width: 24px; height: 24px; margin: 0 auto; border-radius: 50%; background: #5A5F6A"></div>
+<div style="width: 43px; height: 70px; margin-top: 3px; border-radius: 18px 18px 0 0; background: #444851"></div>
+</div>
+</div>
+<span style="position: absolute; left: 12px; top: 12px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #EDEEF0; color: #14161A">Wide</span>
+</sc-if>
+<div style="position: absolute; left: 16px; right: 16px; bottom: 48px; text-align: center; font-weight: 600; font-size: 18px; line-height: 28px"><span style="background: #14161A; padding: 4px 8px; border-radius: 4px">[Caption line]</span></div>
+</div>
+<p style="margin: 0; color: #9BA1AC; font-size: 13px">{{previewNote}}</p>
+</div>
+
+</main>
+
+<aside style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<div>
+<h2 style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600">{{selTitle}}</h2>
+<p style="margin: 4px 0 0; color: #9BA1AC; font-size: 13px; font-family: 'Geist Mono', ui-monospace, Menlo, monospace">{{selRange}} · talking: {{selWho}}</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="color: #9BA1AC; font-size: 13px">Layout for this segment</span>
+<sc-for list="{{layouts}}" as="l" hint-placeholder-count="4">
+<button type="button" aria-pressed="{{l.active}}" onClick="{{l.pick}}" style="min-height: 44px; text-align: left; padding: 10px 12px; border-radius: 8px; color: #EDEEF0; font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 2px; {{l.style}}">
+<span style="font-weight: 500">{{l.name}}</span>
+<span style="font-size: 12px; color: #9BA1AC">{{l.desc}}</span>
+</button>
+</sc-for>
+<button type="button" onClick="{{resetSeg}}" style="min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A2D33; background: transparent; color: #FF8F6B; font: inherit; font-size: 13px; cursor: pointer; text-align: left">Reset to automatic</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #2A2D33; padding-top: 16px">
+<label for="camstyle" style="display: flex; justify-content: space-between; color: #9BA1AC; font-size: 13px"><span>Camera style</span><span style="color: #EDEEF0">{{camName}}</span></label>
+<input id="camstyle" type="range" min="0" max="100" value="{{cam}}" onChange="{{onCam}}" style="width: 100%; accent-color: #FF6A3D">
+<div style="display: flex; justify-content: space-between; font-size: 12px; color: #9BA1AC"><span>Calm</span><span>Dynamic</span></div>
+<span style="font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 12px; color: #9BA1AC">switch after {{hold}} s · smoothing {{smooth}}</span>
+</div>
+<button type="button" aria-pressed="{{applyAll}}" onClick="{{toggleApply}}" style="min-height: 44px; padding: 0 12px; border-radius: 8px; font: inherit; font-size: 13px; cursor: pointer; text-align: left; {{applyStyle}}">{{applyLabel}}</button>
+</aside>
+
+</div>
+
+<section aria-label="Timeline" style="border-top: 1px solid #2A2D33; padding: 16px 24px 24px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 12px">
+<button type="button" aria-label="Play" style="width: 44px; height: 44px; border-radius: 8px; border: 1px solid #2A2D33; background: #17191E; color: #EDEEF0; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 2.5v11l9-5.5z"></path></svg>
+</button>
+<span style="font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 13px">{{playTime}} <span style="color: #9BA1AC">/ 00:58.0</span></span>
+</div>
+<div style="display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 0 12px">
+<div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: #9BA1AC">
+<div style="height: 16px"></div>
+<div style="height: 40px; display: flex; align-items: center">Speakers</div>
+<div style="height: 28px; display: flex; align-items: center">Camera</div>
+<div style="height: 40px; display: flex; align-items: center">Audio</div>
+</div>
+<div style="position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0">
+<div style="height: 16px; display: flex; justify-content: space-between; font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 11px; color: #9BA1AC">
+<sc-for list="{{ticks}}" as="t" hint-placeholder-count="7"><span>{{t}}</span></sc-for>
+</div>
+<div style="height: 40px; display: flex; gap: 3px">
+<sc-for list="{{segs}}" as="s" hint-placeholder-count="8">
+<button type="button" onClick="{{s.pick}}" aria-label="{{s.aria}}" style="min-width: 0; border: 0; padding: 0; border-radius: 8px; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; font: inherit; font-size: 12px; font-weight: 600; {{s.style}}">
+<sc-if value="{{s.both}}" hint-placeholder-val="{{false}}">
+<span style="flex: 1; background: #FF6A3D; color: #14161A; display: flex; align-items: center; padding-left: 8px">A</span>
+<span style="flex: 1; background: #7DB8FF; color: #14161A; display: flex; align-items: center; padding-left: 8px">B</span>
+</sc-if>
+<sc-if value="{{s.solo}}" hint-placeholder-val="{{true}}">
+<span style="flex: 1; display: flex; align-items: center; padding-left: 8px; white-space: nowrap">{{s.label}}</span>
+</sc-if>
+</button>
+</sc-for>
+</div>
+<div style="height: 28px; display: flex; gap: 3px">
+<sc-for list="{{segs}}" as="s" hint-placeholder-count="8">
+<div style="min-width: 0; box-sizing: border-box; border: 1px solid #2A2D33; border-radius: 4px; background: #17191E; font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 11px; color: #9BA1AC; display: flex; align-items: center; padding: 0 6px; overflow: hidden; white-space: nowrap; {{s.flex}}">{{s.layoutLabel}}</div>
+</sc-for>
+</div>
+<div aria-hidden="true" style="height: 40px; display: flex; align-items: center; gap: 2px; background: #10291F; border-radius: 8px; padding: 0 6px">
+<sc-for list="{{bars}}" as="b" hint-placeholder-count="40"><div style="flex: 1; border-radius: 1px; background: #34D399; {{b}}"></div></sc-for>
+</div>
+<div aria-hidden="true" style="position: absolute; top: 18px; bottom: 0; width: 2px; background: #EDEEF0; {{playheadPos}}"></div>
+</div>
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 3, cam: 50, applyAll: false, layouts: {}, focus: {}, never: { C: true }, priority: { A: true } };
+  }
+  resolve(i) {
+    const S = this.state;
+    const base = this.base()[i];
+    const who = S.focus[i] || base.who;
+    const lay = S.layouts[i] || 'follow';
+    let eff = lay;
+    if (lay === 'follow') {
+      if (who === 'AB') eff = 'split';
+      else if (who === 'C' || S.never[who]) eff = 'wide';
+      else eff = 'single';
+    }
+    let focusP = who;
+    if (who === 'AB' || who === 'C') focusP = (S.priority.B && !S.priority.A) ? 'B' : 'A';
+    return { who: who, lay: lay, eff: eff, focusP: focusP };
+  }
+  base() {
+    return [
+      { who: 'A', g: 12, a: '00:00', b: '00:07' },
+      { who: 'B', g: 15, a: '00:07', b: '00:16' },
+      { who: 'A', g: 11, a: '00:16', b: '00:22' },
+      { who: 'AB', g: 12, a: '00:22', b: '00:29' },
+      { who: 'B', g: 16, a: '00:29', b: '00:38' },
+      { who: 'A', g: 8, a: '00:38', b: '00:43' },
+      { who: 'C', g: 8, a: '00:43', b: '00:48' },
+      { who: 'B', g: 18, a: '00:48', b: '00:58' }
+    ];
+  }
+  renderVals() {
+    const S = this.state;
+    const COL = { A: '#FF6A3D', B: '#7DB8FF', C: '#3A3D45' };
+    const NAMES = { A: 'Speaker A', B: 'Speaker B', C: 'Off-camera voice', AB: 'A + B' };
+    const base = this.base();
+    let cum = 0;
+    let playLeft = 0;
+    const segs = base.map((s, i) => {
+      const r = this.resolve(i);
+      const sel = i === S.sel;
+      if (sel) playLeft = cum + s.g / 2;
+      cum += s.g;
+      const bg = r.who === 'AB' ? '#17191E' : COL[r.who];
+      const tc = r.who === 'C' ? '#EDEEF0' : '#14161A';
+      const ring = sel ? 'outline: 2px solid #EDEEF0; outline-offset: 2px;' : '';
+      const layName = r.eff === 'single' ? '1-up ' + r.focusP : (r.eff === 'split' ? 'split' : 'wide');
+      return {
+        both: r.who === 'AB',
+        solo: r.who !== 'AB',
+        label: r.who === 'C' ? 'C · voice' : r.who,
+        aria: 'Segment ' + (i + 1) + ', ' + s.a + ' to ' + s.b,
+        style: 'flex: ' + s.g + ' 1 0; background: ' + bg + '; color: ' + tc + '; ' + ring,
+        flex: 'flex: ' + s.g + ' 1 0;',
+        layoutLabel: layName + (r.lay === 'follow' ? ' · auto' : ' · set'),
+        pick: () => this.setState({ sel: i })
+      };
+    });
+    const cur = this.resolve(S.sel);
+    const curBase = base[S.sel];
+    let rects = [];
+    if (cur.eff === 'single') {
+      rects = [{ color: COL[cur.focusP], pos: cur.focusP === 'A' ? 'left: 11.2%; top: 0; width: 31.6%; height: 100%;' : 'left: 54.2%; top: 0; width: 31.6%; height: 100%;' }];
+    } else if (cur.eff === 'split') {
+      rects = [
+        { color: COL.A, pos: 'left: 9.3%; top: 10%; width: 35.4%; height: 56%;' },
+        { color: COL.B, pos: 'left: 52.3%; top: 10%; width: 35.4%; height: 56%;' }
+      ];
+    } else {
+      rects = [{ color: '#EDEEF0', pos: 'left: 0; top: 0; width: 100%; height: 100%;' }];
+    }
+    let note = '';
+    if (cur.lay !== 'follow') note = 'Your choice for this segment. The automatic pass will not change it.';
+    else if (cur.eff === 'split') note = 'Two people talking at once, so the camera splits.';
+    else if (cur.eff === 'wide') note = 'Voice with no face on screen, so the camera goes wide.';
+    else note = 'Following ' + NAMES[cur.focusP] + ': lips moving while there is voice.';
+    const layDefs = [
+      { id: 'follow', name: 'Follow speaker', desc: 'Picks 1-up, split or wide per moment' },
+      { id: 'single', name: 'One person', desc: 'Keep one face full frame' },
+      { id: 'split', name: 'Split', desc: 'Two people stacked' },
+      { id: 'wide', name: 'Wide + blur', desc: 'Whole shot over a blurred fill' }
+    ];
+    const layouts = layDefs.map((l) => {
+      const active = cur.lay === l.id;
+      return {
+        name: l.name, desc: l.desc, active: active,
+        style: active ? 'border: 1px solid #FF6A3D; background: #3A1D13;' : 'border: 1px solid #2A2D33; background: #17191E;',
+        pick: () => this.setState({ layouts: Object.assign({}, S.layouts, { [S.sel]: l.id }) })
+      };
+    });
+    const onStyle = 'border: 1px solid #FF6A3D; background: #3A1D13; color: #EDEEF0;';
+    const offStyle = 'border: 1px solid #2A2D33; background: transparent; color: #9BA1AC;';
+    const meta = { A: 'talks ~22 s', B: 'talks ~29 s', C: 'voice only, no face' };
+    const people = ['A', 'B', 'C'].map((id) => ({
+      id: id, name: NAMES[id], meta: meta[id], color: COL[id], ink: id === 'C' ? '#EDEEF0' : '#14161A',
+      priority: !!S.priority[id], never: !!S.never[id],
+      priorityStyle: S.priority[id] ? onStyle : offStyle,
+      neverStyle: S.never[id] ? onStyle : offStyle,
+      togglePriority: () => this.setState({ priority: Object.assign({}, S.priority, { [id]: !S.priority[id] }) }),
+      toggleNever: () => this.setState({ never: Object.assign({}, S.never, { [id]: !S.never[id] }) })
+    }));
+    const bars = [];
+    for (let i = 0; i < 120; i++) {
+      const h = 6 + Math.round(26 * Math.abs(Math.sin(i * 0.7) * Math.cos(i * 0.23)));
+      bars.push('height: ' + h + 'px;');
+    }
+    const cam = S.cam;
+    return {
+      people: people,
+      rects: rects,
+      segs: segs,
+      layouts: layouts,
+      bars: bars,
+      ticks: ['00:00', '00:10', '00:20', '00:30', '00:40', '00:50', '00:58'],
+      isSingle: cur.eff === 'single',
+      isSplit: cur.eff === 'split',
+      isWide: cur.eff === 'wide',
+      singleName: NAMES[cur.focusP],
+      singleColor: COL[cur.focusP],
+      previewNote: note,
+      selTitle: 'Segment ' + (S.sel + 1),
+      selRange: curBase.a + '–' + curBase.b,
+      selWho: NAMES[cur.who],
+      playTime: curBase.a + '.0',
+      playheadPos: 'left: calc(' + playLeft.toFixed(1) + '% - 1px);',
+      cam: cam,
+      camName: cam < 34 ? 'Calm' : (cam < 67 ? 'Balanced' : 'Dynamic'),
+      hold: (1.6 - cam * 0.012).toFixed(1),
+      smooth: (0.9 - cam * 0.006).toFixed(2),
+      onCam: (e) => this.setState({ cam: Number(e.target.value) }),
+      applyAll: S.applyAll,
+      applyLabel: S.applyAll ? 'Applies to every clip from this video' : 'Apply these rules to every clip',
+      applyStyle: S.applyAll ? onStyle : offStyle,
+      toggleApply: () => this.setState({ applyAll: !S.applyAll }),
+      pickA: () => this.setState({ focus: Object.assign({}, S.focus, { [S.sel]: 'A' }), layouts: Object.assign({}, S.layouts, { [S.sel]: 'single' }) }),
+      pickB: () => this.setState({ focus: Object.assign({}, S.focus, { [S.sel]: 'B' }), layouts: Object.assign({}, S.layouts, { [S.sel]: 'single' }) }),
+      resetSeg: () => {
+        const f = Object.assign({}, S.focus); delete f[S.sel];
+        const l = Object.assign({}, S.layouts); delete l[S.sel];
+        this.setState({ focus: f, layouts: l });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cutiva Reframe — mobile editor</title>
+
+</head>
+<body>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0E0F12}
+a{color:#FF8F6B}a:hover{color:#FFB396}
+</style>
+
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 16px; background: #0E0F12; color: #EDEEF0; font-family: 'Geist', 'Helvetica Neue', Arial, sans-serif; font-size: 14px; line-height: 20px; display: flex; flex-direction: column; gap: 14px; overflow: hidden">
+
+<header style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<button type="button" style="min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #2A2D33; background: #17191E; color: #EDEEF0; font: inherit; display: flex; align-items: center; gap: 4px">
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"></path></svg>Clips</button>
+<div style="display: flex; flex-direction: column; align-items: center">
+<span style="font-weight: 600">Clip 3</span>
+<span style="font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 11px; color: #9BA1AC">00:58 · 9:16</span>
+</div>
+<button type="button" style="min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid #FF6A3D; background: #FF6A3D; color: #14161A; font: inherit; font-weight: 600">Export</button>
+</header>
+
+<div style="position: relative; width: 252px; height: 448px; margin: 0 auto; border-radius: 16px; overflow: hidden; background: #26292F; border: 1px solid #2A2D33; flex: none">
+<div aria-hidden="true" style="position: absolute; left: 33px; top: 104px; width: 186px; height: 344px">
+<div style="width: 112px; height: 112px; margin: 0 auto; border-radius: 50%; background: #5A5F6A"></div>
+<div style="width: 186px; height: 224px; margin-top: 12px; border-radius: 84px 84px 0 0; background: #444851"></div>
+</div>
+<button type="button" aria-label="Speaker A is in focus. Tap another face to switch" style="position: absolute; left: 66px; top: 96px; width: 120px; height: 128px; border-radius: 12px; border: 2px dashed #FF6A3D; background: transparent; padding: 0"></button>
+<span style="position: absolute; left: 12px; top: 12px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #FF6A3D; color: #14161A">Speaker A · auto</span>
+<div style="position: absolute; left: 14px; right: 14px; bottom: 44px; text-align: center; font-weight: 600; font-size: 17px; line-height: 26px"><span style="background: #14161A; padding: 4px 8px; border-radius: 4px">[Caption line]</span></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 12px; color: #9BA1AC">Focus on</span>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<button type="button" aria-pressed="true" style="min-height: 44px; border-radius: 8px; border: 1px solid #FF6A3D; background: #3A1D13; color: #EDEEF0; font: inherit; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px"><span aria-hidden="true" style="width: 18px; height: 18px; border-radius: 50%; background: #FF6A3D"></span>Speaker A</button>
+<button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 8px; border: 1px solid #2A2D33; background: #17191E; color: #EDEEF0; font: inherit; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px"><span aria-hidden="true" style="width: 18px; height: 18px; border-radius: 50%; background: #7DB8FF"></span>Speaker B</button>
+<button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 8px; border: 1px dashed #2A2D33; background: transparent; color: #9BA1AC; font: inherit; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px"><span aria-hidden="true" style="width: 18px; height: 18px; border-radius: 50%; background: #3A3D45"></span>C · off</button>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 12px; color: #9BA1AC">Layout</span>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid #2A2D33; border-radius: 8px; background: #17191E">
+<button type="button" aria-pressed="true" style="min-height: 44px; border-radius: 6px; border: 0; background: #FF6A3D; color: #14161A; font: inherit; font-size: 13px; font-weight: 600">Auto</button>
+<button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 6px; border: 0; background: transparent; color: #EDEEF0; font: inherit; font-size: 13px">1-up</button>
+<button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 6px; border: 0; background: transparent; color: #EDEEF0; font: inherit; font-size: 13px">Split</button>
+<button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 6px; border: 0; background: transparent; color: #EDEEF0; font: inherit; font-size: 13px">Wide</button>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 11px; color: #9BA1AC"><span>00:04.2</span><span>00:58.0</span></div>
+<div style="position: relative; height: 28px; display: flex; gap: 2px">
+<div style="flex: 12 1 0; border-radius: 6px; background: #FF6A3D"></div>
+<div style="flex: 15 1 0; border-radius: 6px; background: #7DB8FF"></div>
+<div style="flex: 11 1 0; border-radius: 6px; background: #FF6A3D"></div>
+<div style="flex: 12 1 0; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column"><div style="flex: 1; background: #FF6A3D"></div><div style="flex: 1; background: #7DB8FF"></div></div>
+<div style="flex: 16 1 0; border-radius: 6px; background: #7DB8FF"></div>
+<div style="flex: 8 1 0; border-radius: 6px; background: #FF6A3D"></div>
+<div style="flex: 8 1 0; border-radius: 6px; background: #3A3D45"></div>
+<div style="flex: 18 1 0; border-radius: 6px; background: #7DB8FF"></div>
+<div aria-hidden="true" style="position: absolute; left: 7%; top: -4px; bottom: -4px; width: 2px; background: #EDEEF0"></div>
+</div>
+<span style="font-size: 12px; color: #9BA1AC">Tap a face in the preview to switch focus. Long-press a segment for more.</span>
+</div>
+
+</div>
+
+
+</body>
+</html>
