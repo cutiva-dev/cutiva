@@ -169,17 +169,22 @@ class ClipSetFade extends Command<CommandResult> {
   Map<String, Object?> _fields() => {'clipId': clipId, 'inUs': inUs, 'outUs': outUs};
 }
 
-/// Replace a video clip's crop keys (source times). An empty list removes the reframe.
+/// Replace a video clip's crop keys (source times). An empty list removes the reframe. [track]
+/// (ADR 0006): null keeps the clip's current Reframe Track unless [removeTrack]; a track replaces it.
 class ClipSetReframe extends Command<CommandResult> {
   final String clipId;
   final List<ReframeKey> keys;
-  const ClipSetReframe(this.clipId, this.keys);
+  final ReframeTrack? track;
+  final bool removeTrack;
+  const ClipSetReframe(this.clipId, this.keys, {this.track, this.removeTrack = false});
   @override
   String get type => 'clip.setReframe';
   @override
   Map<String, Object?> _fields() => {
     'clipId': clipId,
     'keys': [for (final k in keys) k.toJson()],
+    if (track != null) 'track': track!.toJson(),
+    if (removeTrack) 'track': null,
   };
 }
 
@@ -459,26 +464,30 @@ CommandResult _projectSetSize(Project project, ProjectSetSize cmd) {
 CommandResult _clipSetReframe(Project project, ClipSetReframe cmd) {
   final (track: _, :clip, index: _) = findClip(project, cmd.clipId);
   final asset = _findAsset(project, clip.assetId);
-  final keys = normalizeReframeKeys(cmd.keys);
+  Object? current;
+  for (final e in clip.effects) {
+    if (e.type == reframeEffect) current = e.params['track'];
+  }
+  final track = cmd.removeTrack ? null : (cmd.track?.toJson() ?? current);
+  final params = normalizeReframeParams(
+    {
+      'keys': [for (final k in cmd.keys) k.toJson()],
+      if (track != null) 'track': track,
+    },
+    width: asset.width,
+    height: asset.height,
+  );
   if (asset.kind != AssetKind.video) {
     throw CutivaError(CutivaErrorCode.trackKindMismatch, 'Only video clips can be reframed ("${clip.id}" is audio).');
   }
-  if (keys.isNotEmpty && (asset.width == null || asset.height == null || asset.width == 0 || asset.height == 0)) {
+  if (params.keys.isNotEmpty &&
+      (asset.width == null || asset.height == null || asset.width == 0 || asset.height == 0)) {
     throw CutivaError(
       CutivaErrorCode.assetSizeUnknown,
       'Asset "${asset.id}" has no width and height, so its clips can\'t be reframed.',
     );
   }
   clip.effects.removeWhere((e) => e.type == reframeEffect);
-  if (keys.isNotEmpty) {
-    clip.effects.add(
-      Effect(
-        type: reframeEffect,
-        params: {
-          'keys': [for (final k in keys) k.toJson()],
-        },
-      ),
-    );
-  }
+  if (params.keys.isNotEmpty) clip.effects.add(Effect(type: reframeEffect, params: reframeParamsJson(params)));
   return CommandResult(cmd.type);
 }

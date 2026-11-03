@@ -14,9 +14,22 @@ export {
   clipCropKeys,
   cropKeysInRange,
   normalizeReframeKeys,
+  normalizeReframeParams,
+  normalizeReframeTrack,
   reframeKeys,
+  reframeTrack,
   type CropKey,
 } from "./reframe.js";
+export {
+  planReframe,
+  editReframeTrack,
+  reframeStyle,
+  type PlanFace,
+  type PlanFrame,
+  type ReframePlanInput,
+  type ReframePlanResult,
+  type ReframeEdit,
+} from "./reframe-plan.js";
 export {
   autoReframe,
   detectCuts,

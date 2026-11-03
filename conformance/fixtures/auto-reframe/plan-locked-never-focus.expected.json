@@ -1,0 +1,120 @@
+{
+  "_notes": [
+    "Frames of plan-two-speakers. The previous track names p1 Ana and p2 Ben, marks Ben never-focus, and has a locked segment [4 s, 5 s) framing Ana.",
+    "Ben is never a candidate. Frames 0-14: Ana talks. Frames 15-29: Ana's lips are 0 and the only one talking is Ben (never focus), so never-focus: wide, speaker p2.",
+    "Segments: Ana [0, 3 s), never-focus [3 s, 6 s); the locked segment cuts the latter into [3 s, 4 s) and [5 s, 6 s), each exactly the 1 s minimum, and passes through unchanged except its id (s3, by time order).",
+    "Locked single focus p1: Ana's window, centre 500. Names and flags carry over."
+  ],
+  "track": {
+    "version": 1,
+    "style": 50,
+    "maxUpscalePct": 200,
+    "zoomPct": 100,
+    "safeZone": "none",
+    "people": [
+      {
+        "id": "p1",
+        "label": "Ana",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      },
+      {
+        "id": "p2",
+        "label": "Ben",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": true
+      }
+    ],
+    "segments": [
+      {
+        "id": "s1",
+        "startUs": 0,
+        "endUs": 3000000,
+        "speakers": [
+          "p1"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "single",
+        "locked": false,
+        "reason": "lips+voice"
+      },
+      {
+        "id": "s2",
+        "startUs": 3000000,
+        "endUs": 4000000,
+        "speakers": [
+          "p2"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "wide",
+        "locked": false,
+        "reason": "never-focus"
+      },
+      {
+        "id": "s3",
+        "startUs": 4000000,
+        "endUs": 5000000,
+        "speakers": [
+          "p2"
+        ],
+        "layout": "single",
+        "focus": [
+          "p1"
+        ],
+        "resolved": "single",
+        "locked": true,
+        "reason": "user"
+      },
+      {
+        "id": "s4",
+        "startUs": 5000000,
+        "endUs": 6000000,
+        "speakers": [
+          "p2"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "wide",
+        "locked": false,
+        "reason": "never-focus"
+      }
+    ]
+  },
+  "keys": [
+    {
+      "atUs": 0,
+      "x": 500,
+      "y": 540,
+      "h": 1080,
+      "cut": true
+    },
+    {
+      "atUs": 3000000,
+      "x": 960,
+      "y": 540,
+      "h": 1080,
+      "cut": true,
+      "layout": "wide"
+    },
+    {
+      "atUs": 4000000,
+      "x": 500,
+      "y": 540,
+      "h": 1080,
+      "cut": true
+    },
+    {
+      "atUs": 5000000,
+      "x": 960,
+      "y": 540,
+      "h": 1080,
+      "cut": true,
+      "layout": "wide"
+    }
+  ],
+  "passthrough": false
+}

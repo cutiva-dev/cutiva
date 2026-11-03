@@ -381,12 +381,14 @@ El MVP se construye en 7 fases (0 a 6), cada una cerrada por una condición veri
 
 **Fase 1 — Core en Rust (sin video)**
 
-- [ ] `reframe-core`: tipos, migración de versiones y validación.
-- [ ] Geometría: fórmula de recorte, área activa, clamp, split 9:8, zona segura.
-- [ ] Segmentación: puntaje de hablante, histéresis, overlap, `no-face`, `voice-only`, segmento mínimo, ajuste a cortes, `locked`.
-- [ ] Cámara: zona muerta, One Euro, velocidad máxima, cortes secos entre personas.
-- [ ] API: `resolve(track)`, `cropAt(track, tMs)`, `editTrack(track, edit)`.
-- [ ] **Condición:** tests con observaciones sintéticas (JSON) para cada regla de la tabla de edge cases marcada MVP; salidas iguales a los golden files.
+> Adaptada: el core es TypeScript (`packages/core/src/reframe-plan.ts`, `reframe.ts`) y Dart (`reframe_plan.dart`, `reframe.dart`), con la misma salida. Pasos y constantes en `apps/website/content/docs/auto-reframe.mdx` ("The reframe planner").
+
+- [x] `reframe-core`: tipos, migración de versiones y validación. *Tipos `ReframeTrack`, `TrackPerson`, `TrackSegment` y claves con `layout`/`regions`; validación en `normalizeReframeTrack` y en `parseProject`. Solo existe `track.version` 1, así que aún no hay migración.*
+- [x] Geometría: fórmula de recorte, área activa, clamp, split 9:8, zona segura. *Hecho salvo la zona segura: el schema solo admite `"none"` hasta definir los presets de plataforma (pendiente para la Fase 4, con la superposición en la UI).*
+- [x] Segmentación: puntaje de hablante, histéresis, overlap, `no-face`, `voice-only`, segmento mínimo, ajuste a cortes, `locked`.
+- [x] Cámara: zona muerta, One Euro, velocidad máxima, cortes secos entre personas.
+- [x] API: `resolve(track)`, `cropAt(track, tMs)`, `editTrack(track, edit)`. *Como `planReframe(input)` (re-resuelve con el track actual), `cropAt` (ya existía, sobre claves) y `editReframeTrack(track, edit)`.*
+- [x] **Condición:** tests con observaciones sintéticas (JSON) para cada regla de la tabla de edge cases marcada MVP; salidas iguales a los golden files. *Cumplida el 2026-11-03: 8 fixtures `conformance/fixtures/auto-reframe/plan-*.json` con valores escritos a mano, idénticos en TS y Dart, y un test unitario por regla del core (`reframe-plan.test.ts`, `reframe_plan_test.dart`). Las reglas de plataforma (rotación, SAR, códec, contexto de 2 s, laterales difuminados, HDR) son de la Fase 3. Desviación de la spec: `maxUpscale` por defecto 2× en vez de 1.5×, porque un 1080p a 1080×1920 ya necesita 1.78×.*
 
 **Fase 2 — Bindings**
 

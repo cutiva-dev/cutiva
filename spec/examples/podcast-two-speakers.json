@@ -11,7 +11,7 @@
   "track": {
     "version": 1,
     "style": 50,
-    "maxUpscalePct": 150,
+    "maxUpscalePct": 200, "zoomPct": 100,
     "safeZone": "none",
     "people": [
       { "id": "p1", "label": "Speaker A", "kind": "face", "priority": true, "neverFocus": false },

@@ -17,6 +17,12 @@ enum CutivaErrorCode {
   exportFailed('EXPORT_FAILED'),
   exportCancelled('EXPORT_CANCELLED'),
   analysisCancelled('ANALYSIS_CANCELLED'),
+
+  /// A reframe edit names a segment the clip's track doesn't have.
+  segmentNotFound('SEGMENT_NOT_FOUND'),
+
+  /// A reframe edit names a person the clip's track doesn't have.
+  personNotFound('PERSON_NOT_FOUND'),
   nothingToExport('NOTHING_TO_EXPORT');
 
   /// The same string every Cutiva SDK uses for this error.

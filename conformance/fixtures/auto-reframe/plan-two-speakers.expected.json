@@ -1,0 +1,81 @@
+{
+  "_notes": [
+    "30 frames at 200 ms, voice 0.5 everywhere. A (x 400) alternates mouth 0.1/0.3 on frames 0-14, then 0.1. B (x 1300) is 0.1 until frame 14, then alternates.",
+    "Lips = min(1, std of mouth within 250 ms / 0.05): any window holding both 0.1 and 0.3 gives std >= 0.094, so 1; a flat window gives 0. A: 1 on frames 0-14, 0 from 15. B: 0 on frames 0-13, 1 from 14.",
+    "No pan, so score = (0.6 lips + 0.15 continuity) / 0.75 = 0.8 lips + 0.2 continuity.",
+    "Frame 0: nobody is current, A is the only candidate, A becomes current. Frame 14: A 1.0, B 0.8, both above 0.5: overlap, but only 200 ms (< 1.5 s), so it stays A.",
+    "Frame 15: A 0.2 (not a candidate), B 0.8 > 0.2 + 0.15, so B challenges from frame 15. Balanced hold = 1 s: at frame 20 (4.0 s - 3.0 s = 1 s) B takes over, back-dated to frame 15 (3.0 s).",
+    "Segments: A [0, 3 s), B [3 s, 6 s), both longer than the 1 s minimum.",
+    "Window for 1920x1080 to 9:16: h = min(1080, floor(1920*1920/1080)) = 1080, w = round(1080*1080/1920) = round(607.5) = 608, so a centre x lies in [304, 1616] and y is always 540 (the window is as tall as the frame).",
+    "A face at x = 400 (w 200) has its centre at 500; at x = 1300, at 1400.",
+    "Faces never move, so each segment has one cut key. Upscale 1920 / 1080 = 1.78 <= 2: not low quality."
+  ],
+  "track": {
+    "version": 1,
+    "style": 50,
+    "maxUpscalePct": 200,
+    "zoomPct": 100,
+    "safeZone": "none",
+    "people": [
+      {
+        "id": "p1",
+        "label": "Speaker A",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      },
+      {
+        "id": "p2",
+        "label": "Speaker B",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      }
+    ],
+    "segments": [
+      {
+        "id": "s1",
+        "startUs": 0,
+        "endUs": 3000000,
+        "speakers": [
+          "p1"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "single",
+        "locked": false,
+        "reason": "lips+voice"
+      },
+      {
+        "id": "s2",
+        "startUs": 3000000,
+        "endUs": 6000000,
+        "speakers": [
+          "p2"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "single",
+        "locked": false,
+        "reason": "lips+voice"
+      }
+    ]
+  },
+  "keys": [
+    {
+      "atUs": 0,
+      "x": 500,
+      "y": 540,
+      "h": 1080,
+      "cut": true
+    },
+    {
+      "atUs": 3000000,
+      "x": 1400,
+      "y": 540,
+      "h": 1080,
+      "cut": true
+    }
+  ],
+  "passthrough": false
+}
