@@ -86,11 +86,28 @@ describe("planReframe rules", () => {
 
   it("without audio, lips decide", () => {
     const fs = frames(20, (i) => ({ faces: [face(A, i < 10 ? talk(i) : 0.1), face(B, i >= 10 ? talk(i) : 0.1)] }));
-    // B's lips first move in the window of frame 10, where A's still do (a 200 ms overlap); A stops at frame 11, so B wins from 2.2 s.
+    // Lips look 500 ms each side: A's move up to frame 11, B's from frame 9 (a 600 ms overlap, kept on A);
+    // from frame 12 only B's do, so B claims the frame there and wins a hold later, back-dated to 2.4 s.
     expect(brief(planReframe(input(fs)).track.segments)).toEqual([
-      [0, 2_200_000, "p1", "single", "lips+voice"],
-      [2_200_000, 4_000_000, "p2", "single", "lips+voice"],
+      [0, 2_400_000, "p1", "single", "lips+voice"],
+      [2_400_000, 4_000_000, "p2", "single", "lips+voice"],
     ]);
+  });
+
+  it("a challenger keeps its claim through frames where its lips pause or nobody beats the margin", () => {
+    // A talks for 2 s, then B; B's lips stop on frames 13-14 (a pause), which used to reset B's claim.
+    const fs = frames(30, (i) => ({ faces: [face(A, i < 10 ? talk(i) : 0.1), face(B, i >= 10 && (i < 13 || i > 16) ? talk(i) : 0.1)] }));
+    const segs = brief(planReframe(input(fs)).track.segments);
+    expect(segs.map((s) => s[2])).toEqual(["p1", "p2"]);
+    expect(segs[1]![0]).toBeLessThan(3_000_000);
+  });
+
+  it("a quiet current speaker loses the frame to one whose lips move more", () => {
+    // Both keep moving their lips; from frame 10 B's move about twice as much (lips ~0.8 against ~0.4).
+    // With continuity weighing 0.05, B's lead (~0.37) clears the 0.15 margin plus A's 0.08 continuity;
+    // with the old 0.15 weight A's continuity (0.2) kept the frame.
+    const fs = frames(30, (i) => ({ faces: [face(A, i % 2 ? 0.14 : 0.1), face(B, i >= 10 && i % 2 ? 0.18 : 0.1)] }));
+    expect(brief(planReframe(input(fs)).track.segments).map((s) => s[2])).toEqual(["p1", "p2"]);
   });
 
   it("without audio or visible lips, there is no useful signal: the most visible person holds", () => {

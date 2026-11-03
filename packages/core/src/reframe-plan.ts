@@ -88,15 +88,19 @@ const MIN_TRACK_SHARE = 0.2;
 const VOICE_LEVEL = 0.1;
 const VOICE_MIN_US = 250_000;
 const VOICE_GAP_US = 300_000;
-/** Lip activity is the spread of mouth openness within this many µs on each side of a frame. */
-const LIPS_WINDOW_US = 250_000;
+/**
+ * Lip activity is the spread of mouth openness within this many µs on each side of a frame: five
+ * samples at 5 fps. Three (250 ms) were too noisy on real faces to keep a speaker for a second.
+ */
+const LIPS_WINDOW_US = 500_000;
 /** A standard deviation of mouth openness this large scores 1. */
 const LIPS_FULL = 0.05;
 /** A visible face with lip activity under this isn't a candidate speaker. */
 const LIPS_CANDIDATE = 0.3;
 const W_LIPS = 0.6;
 const W_PAN = 0.25;
-const W_CONTINUITY = 0.15;
+/** Small: a hold time and a switch margin already keep the camera steady; more let a quiet speaker keep the frame. */
+const W_CONTINUITY = 0.05;
 /** A challenger must beat the current speaker by this much for `holdUs` to take the frame. */
 const SWITCH_MARGIN = 0.15;
 const OVERLAP_SCORE = 0.5;
@@ -425,7 +429,7 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
       const talking = visible.filter((i) => flag(i, "neverFocus") && (lips(i, fi) ?? 0) >= LIPS_CANDIDATE);
       labels.push(talking.length > 0 ? { kind: "never", person: talking[0]! } : { kind: "voice" });
       speakerOf.push(current);
-      challenger = null;
+      // A pause in someone's lip movement doesn't end their claim to the frame.
       continue;
     }
     const scores = new Map(focusable.map((i) => [i, score(i, fi, current)]));
@@ -434,20 +438,27 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
     if (current === null || !present(current, fi) || flag(current, "neverFocus")) {
       current = best;
       challenger = null;
-    } else if (best !== current && scores.get(best)! > (scores.get(current) ?? 0) + SWITCH_MARGIN) {
-      const ch: Challenge = challenger !== null && challenger.person === best ? challenger : { person: best, from: fi };
-      challenger = ch;
-      if (at(fi) - at(ch.from) >= params.holdUs) {
-        // Cut where the new speaker started, as an editor would.
-        for (let g = ch.from; g < fi; g++) {
-          speakerOf[g] = best;
-          const lab = labels[g]!;
-          if (lab.kind === "speak") labels[g] = { kind: "speak", person: best };
+    } else {
+      const cur = scores.get(current) ?? 0;
+      // A challenger claims the frame by beating the current speaker by the margin, and keeps the
+      // claim while it still scores higher than them; it wins once the claim lasts the hold time.
+      const keeps = challenger !== null && (scores.get(challenger.person) ?? 0) > cur;
+      const claims = best !== current && scores.get(best)! > cur + SWITCH_MARGIN;
+      if (keeps || claims) {
+        const ch: Challenge = keeps ? challenger! : { person: best, from: fi };
+        challenger = ch;
+        if (at(fi) - at(ch.from) >= params.holdUs) {
+          // Cut where the new speaker started, as an editor would.
+          for (let g = ch.from; g < fi; g++) {
+            speakerOf[g] = ch.person;
+            const lab = labels[g]!;
+            if (lab.kind === "speak") labels[g] = { kind: "speak", person: ch.person };
+          }
+          current = ch.person;
+          challenger = null;
         }
-        current = best;
-        challenger = null;
-      }
-    } else challenger = null;
+      } else challenger = null;
+    }
     // Talking at once needs moving lips on both: pan and continuity alone can't tell two voices apart.
     const over = ranked.filter((i) => scores.get(i)! > OVERLAP_SCORE && (lips(i, fi) ?? 0) >= LIPS_CANDIDATE);
     speakerOf.push(current);

@@ -1,11 +1,11 @@
 {
   "_notes": [
-    "Cut at 2.8 s (frame 14). Shot 0: A at x 400, alternating until frame 12, flat on 13. Shot 1: C at x 1300, flat until frame 20, alternating from 21. Voice 0.5 everywhere.",
-    "Tracks reset at the cut, so C is a new person (p2). Lips only use the same shot's sightings: A's frame 13 window is 0.1, 0.1 -> 0.",
-    "Frames 0-12: A. Frames 13-19: voice, no candidate: voice-only (2.6 s to 4.0 s = 1.4 s > 1 s). Frame 20: C is a candidate (its window has 0.1, 0.1, 0.3) and A isn't in this shot, so C takes over at once.",
-    "Segments before snapping: A [0, 2.6 s), voice [2.6 s, 4.0 s), C [4.0 s, 6.0 s). The edge at 2.6 s is 0.2 s from the cut (< 0.4 s), so it moves to 2.8 s.",
+    "Cut at 2.8 s (frame 14). Shot 0: A at x 400, mouth 0.3 on odd frames 1-9 and on frame 10, 0.1 elsewhere (frames 11-13 flat). Shot 1: C at x 1300, flat until frame 20, 0.3 on odd frames from 21. Voice 0.5 everywhere.",
+    "Tracks reset at the cut, so C is a new person (p2). Lips use the same shot's sightings within 500 ms: A's frame 12 window (10-13) holds 0.3 and 0.1 -> 1; frame 13's window (11-13) is flat -> 0. C's window reaches frame 21 from frame 19, so C has lips 1 from frame 19.",
+    "Frames 0-12: A. Frames 13-18: voice, no candidate: voice-only from 2.6 s to 3.8 s = 1.2 s > 1 s. Frame 19: C is a candidate and A isn't in this shot, so C takes over at once.",
+    "Segments before snapping: A [0, 2.6 s), voice [2.6 s, 3.8 s), C [3.8 s, 6.0 s). The edge at 2.6 s is 0.2 s from the cut (< 0.4 s), so it moves to 2.8 s; the voice segment stays 1.0 s, the Balanced minimum.",
     "Window for 1920x1080 to 9:16: h = min(1080, floor(1920*1920/1080)) = 1080, w = round(1080*1080/1920) = round(607.5) = 608, so a centre x lies in [304, 1616] and y is always 540 (the window is as tall as the frame).",
-    "A face at x = 400 (w 200) has its centre at 500; at x = 1300, at 1400."
+    "A face at x = 400 (w 200) has its centre at 500; at x = 1300, at 1400. The wide key is centred on the frame (960, 540)."
   ],
   "track": {
     "version": 1,
@@ -53,7 +53,7 @@
       {
         "id": "s2",
         "startUs": 2800000,
-        "endUs": 4000000,
+        "endUs": 3800000,
         "speakers": [
           "p3"
         ],
@@ -65,7 +65,7 @@
       },
       {
         "id": "s3",
-        "startUs": 4000000,
+        "startUs": 3800000,
         "endUs": 6000000,
         "speakers": [
           "p2"
@@ -95,7 +95,7 @@
       "layout": "wide"
     },
     {
-      "atUs": 4000000,
+      "atUs": 3800000,
       "x": 1400,
       "y": 540,
       "h": 1080,

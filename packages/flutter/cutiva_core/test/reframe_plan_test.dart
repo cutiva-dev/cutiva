@@ -150,14 +150,43 @@ void main() {
     ]);
   });
 
+  test('a challenger keeps its claim through a pause in its lips', () {
+    final fs = _frames(
+      30,
+      (i) => (
+        voice: null,
+        pan: null,
+        faces: [_face(_a, i < 10 ? _talk(i) : 0.1), _face(_b, i >= 10 && (i < 13 || i > 16) ? _talk(i) : 0.1)],
+      ),
+    );
+    final segs = _brief(_plan(fs).track.segments);
+    expect([for (final s in segs) s[2]], ['p1', 'p2']);
+    expect(segs[1][0] as int, lessThan(3000000));
+  });
+
+  test('a quiet current speaker loses the frame to one whose lips move more', () {
+    // From frame 10 B's lips move about twice as much as A's (~0.8 against ~0.4); continuity weighs 0.05.
+    final fs = _frames(
+      30,
+      (i) => (
+        voice: null,
+        pan: null,
+        faces: [_face(_a, i.isOdd ? 0.14 : 0.1), _face(_b, i >= 10 && i.isOdd ? 0.18 : 0.1)],
+      ),
+    );
+    expect([for (final s in _brief(_plan(fs).track.segments)) s[2]], ['p1', 'p2']);
+  });
+
   test('without audio, lips decide; with nothing to go on, the most visible person holds', () {
     final fs = _frames(
       20,
       (i) => (voice: null, pan: null, faces: [_face(_a, i < 10 ? _talk(i) : 0.1), _face(_b, i >= 10 ? _talk(i) : 0.1)]),
     );
+    // Lips look 500 ms each side: A's move up to frame 11, B's from frame 9 (an overlap kept on A);
+    // from frame 12 only B's do, so B claims the frame there and wins a hold later, back-dated to 2.4 s.
     expect(_brief(_plan(fs).track.segments), [
-      [0, 2200000, 'p1', 'single', 'lips+voice'],
-      [2200000, 4000000, 'p2', 'single', 'lips+voice'],
+      [0, 2400000, 'p1', 'single', 'lips+voice'],
+      [2400000, 4000000, 'p2', 'single', 'lips+voice'],
     ]);
     final still = _frames(10, (_) => (voice: 0, pan: null, faces: [_face(_a, 0.1, w: 150, h: 150), _face(_b, 0.1)]));
     expect(_brief(_plan(still).track.segments), [

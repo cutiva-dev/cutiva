@@ -1,8 +1,8 @@
 {
   "_notes": [
-    "40 frames, voice 0.5. Frames 0-14: A and B both alternate (lips 1). Frames 15-29: both visible, mouths flat (lips 0). Frames 30-39: no faces.",
-    "Frame 0: both candidates score 0.8 (nobody current); tie goes to the lower person, A. Frames 0-14: A 1.0, B 0.8, both above 0.5: overlap for 3 s (>= 1.5 s), so a split.",
-    "Frames 15-29: voice but no candidate (lips 0 < 0.3): voice-only for 3 s (> 1 s), so wide, with an off-camera voice person p3. Frames 30-39: no faces: wide, no-face.",
+    "40 frames, voice 0.5. Frames 0-14: A and B both alternate (0.3 on odd frames 1-13). Lips over 500 ms: 1 on frames 0-15 (frame 15's window reaches frame 13), 0 on 16-29. Frames 30-39: no faces.",
+    "Frame 0: both candidates score 0.6 / 0.65 = 0.923 (nobody current); tie goes to the lower person, A. Frames 0-15: A (0.6 + 0.05) / 0.65 = 1.0, B 0.923, both above 0.5: overlap for 3.2 s (>= 1.5 s), so a split.",
+    "Frames 16-29: voice but no candidate (lips 0 < 0.3): voice-only for 2.8 s (> 1 s), so wide, with an off-camera voice person p3. Frames 30-39: no faces: wide, no-face.",
     "Split: A and B are 1100 px apart (union wider than the 608 px window). Each region: h = round(200 / 0.35) = 571 (max floor(1920*1920 / 2160) = 1706), w = round(571*2160/1920) = 642, centre x = face centre, y = 300 + 0.38 * 571 = 516.98 -> 517.",
     "Split upscale 960 / 571 = 1.68 <= 2. Split and wide keys carry the area's centre (960, 540) and h 1080 for renderers that don't draw layouts."
   ],
@@ -39,7 +39,7 @@
       {
         "id": "s1",
         "startUs": 0,
-        "endUs": 3000000,
+        "endUs": 3200000,
         "speakers": [
           "p1",
           "p2"
@@ -52,7 +52,7 @@
       },
       {
         "id": "s2",
-        "startUs": 3000000,
+        "startUs": 3200000,
         "endUs": 6000000,
         "speakers": [
           "p3"
@@ -98,7 +98,7 @@
       ]
     },
     {
-      "atUs": 3000000,
+      "atUs": 3200000,
       "x": 960,
       "y": 540,
       "h": 1080,
