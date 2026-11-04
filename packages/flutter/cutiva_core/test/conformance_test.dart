@@ -47,6 +47,7 @@ void main() {
             activeArea:
                 area == null ? null : CropRect(area['x'] as int, area['y'] as int, area['w'] as int, area['h'] as int),
             track: input['track'] == null ? null : normalizeReframeTrack(input['track']),
+            minShotUs: input['minShotUs'] as int?,
           );
           // Sightings are for editors and are covered by unit tests; the fixtures pin the track and keys.
           expect(result.toJson()..remove('sightings'), expected);

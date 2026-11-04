@@ -1,0 +1,57 @@
+{
+  "_notes": [
+    "Same frames as plan-two-speakers, with minShotUs 3 s.",
+    "Without it the plan is A [0, 3.2 s) then B [3.2 s, 6 s) (see plan-two-speakers).",
+    "The minimum shot is max(balanced style's 1 s, minShotUs 3 s) = 3 s. A lasts 3.2 s and stays; B lasts 2.8 s, so it folds into its only neighbour, A.",
+    "The folded segments merge: one segment A [0, 6 s) with A's reason. Both people are still in the track (they were tracked); the minimum is not stored.",
+    "One cut key at 0 on A's centre (500, 540), as in plan-two-speakers."
+  ],
+  "track": {
+    "version": 1,
+    "style": 50,
+    "maxUpscalePct": 200,
+    "zoomPct": 100,
+    "safeZone": "none",
+    "people": [
+      {
+        "id": "p1",
+        "label": "Speaker A",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      },
+      {
+        "id": "p2",
+        "label": "Speaker B",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      }
+    ],
+    "segments": [
+      {
+        "id": "s1",
+        "startUs": 0,
+        "endUs": 6000000,
+        "speakers": [
+          "p1"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "single",
+        "locked": false,
+        "reason": "lips+voice"
+      }
+    ]
+  },
+  "keys": [
+    {
+      "atUs": 0,
+      "x": 500,
+      "y": 540,
+      "h": 1080,
+      "cut": true
+    }
+  ],
+  "passthrough": false
+}
