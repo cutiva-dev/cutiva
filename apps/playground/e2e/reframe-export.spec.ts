@@ -98,7 +98,8 @@ test("split and wide + blur draw in the preview, and the exported MP4 matches it
 
   // The preview at three instants, once it has drawn the expected layout.
   const samples = [
-    { t: 0.75, ready: (m: Measure) => m.points.centre30 === "red" },
+    // A split's top face also covers 30% height, so the single is ready once no blue shows anywhere.
+    { t: 0.75, ready: (m: Measure) => m.points.centre30 === "red" && Object.values(m.edges).every((e) => e.blue < 0) },
     { t: 2.4, ready: (m: Measure) => m.points.corner === "dim" && m.points.wideRed === "red" },
     { t: 4.6, ready: (m: Measure) => new Set([m.points.top, m.points.bottom]).size === 2 && [m.points.top, m.points.bottom].every((c) => c === "red" || c === "blue") },
   ];
