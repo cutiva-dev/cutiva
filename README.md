@@ -27,7 +27,8 @@ Cutiva lets you add trimming, splitting, audio, auto-reframe to vertical and MP4
 | [`apps/website`](apps/website) | Deployed at [cutiva.ngstudios.co](https://cutiva.ngstudios.co) | The landing at `/`, docs at `/docs` (Next.js + Fumadocs), the playground at `/play`, and the waitlist endpoint. |
 | [`cutiva_core`](packages/flutter/cutiva_core) (Dart) | Working, tested (98.9% line coverage, same conformance and auto-reframe fixtures); not on pub.dev | The core ported to Dart for Flutter: project format, commands, undo/redo, timeline resolution, crop keys and the auto-reframe planner. |
 | [`engine-android`](packages/engine-android) | Export and reframe analysis working on the Android emulator (one video layer); real devices need testing; preview planned | Renders the core's render plan with Media3: MP4 export with speed, gaps, mixing, volume and fades, audio within 5 ms of the picture, and reframed clips (single, split, wide + blur). Its `reframe` module finds faces with MediaPipe and measures speech, for auto-reframe on the device. |
-| Flutter preview and export, React Native | Planned | One native engine per OS ([ADR 0004](docs/adr/0004-mobile-engine-render-plan.md)). See the [roadmap](ROADMAP.md). |
+| [`@cutiva/expo`](packages/expo) | Beta: Android only, tested on the Android 15 emulator; real phones need testing; iOS planned | `reframeVideo(uri)`: auto-reframe to 9:16 on the phone for Expo and React Native apps (native analysis with MediaPipe, planning with `@cutiva/core`, export with the Android engine). Example in [`apps/expo-example`](apps/expo-example). |
+| Flutter preview and export, React Native editor | Planned | One native engine per OS ([ADR 0004](docs/adr/0004-mobile-engine-render-plan.md)). See the [roadmap](ROADMAP.md). |
 
 ## Quick look
 

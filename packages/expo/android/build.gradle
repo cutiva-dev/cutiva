@@ -1,0 +1,41 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'dev.cutiva.expo'
+version = '0.1.0'
+
+// The Cutiva Android engine and its reframe module (packages/engine-android), compiled into this
+// module. In the monorepo they are read in place; the npm package carries a copy (android/engine,
+// written by scripts/copy-engine.mjs). canonicalPath follows the symlink an app's node_modules has.
+def here = file(projectDir.canonicalPath)
+def monorepo = new File(here, '../../engine-android')
+def engine = monorepo.exists() ? monorepo : new File(here, 'engine')
+
+android {
+  namespace "dev.cutiva.expo"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+    minSdkVersion 24
+  }
+  sourceSets {
+    main {
+      java.srcDirs += [new File(engine, 'engine/src/main/kotlin'), new File(engine, 'reframe/src/main/kotlin')]
+    }
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  // All Apache-2.0; the same versions as packages/engine-android.
+  implementation 'androidx.media3:media3-transformer:1.11.1'
+  implementation 'androidx.media3:media3-effect:1.11.1'
+  implementation 'androidx.media3:media3-common:1.11.1'
+  implementation 'androidx.media3:media3-inspector:1.11.1'
+  implementation 'androidx.media3:media3-inspector-frame:1.11.1'
+  implementation 'com.google.mediapipe:tasks-vision:1.1.1'
+}

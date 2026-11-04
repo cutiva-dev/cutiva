@@ -45,6 +45,8 @@ class ReframeMeasurements(
     val peakWidth: Int,
     val peakHeight: Int,
     val peak: ByteArray,
+    /** The file has an audio track. */
+    val hasAudio: Boolean = false,
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("durationUs", durationUs)
@@ -53,6 +55,7 @@ class ReframeMeasurements(
         put("fromUs", fromUs)
         put("toUs", toUs)
         put("fps", fps)
+        put("hasAudio", hasAudio)
         put("frames", JSONArray().apply {
             for (f in frames) put(JSONObject().apply {
                 put("atUs", f.atUs)
@@ -163,7 +166,7 @@ class ReframeAnalyzer(context: Context) {
             }
             onProgress(1.0, "audio")
         }
-        return ReframeMeasurements(info.durationUs, info.width, info.height, from, to, options.fps, frames, histograms, barsW, barsH, peak)
+        return ReframeMeasurements(info.durationUs, info.width, info.height, from, to, options.fps, frames, histograms, barsW, barsH, peak, hasAudio)
     }
 
     private fun pixels(bitmap: Bitmap, w: Int, h: Int): IntArray {
