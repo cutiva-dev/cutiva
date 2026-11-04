@@ -57,6 +57,7 @@ describe("planReframe input", () => {
     expect(() => planReframe({ ...ok, cuts: [0.5] })).toThrow("Cuts");
     expect(() => planReframe({ ...ok, activeArea: { x: 1000, y: 0, w: 1000, h: 1080 } })).toThrow("activeArea");
     expect(() => planReframe({ ...ok, minShotUs: -1 })).toThrow("minShotUs");
+    expect(() => planReframe({ ...ok, frames: [{ atUs: 0, faces: [face(0, 0, { speaking: 1.5 })] }] })).toThrow("speaking");
     expect(() => planReframe({ ...ok, minShotUs: 1.5 })).toThrow("minShotUs");
   });
 
@@ -94,6 +95,25 @@ describe("planReframe rules", () => {
       [0, 2_400_000, "p1", "single", "lips+voice"],
       [2_400_000, 4_000_000, "p2", "single", "lips+voice"],
     ]);
+  });
+
+  it("an active-speaker score replaces lip activity", () => {
+    // Lips say A talks the whole time; the speaker model says B. The model wins.
+    const fs = frames(20, () => ({ voice: 0.5, faces: [face(A, 0.1, { speaking: 0.1 }), face(B, 0.1, { speaking: 0.9 })] }));
+    fs.forEach((f, i) => (f.faces[0]!.mouth = talk(i)));
+    expect(brief(planReframe(input(fs)).track.segments)).toEqual([[0, 4_000_000, "p2", "single", "lips+voice"]]);
+    // Still mouths and no model: nobody is a candidate, so the voice goes wide.
+    const still = frames(10, () => ({ voice: 0.5, faces: [face(A, 0.1), face(B, 0.1)] }));
+    expect(brief(planReframe(input(still)).track.segments).map((s) => [s[3], s[4]])).toEqual([["wide", "voice-only"]]);
+  });
+
+  it("a person without speaker scores falls back to their lips; two scores over 0.5 are an overlap", () => {
+    // A has no score and moving lips; B's score is low: A is framed.
+    const mixed = frames(20, (i) => ({ voice: 0.5, faces: [face(A, talk(i)), face(B, 0.1, { speaking: 0.2 })] }));
+    expect(brief(planReframe(input(mixed)).track.segments).map((s) => s[2])).toEqual(["p1"]);
+    // Both scored as talking for 2 s: an overlap, framed together.
+    const both = frames(10, () => ({ voice: 0.5, faces: [face(A, 0.1, { speaking: 0.9 }), face(B, 0.1, { speaking: 0.9 })] }));
+    expect(brief(planReframe(input(both)).track.segments).map((s) => s[2])).toEqual(["p1+p2"]);
   });
 
   it("minShotUs raises the camera style's minimum shot; shorter shots fold into a neighbour", () => {

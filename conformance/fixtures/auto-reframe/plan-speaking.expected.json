@@ -1,0 +1,80 @@
+{
+  "_notes": [
+    "20 frames at 200 ms, voice 0.5 everywhere. Both mouths stay at 0.1, so lip activity is 0: with lips alone nobody is a candidate and the plan would be wide voice-only.",
+    "speaking: A (x 400) is 0.9 on frames 0-9 and 0.1 from 10; B (x 1300) the opposite.",
+    "speakingAt is the mean over real sightings within 500 ms (frames i-2..i+2). A: 0.9 up to frame 7, 0.74 on 8, 0.58 on 9, 0.42 on 10, 0.26 on 11, 0.1 from 12. B mirrors it: 0.42 on 9, 0.58 on 10, 0.74 on 11, 0.9 from 12.",
+    "A candidate needs speaking >= 0.5. Score = (0.6 speaking + 0.05 continuity) / 0.65 (no pan).",
+    "Frame 0: A is the only candidate and becomes current. Frame 10: B 0.535, A 0.465; B doesn't beat A by 0.15. Frame 11: B 0.683 > A 0.317 + 0.15, so B claims from frame 11 (2.2 s) and keeps the claim. Balanced hold 1 s: at frame 16 B takes over, back-dated to frame 11.",
+    "No overlap: on frames 9-10 only one face reaches 0.5.",
+    "Segments: A [0, 2.2 s), B [2.2 s, 4 s), both over the 1 s minimum. The reason stays lips+voice.",
+    "Window and keys as in plan-two-speakers: x 500 for A, 1400 for B, y 540, h 1080, one cut key per segment."
+  ],
+  "track": {
+    "version": 1,
+    "style": 50,
+    "maxUpscalePct": 200,
+    "zoomPct": 100,
+    "safeZone": "none",
+    "people": [
+      {
+        "id": "p1",
+        "label": "Speaker A",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      },
+      {
+        "id": "p2",
+        "label": "Speaker B",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      }
+    ],
+    "segments": [
+      {
+        "id": "s1",
+        "startUs": 0,
+        "endUs": 2200000,
+        "speakers": [
+          "p1"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "single",
+        "locked": false,
+        "reason": "lips+voice"
+      },
+      {
+        "id": "s2",
+        "startUs": 2200000,
+        "endUs": 4000000,
+        "speakers": [
+          "p2"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "single",
+        "locked": false,
+        "reason": "lips+voice"
+      }
+    ]
+  },
+  "keys": [
+    {
+      "atUs": 0,
+      "x": 500,
+      "y": 540,
+      "h": 1080,
+      "cut": true
+    },
+    {
+      "atUs": 2200000,
+      "x": 1400,
+      "y": 540,
+      "h": 1080,
+      "cut": true
+    }
+  ],
+  "passthrough": false
+}

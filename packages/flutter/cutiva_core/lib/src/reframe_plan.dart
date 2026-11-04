@@ -19,7 +19,19 @@ class PlanFace {
 
   /// Detector confidence, 0 to 1. Faces under 0.6 are ignored. Null when the detector gives none.
   final double? conf;
-  const PlanFace({required this.x, required this.y, required this.w, required this.h, this.mouth, this.conf});
+
+  /// How likely this face is talking right now, 0 to 1, from an active-speaker model (for example
+  /// Light-ASD). When a person's faces carry it, it replaces their lip activity. Null without one.
+  final double? speaking;
+  const PlanFace({
+    required this.x,
+    required this.y,
+    required this.w,
+    required this.h,
+    this.mouth,
+    this.conf,
+    this.speaking,
+  });
 
   factory PlanFace.fromJson(Map<String, Object?> json) => PlanFace(
     x: (json['x'] as num).toDouble(),
@@ -28,6 +40,7 @@ class PlanFace {
     h: (json['h'] as num).toDouble(),
     mouth: (json['mouth'] as num?)?.toDouble(),
     conf: (json['conf'] as num?)?.toDouble(),
+    speaking: (json['speaking'] as num?)?.toDouble(),
   );
 }
 
@@ -111,6 +124,9 @@ const _voiceGapUs = 300000;
 const _lipsWindowUs = 500000;
 const _lipsFull = 0.05;
 const _lipsCandidate = 0.3;
+
+/// With an active-speaker score, a face averaging under this within the lips window isn't a candidate speaker.
+const _speakingCandidate = 0.5;
 const _wLips = 0.6;
 const _wPan = 0.25;
 // Small: the hold time and the switch margin already keep the camera steady.
@@ -251,6 +267,10 @@ ReframePlanResult planReframe({
       _check(
         face.conf == null || (face.conf!.isFinite && face.conf! >= 0 && face.conf! <= 1),
         'conf must be between 0 and 1.',
+      );
+      _check(
+        face.speaking == null || (face.speaking!.isFinite && face.speaking! >= 0 && face.speaking! <= 1),
+        'speaking must be between 0 and 1.',
       );
     }
   }
@@ -516,8 +536,39 @@ ReframePlanResult planReframe({
     return math.min(1, math.sqrt(variance) / _lipsFull);
   }
 
-  double score(int i, int fi, int? current) {
+  // The mean active-speaker score of the person's real sightings within the lips window.
+  double? speakingAt(int i, int fi) {
+    final values = <double>[];
+    for (final t in tracks) {
+      if (t.person != i || t.shot != frameShot[fi]) continue;
+      for (final s in t.seen) {
+        if ((at(s.fi) - at(fi)).abs() <= _lipsWindowUs && s.face.speaking != null) values.add(s.face.speaking!);
+      }
+      if (values.isNotEmpty) break;
+    }
+    if (values.isEmpty) return null;
+    var sum = 0.0;
+    for (final v in values) {
+      sum += v;
+    }
+    return sum / values.length;
+  }
+
+  double? activity(int i, int fi) => speakingAt(i, fi) ?? lips(i, fi);
+  bool talking(int i, int fi) {
+    final sp = speakingAt(i, fi);
+    return sp != null ? sp >= _speakingCandidate : (lips(i, fi) ?? 0) >= _lipsCandidate;
+  }
+
+  bool candidate(int i, int fi) {
+    final sp = speakingAt(i, fi);
+    if (sp != null) return sp >= _speakingCandidate;
     final l = lips(i, fi);
+    return l == null || l >= _lipsCandidate;
+  }
+
+  double score(int i, int fi, int? current) {
+    final l = activity(i, fi);
     final pan = noAudio ? null : frames[fi].pan;
     var sum = _wContinuity * (i == current ? 1 : 0);
     var weight = _wContinuity;
@@ -557,14 +608,10 @@ ReframePlanResult planReframe({
       continue;
     }
     final focusable = visible.where((i) => !neverFocusOf(i)).toList();
-    final candidates =
-        focusable.where((i) {
-          final l = lips(i, fi);
-          return l == null || l >= _lipsCandidate;
-        }).toList();
+    final candidates = focusable.where((i) => candidate(i, fi)).toList();
     if (candidates.isEmpty) {
-      final talking = visible.where((i) => neverFocusOf(i) && (lips(i, fi) ?? 0) >= _lipsCandidate).toList();
-      labels.add(talking.isNotEmpty ? _Label(_Kind.never, talking[0]) : const _Label(_Kind.voice));
+      final hidden = visible.where((i) => neverFocusOf(i) && talking(i, fi)).toList();
+      labels.add(hidden.isNotEmpty ? _Label(_Kind.never, hidden[0]) : const _Label(_Kind.voice));
       speakerOf.add(current);
       // A pause in someone's lip movement doesn't end their claim to the frame.
       continue;
@@ -602,7 +649,7 @@ ReframePlanResult planReframe({
         challenger = null;
       }
     }
-    final over = ranked.where((i) => scores[i]! > _overlapScore && (lips(i, fi) ?? 0) >= _lipsCandidate).toList();
+    final over = ranked.where((i) => scores[i]! > _overlapScore && talking(i, fi)).toList();
     speakerOf.add(current);
     labels.add(
       over.length >= 2
