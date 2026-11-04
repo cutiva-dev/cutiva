@@ -48,6 +48,12 @@ export interface ReframePlanInput {
   activeArea?: CropRect;
   /** The clip's current track: its settings, people (names, flags, merges) and locked segments are kept. */
   track?: ReframeTrack;
+  /**
+   * Shortest shot to keep, on top of the camera style's own minimum (the longer one wins). Shorter
+   * stretches fold into a neighbour. Not stored in the track. Edges that then move onto a camera
+   * cut can leave a shot up to 400 ms shorter.
+   */
+  minShotUs?: Us;
 }
 
 export interface ReframePlanResult {
@@ -205,6 +211,7 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
     }
   });
   for (const c of input.cuts ?? []) check(Number.isInteger(c) && c >= 0, "Cuts must be non-negative integers.");
+  check(input.minShotUs === undefined || (Number.isInteger(input.minShotUs) && input.minShotUs >= 0), "minShotUs must be a non-negative integer.");
 
   const prev = input.track;
   const style = prev?.style ?? 50;
@@ -213,7 +220,8 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
   const givenArea = input.activeArea ?? prev?.activeArea;
   const area: CropRect = givenArea ?? { x: 0, y: 0, w: srcW, h: srcH };
   check(area.x >= 0 && area.y >= 0 && area.w >= 1 && area.h >= 1 && area.x + area.w <= srcW && area.y + area.h <= srcH, "activeArea must lie inside the source frame.");
-  const params = reframeStyle(style);
+  const styleParams = reframeStyle(style);
+  const params = { ...styleParams, minSegmentUs: Math.max(styleParams.minSegmentUs, input.minShotUs ?? 0) };
   const trackOf = (people: TrackPerson[], segments: TrackSegment[]): ReframeTrack => ({
     version: 1,
     style,

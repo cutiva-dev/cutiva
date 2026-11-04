@@ -25,6 +25,7 @@ ReframePlanResult _plan(
   List<int> cuts = const [],
   CropRect? area,
   ReframeTrack? track,
+  int? minShotUs,
 }) => planReframe(
   sourceWidth: srcW,
   sourceHeight: srcH,
@@ -35,6 +36,7 @@ ReframePlanResult _plan(
   cuts: cuts,
   activeArea: area,
   track: track,
+  minShotUs: minShotUs,
 );
 List<List<Object?>> _brief(List<TrackSegment> s) => [
   for (final x in s) [x.startUs, x.endUs, x.speakers.join('+'), x.resolved, x.reason],
@@ -112,6 +114,7 @@ void main() {
     );
     expect(codeOf(() => _plan(ok, cuts: [-1])), 'INVALID_RANGE');
     expect(codeOf(() => _plan(ok, area: const CropRect(1000, 0, 1000, 1080))), 'INVALID_RANGE');
+    expect(codeOf(() => _plan(ok, minShotUs: -1)), 'INVALID_RANGE');
     final none = _plan([], durationUs: 1000000);
     expect(_brief(none.track.segments), [
       [0, 1000000, '', 'wide', 'no-face'],
@@ -187,6 +190,11 @@ void main() {
     expect(_brief(_plan(fs).track.segments), [
       [0, 2400000, 'p1', 'single', 'lips+voice'],
       [2400000, 4000000, 'p2', 'single', 'lips+voice'],
+    ]);
+    // A minimum shot under the 1.6 s of B changes nothing; one above it folds B into A.
+    expect(_brief(_plan(fs, minShotUs: 1500000).track.segments).length, 2);
+    expect(_brief(_plan(fs, minShotUs: 2000000).track.segments), [
+      [0, 4000000, 'p1', 'single', 'lips+voice'],
     ]);
     final still = _frames(10, (_) => (voice: 0, pan: null, faces: [_face(_a, 0.1, w: 150, h: 150), _face(_b, 0.1)]));
     expect(_brief(_plan(still).track.segments), [

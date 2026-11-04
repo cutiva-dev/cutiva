@@ -56,6 +56,8 @@ describe("planReframe input", () => {
     expect(() => planReframe({ ...ok, frames: [{ atUs: 0, faces: [face(0, 0, { conf: 9 })] }] })).toThrow("conf");
     expect(() => planReframe({ ...ok, cuts: [0.5] })).toThrow("Cuts");
     expect(() => planReframe({ ...ok, activeArea: { x: 1000, y: 0, w: 1000, h: 1080 } })).toThrow("activeArea");
+    expect(() => planReframe({ ...ok, minShotUs: -1 })).toThrow("minShotUs");
+    expect(() => planReframe({ ...ok, minShotUs: 1.5 })).toThrow("minShotUs");
   });
 
   it("frames nothing as wide no-face", () => {
@@ -92,6 +94,13 @@ describe("planReframe rules", () => {
       [0, 2_400_000, "p1", "single", "lips+voice"],
       [2_400_000, 4_000_000, "p2", "single", "lips+voice"],
     ]);
+  });
+
+  it("minShotUs raises the camera style's minimum shot; shorter shots fold into a neighbour", () => {
+    // The case above: A for 2.4 s, then B for 1.6 s. The balanced style's minimum is 1 s.
+    const fs = frames(20, (i) => ({ faces: [face(A, i < 10 ? talk(i) : 0.1), face(B, i >= 10 ? talk(i) : 0.1)] }));
+    expect(brief(planReframe(input(fs, { minShotUs: 1_500_000 })).track.segments).map((s) => s[2])).toEqual(["p1", "p2"]);
+    expect(brief(planReframe(input(fs, { minShotUs: 2_000_000 })).track.segments)).toEqual([[0, 4_000_000, "p1", "single", "lips+voice"]]);
   });
 
   it("a challenger keeps its claim through frames where its lips pause or nobody beats the margin", () => {

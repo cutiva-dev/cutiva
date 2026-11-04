@@ -221,6 +221,7 @@ ReframePlanResult planReframe({
   List<Us> cuts = const [],
   CropRect? activeArea,
   ReframeTrack? track,
+  Us? minShotUs,
 }) {
   final srcW = sourceWidth;
   final srcH = sourceHeight;
@@ -256,6 +257,7 @@ ReframePlanResult planReframe({
   for (final c in cuts) {
     _check(c >= 0, 'Cuts must be non-negative integers.');
   }
+  _check(minShotUs == null || minShotUs >= 0, 'minShotUs must be a non-negative integer.');
 
   final prev = track;
   final style = prev?.style ?? 50;
@@ -267,7 +269,14 @@ ReframePlanResult planReframe({
     area.x >= 0 && area.y >= 0 && area.w >= 1 && area.h >= 1 && area.x + area.w <= srcW && area.y + area.h <= srcH,
     'activeArea must lie inside the source frame.',
   );
-  final params = reframeStyle(style);
+  final styleParams = reframeStyle(style);
+  final params = (
+    holdUs: styleParams.holdUs,
+    minSegmentUs: math.max(styleParams.minSegmentUs, minShotUs ?? 0),
+    deadZone: styleParams.deadZone,
+    minCutoff: styleParams.minCutoff,
+    maxSpeed: styleParams.maxSpeed,
+  );
   ReframeTrack trackOf(List<TrackPerson> people, List<TrackSegment> segments) => ReframeTrack(
     style: style,
     maxUpscalePct: maxUpscalePct,
