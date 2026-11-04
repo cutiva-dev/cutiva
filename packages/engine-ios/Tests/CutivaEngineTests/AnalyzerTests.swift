@@ -9,7 +9,7 @@ import XCTest
  */
 final class AnalyzerTests: XCTestCase {
     static func resource(_ name: String) -> URL {
-        Bundle.module.resourceURL!.appendingPathComponent("Resources").appendingPathComponent(name)
+        Bundle.module.resourceURL!.appendingPathComponent("Fixtures").appendingPathComponent(name)
     }
 
     let talk = resource("talk.mp4")

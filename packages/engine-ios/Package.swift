@@ -14,7 +14,7 @@ let package = Package(
             name: "CutivaEngineTests",
             dependencies: ["CutivaEngine"],
             path: "Tests/CutivaEngineTests",
-            resources: [.copy("Resources")]
+            resources: [.copy("Fixtures")]
         ),
     ]
 )

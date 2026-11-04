@@ -6,7 +6,7 @@ import XCTest
 /** Reading exported files back, for the export tests: frame times, pixels and decoded sound. */
 enum Media {
     static func resource(_ name: String) -> URL {
-        Bundle.module.url(forResource: name, withExtension: nil, subdirectory: "Resources")!
+        Bundle.module.url(forResource: name, withExtension: nil, subdirectory: "Fixtures")!
     }
 
     static func tempURL(_ prefix: String) -> URL {
