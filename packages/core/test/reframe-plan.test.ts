@@ -265,12 +265,47 @@ describe("planReframe rules", () => {
     expect(brief(short.track.segments)).toEqual([[0, 1_400_000, "p2", "single", "lips+voice"]]);
   });
 
-  it("a split that needs too much upscaling frames whoever held the frame; wide only if single is too blurry too", () => {
+  it("split regions grow so a split is as sharp as a single window", () => {
     const fs = frames(10, (i) => ({ voice: 0.5, faces: [face(A, talk(i), { w: 60, h: 60 }), face(B, talk(i), { w: 60, h: 60 })] }));
-    // Region h = round(60 / 0.35) = 171; 960 / 171 = 5.6x. A single window (1080 px for 1920) is fine.
-    // Before, this went wide; on real footage the person already framed reads better than a far shot.
+    // By face share alone a region would be round(60 / 0.35) = 171 px (5.6x); the floor is half a single window:
+    // ceil(1080 / 2) = 540 px (960 / 540 = 1.78x, like the single's 1920 / 1080).
+    const r = planReframe(input(fs));
+    expect(brief(r.track.segments)).toEqual([[0, 2_000_000, "p1+p2", "split", "overlap"]]);
+    // y = 300 + 0.38 * 540 = 505.2.
+    expect(r.keys[0]!.regions).toEqual([{ x: 430, y: 505, h: 540 }, { x: 1330, y: 505, h: 540 }]);
+    // Big faces keep the face share: round(200 / 0.35) = 571.
+    const big = frames(10, (i) => ({ voice: 0.5, faces: [face(A, talk(i)), face(B, talk(i))] }));
+    expect(planReframe(input(big)).keys[0]!.regions!.map((g) => g.h)).toEqual([571, 571]);
+  });
+
+  it("a region never reaches the other face", () => {
+    // Faces of 100 at x 600 and 960 (centres 650 and 1010, 360 apart): a region is at most 2 * 360 - 100 = 620 px wide,
+    // floor(620 * 1920 / 2160) = 551 px tall, so the 540 px floor fits.
+    const fs = frames(10, (i) => ({ voice: 0.5, faces: [face(600, talk(i), { w: 100, h: 100 }), face(960, talk(i), { w: 100, h: 100 })] }));
+    expect(planReframe(input(fs)).keys[0]!.regions!.map((g) => g.h)).toEqual([540, 540]);
+    // A locked split of people 200 apart: 2 * 200 - 100 = 300 px wide, floor(300 * 1920 / 2160) = 266 tall.
+    const near = frames(10, (i) => ({ voice: 0.5, faces: [face(600, talk(i), { w: 100, h: 100 }), face(800, talk(i), { w: 100, h: 100 })] }));
+    const track = planReframe(input(near)).track;
+    const locked = editReframeTrack(track, { type: "segment", segmentId: "s1", layout: "split" });
+    expect(planReframe(input(near, { track: locked })).keys[0]!.regions!.map((g) => g.h)).toEqual([266, 266]);
+  });
+
+  it("two people on the edges of one window get a split as sharp as a single instead", () => {
+    // Same faces 360 apart: both span 600 to 1060 = 460 px, 76% of the 608 px window (over 60%), and the split is as sharp.
+    const fs = frames(10, (i) => ({ voice: 0.5, faces: [face(600, talk(i), { w: 100, h: 100 }), face(960, talk(i), { w: 100, h: 100 })] }));
+    expect(brief(planReframe(input(fs)).track.segments)).toEqual([[0, 2_000_000, "p1+p2", "split", "overlap"]]);
+    // Within 60% (600 to 900 = 300 px, 49%) they keep sharing one window.
+    const close = frames(10, (i) => ({ voice: 0.5, faces: [face(600, talk(i), { w: 100, h: 100 }), face(800, talk(i), { w: 100, h: 100 })] }));
+    expect(brief(planReframe(input(close)).track.segments)).toEqual([[0, 2_000_000, "p1+p2", "single", "overlap"]]);
+  });
+
+  it("a split that needs too much upscaling frames whoever held the frame; wide only if single is too blurry too", () => {
+    // Faces of 300 at x 400 and 800 (centres 400 apart) don't fit one 608 px window (400 to 1100).
+    // Keeping the other face out caps a region at 2 * 400 - 300 = 500 px wide, floor(500 * 1920 / 2160) = 444 tall:
+    // 960 / 444 = 2.16x, over 200%. A single window (1080 px for 1920) is fine.
+    const fs = frames(10, (i) => ({ voice: 0.5, faces: [face(400, talk(i), { w: 300, h: 300 }), face(800, talk(i), { w: 300, h: 300 })] }));
     expect(brief(planReframe(input(fs)).track.segments)).toEqual([[0, 2_000_000, "p1+p2", "single", "overlap"]]);
-    expect(planReframe(input(fs)).keys[0]).toMatchObject({ x: 430, cut: true });
+    expect(planReframe(input(fs)).keys[0]).toMatchObject({ x: 550, cut: true });
     expect(planReframe(input(fs)).keys.some((k) => k.layout)).toBe(false);
     // With a 200% limit a 720p single (1920 / 720 = 2.7x) is too blurry as well: wide.
     const small = frames(10, (i) => ({ voice: 0.5, faces: [face(200, talk(i), { w: 60, h: 60 }), face(900, talk(i), { w: 60, h: 60 })] }));

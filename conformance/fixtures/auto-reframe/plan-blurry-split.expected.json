@@ -1,11 +1,13 @@
 {
   "_notes": [
-    "10 frames at 200 ms, voice 0.5. Faces of 60 px at x 400 (A, centre 430) and x 1300 (B, centre 1330), both mouths alternating 0.1/0.3.",
-    "Both have lips 1 on every frame (each 500 ms window holds 0.1 and 0.3) and score (0.6 + continuity) / 0.65 > 0.5: an overlap on all 10 frames (2 s >= 1.5 s), so it stays an overlap.",
+    "10 frames at 200 ms, voice 0.5. Faces of 300 px at x 400 (A, centre 550) and x 800 (B, centre 950), both mouths alternating 0.1/0.3.",
+    "Both have lips 1 on every frame and score (0.6 + continuity) / 0.65 > 0.5: an overlap on all 10 frames (2 s >= 1.5 s).",
     "Frame 0: equal scores, no priority, so the lower id, p1, becomes the current speaker; B never beats A by 0.15, so p1 holds the frame on every frame.",
-    "Both faces don't fit one 608 px window (they span 400 to 1360), so a split. Each split region is round(60 / 0.35) = 171 px tall for a 960 px half: 5.6x, over the 200% limit.",
-    "A single window is 1080 px tall for 1920: 1.78x, within the limit. So the segment is single on whoever held the frame, p1, reason overlap. Before this rule it went wide (low-quality).",
-    "One cut key on A's centre: x 430, y 540, h 1080, no layout."
+    "Both faces span 400 to 1100 = 700 px, wider than the 608 px window, so a split is tried.",
+    "Each region wants max(round(300 / 0.35) = 857, ceil(1080 / 2) = 540) = 857 px, but must keep the other face out: at most 2 * 400 - 300 = 500 px wide, so floor(500 * 1920 / 2160) = 444 px tall. 960 / 444 = 2.16x, over the 200% limit.",
+    "A single window is 1080 px tall for 1920: 1.78x, within the limit. So the segment is single on whoever held the frame, p1, reason overlap.",
+    "One cut key on A's centre: x 550; y = 300 + 0.38 * 1080 = 710.4, clamped to the only position, 540; h 1080, no layout.",
+    "Changed with the sharp-split rule: the old faces (60 px, 900 apart) now get 540 px regions and split, see plan-close-split."
   ],
   "track": {
     "version": 1,
@@ -49,7 +51,7 @@
   "keys": [
     {
       "atUs": 0,
-      "x": 430,
+      "x": 550,
       "y": 540,
       "h": 1080,
       "cut": true

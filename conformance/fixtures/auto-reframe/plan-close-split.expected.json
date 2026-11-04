@@ -1,0 +1,73 @@
+{
+  "_notes": [
+    "10 frames at 200 ms, voice 0.5. Faces of 100 px at x 600 (A, centre 650) and x 960 (B, centre 1010), both mouths alternating 0.1/0.3: an overlap on all 10 frames, p1 current (see plan-blurry-split).",
+    "Both faces span 600 to 1060 = 460 px. They fit the 608 px window, but over 60% of its width (364.8 px), so they would sit on its edges.",
+    "Each region wants max(round(100 / 0.35) = 286, ceil(1080 / 2) = 540) = 540 px: half a single window, so the split is as sharp as a single (960 / 540 = 1920 / 1080 = 1.78x).",
+    "Keeping the other face out allows 2 * 360 - 100 = 620 px of width, floor(620 * 1920 / 2160) = 551 px of height: 540 fits.",
+    "So a split, reason overlap. Region width round(540 * 2160 / 1920) = 608; x = face centre (650 and 1010, inside [304, 1616]); y = 300 + 0.38 * 540 = 505.2 -> 505, inside [270, 810].",
+    "Before the sharp-split rule this was a single window on both, with the faces on its edges.",
+    "The split key carries the area's centre (960, 540) and h 1080 for renderers that don't draw layouts."
+  ],
+  "track": {
+    "version": 1,
+    "style": 50,
+    "maxUpscalePct": 200,
+    "zoomPct": 100,
+    "safeZone": "none",
+    "people": [
+      {
+        "id": "p1",
+        "label": "Speaker A",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      },
+      {
+        "id": "p2",
+        "label": "Speaker B",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      }
+    ],
+    "segments": [
+      {
+        "id": "s1",
+        "startUs": 0,
+        "endUs": 2000000,
+        "speakers": [
+          "p1",
+          "p2"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "split",
+        "locked": false,
+        "reason": "overlap"
+      }
+    ]
+  },
+  "keys": [
+    {
+      "atUs": 0,
+      "x": 960,
+      "y": 540,
+      "h": 1080,
+      "cut": true,
+      "layout": "split",
+      "regions": [
+        {
+          "x": 650,
+          "y": 505,
+          "h": 540
+        },
+        {
+          "x": 1010,
+          "y": 505,
+          "h": 540
+        }
+      ]
+    }
+  ],
+  "passthrough": false
+}
