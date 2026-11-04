@@ -6,13 +6,14 @@
     "packages/core",
     "packages/web",
     "packages/react",
+    "packages/expo",
     "apps/playground",
     "apps/website"
   ],
   "scripts": {
-    "build": "npm run build -w @cutiva/core -w @cutiva/web -w @cutiva/react",
+    "build": "npm run build -w @cutiva/core -w @cutiva/web -w @cutiva/react -w @cutiva/expo",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test -w @cutiva/core && npm run test -w @cutiva/web",
+    "test": "npm run test -w @cutiva/core && npm run test -w @cutiva/web && npm run test -w @cutiva/expo",
     "test:dart": "cd packages/flutter/cutiva_core && dart pub get && dart analyze --fatal-infos && dart format --line-length 120 --output none --set-exit-if-changed lib test tool example && dart run coverage:test_with_coverage && dart run tool/check_coverage.dart",
     "e2e": "npm run e2e -w @cutiva/playground",
     "test:android": "cd packages/engine-android && ./gradlew :engine:testDebugUnitTest :reframe:testDebugUnitTest :engine:connectedDebugAndroidTest :reframe:connectedDebugAndroidTest --console=plain",

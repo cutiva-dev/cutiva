@@ -1,0 +1,67 @@
+{
+  "name": "@cutiva/expo",
+  "version": "0.1.0",
+  "description": "Cutiva for Expo and React Native: auto-reframe a video to 9:16 on the device.",
+  "license": "Apache-2.0",
+  "author": "Cutiva contributors",
+  "contributors": [
+    {
+      "name": "Wilfredo Noyola",
+      "url": "https://github.com/wilfredonoyola"
+    }
+  ],
+  "homepage": "https://cutiva.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cutiva-dev/cutiva.git",
+    "directory": "packages/expo"
+  },
+  "bugs": "https://github.com/cutiva-dev/cutiva/issues",
+  "keywords": [
+    "video",
+    "reframe",
+    "expo",
+    "react-native",
+    "sdk"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "android/build.gradle",
+    "android/src",
+    "android/engine",
+    "expo-module.config.json",
+    "NOTICE",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "prepack": "npm run build && node scripts/copy-engine.mjs"
+  },
+  "dependencies": {
+    "@cutiva/core": "0.1.0"
+  },
+  "peerDependencies": {
+    "expo": ">=58",
+    "react-native": "*"
+  },
+  "peerDependenciesMeta": {
+    "expo": { "optional": true },
+    "react-native": { "optional": true }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

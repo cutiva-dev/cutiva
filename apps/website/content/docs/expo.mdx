@@ -1,0 +1,92 @@
+---
+title: Expo (React Native)
+description: Auto-reframe a video to 9:16 on the phone in an Expo app, with @cutiva/expo.
+---
+
+**Status: beta, Android only.** Tested on the Android 15 emulator; real phones need testing. iOS is planned.
+
+`@cutiva/expo` turns a landscape video into a vertical one that follows whoever is talking, entirely on the phone: no server, and frames never leave the device. It is a native Expo module ([ADR 0007](https://github.com/cutiva-dev/cutiva/blob/main/docs/adr/0007-mobile-reframe-first.md)).
+
+## Install
+
+```bash
+npx expo install @cutiva/expo
+npx expo run:android
+```
+
+It needs a **development build** (`npx expo run:android` or EAS Build): Expo Go can't load native modules. Requirements: Expo SDK 58 or later, Android 7 (API 24) or later.
+
+## Reframe a video
+
+```tsx
+import { reframeVideo } from "@cutiva/expo";
+import * as ImagePicker from "expo-image-picker";
+
+const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"] });
+const result = await reframeVideo(picked.assets![0]!.uri, {
+  onProgress: (ratio, stage) => console.log(stage, Math.round(ratio * 100)),
+});
+
+result.uri;      // file:// URI of the vertical MP4: play it with expo-video, or upload it
+result.track;    // who speaks when, and the shot of each segment
+result.analysis; // keep it for corrections
+```
+
+`stage` is `model` (the face model downloads once, 3.7 MB), `video` (finding faces), `audio` (speech) and `export`. Pass an `AbortSignal` as `signal` to cancel.
+
+Options: `width` and `height` of the output (default 1080 x 1920; 1080 x 1080 for square), `fromUs` and `toUs` to reframe part of the video, `outputUri` for where to write the MP4.
+
+## Correct a shot
+
+Each segment of `result.track.segments` has an `id`, a time range (`startUs`, `endUs`, in microseconds), the people talking (`speakers`) and its shot (`resolved`: `single`, `split` or `wide`). People are in `result.track.people` (`p1`, `p2`, … with labels like "Speaker A").
+
+To fix one, pass the earlier analysis and track with an edit. It re-plans in a moment and only the export takes time:
+
+```ts
+const fixed = await reframeVideo(uri, {
+  analysis: result.analysis,
+  track: result.track,
+  edits: [{ type: "segment", segmentId: result.track.segments[2]!.id, layout: "single", focus: ["p2"] }],
+});
+```
+
+| Edit | Does |
+| --- | --- |
+| `{ type: "segment", segmentId, layout: "single", focus: [personId] }` | Frame that person |
+| `{ type: "segment", segmentId, layout: "split" }` | Two people, one in each half |
+| `{ type: "segment", segmentId, layout: "wide" }` | The whole picture over a blurred copy |
+| `{ type: "reset", segmentId }` | Give the segment back to the planner |
+| `{ type: "person", personId, label, neverFocus, priority }` | Name a person, never frame them alone, or prefer them |
+| `{ type: "settings", style }` | Camera style: 0 calm, 50 balanced, 100 dynamic |
+
+Corrected segments are locked: re-planning never changes them.
+
+## Step by step
+
+`reframeVideo` is three steps you can also call yourself:
+
+```ts
+import { analyzeVideo, planVideo, reframedProject } from "@cutiva/expo";
+
+const analysis = await analyzeVideo(uri);   // native: slow, numbers only
+const plan = planVideo(analysis);           // JavaScript (@cutiva/core): fast
+const { project } = reframedProject(uri, analysis, plan); // a Cutiva project (CPF) you can save
+```
+
+## Privacy and permissions
+
+- Frames and audio stay on the phone; the analysis is numbers only (face boxes, mouth movement, loudness).
+- The module adds the `INTERNET` permission, only to download the face model once (MediaPipe Face Landmarker, Apache-2.0, checked against a pinned SHA-256).
+- **MediaPipe's Android library sends anonymous usage statistics** to Google (task name, latency, device model). No images or results. Mention it in your privacy policy if it applies to you.
+
+## Speed and limits
+
+- Analysis is the slow part. On the emulator a 48-second 1080p clip took about 3 minutes; phones should be faster, but this hasn't been measured yet. Keep `result.analysis` so corrections don't analyse again.
+- Android only. iOS is planned.
+- Speech is measured by loudness, so music or noise can look like speech.
+
+## Example app
+
+[`apps/expo-example`](https://github.com/cutiva-dev/cutiva/tree/main/apps/expo-example) picks a video, reframes it, plays the result and lets you tap a shot to correct it.
+
+See [Auto-reframe](/docs/auto-reframe) for how the planner decides.

@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@changesets/config/schema.json",
   "baseBranch": "main",
   "access": "public",
-  "fixed": [["@cutiva/core", "@cutiva/web", "@cutiva/react"]],
+  "fixed": [["@cutiva/core", "@cutiva/web", "@cutiva/react", "@cutiva/expo"]],
   "updateInternalDependencies": "patch",
   "privatePackages": { "version": false, "tag": false },
   "changelog": "@changesets/cli/changelog",
