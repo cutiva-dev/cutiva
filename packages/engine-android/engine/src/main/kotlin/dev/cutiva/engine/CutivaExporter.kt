@@ -40,8 +40,9 @@ fun interface ExportTask {
 /**
  * Exports a [RenderPlan] to an MP4 (H.264 + AAC) with Media3 Transformer and the device's encoders.
  *
- * Supported today: one video layer (gaps show black), any number of audio segments mixed together,
- * speed, volume and fades. Plans with more than one video layer or with reframed clips fail with `UNSUPPORTED_FEATURE`.
+ * Supported today: one video layer (gaps show black), reframed clips (single, split and wide crops,
+ * drawn as `@cutiva/web` draws them), any number of audio segments mixed together, speed, volume and
+ * fades. Plans with more than one video layer fail with `UNSUPPORTED_FEATURE`.
  */
 @UnstableApi
 class CutivaExporter(context: Context, private val looper: Looper = Looper.getMainLooper()) {
@@ -131,22 +132,26 @@ class CutivaExporter(context: Context, private val looper: Looper = Looper.getMa
             if (plan.video.any { it.layer != plan.video[0].layer }) {
                 throw CutivaException("UNSUPPORTED_FEATURE", "The Android engine exports one video layer for now; this project has several.")
             }
-            if (plan.video.any { it.cropped }) {
-                throw CutivaException("UNSUPPORTED_FEATURE", "The Android engine can't draw reframed clips yet.")
+            if (plan.video.any { it.cropped && (it.crop!!.isEmpty() || it.sourceWidth <= 0 || it.sourceHeight <= 0) }) {
+                throw CutivaException("INVALID_PROJECT", "A reframed segment needs crop keys and its source size.")
             }
 
             // Media3 takes a whole frame rate as a maximum: sped-up clips drop frames down to it, like the web export.
             val maxFps = ceil(plan.settings.fps.num.toDouble() / plan.settings.fps.den).toInt()
+            val (width, height) = evenSize(plan.settings.width, plan.settings.height)
             val video = EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_VIDEO))
             for (slot in withGaps(plan.video, plan.durationUs, { it.startUs }, { it.endUs })) {
                 when (slot) {
                     is Slot.Gap -> video.addGap(slot.durationUs)
-                    is Slot.Item -> video.addItem(
-                        item(slot.segment.uri, slot.segment.sourceInUs, slot.segment.sourceOutUs, slot.segment.speed)
-                            .setRemoveAudio(true)
-                            .setFrameRate(maxFps)
-                            .build(),
-                    )
+                    is Slot.Item -> {
+                        val s = slot.segment
+                        val builder = item(s.uri, s.sourceInUs, s.sourceOutUs, s.speed).setRemoveAudio(true).setFrameRate(maxFps)
+                        // Frames reach item effects in the sequence's (timeline) time, so the source time is resolveVideoAt's.
+                        if (s.crop != null) {
+                            builder.setEffects(Effects(emptyList(), listOf(ReframeEffect(s.crop, s.sourceWidth, s.sourceHeight, width, height) { sourceTimeAt(s, it) })))
+                        }
+                        video.addItem(builder.build())
+                    }
                 }
             }
 
@@ -171,7 +176,6 @@ class CutivaExporter(context: Context, private val looper: Looper = Looper.getMa
                 sequence.build()
             }
 
-            val (width, height) = evenSize(plan.settings.width, plan.settings.height)
             return Composition.Builder(listOf(video.build()) + audio)
                 .setEffects(Effects(emptyList(), listOf(Presentation.createForWidthAndHeight(width, height, Presentation.LAYOUT_SCALE_TO_FIT))))
                 .build()

@@ -115,7 +115,18 @@ void main() {
 
       final plan = renderPlan(project);
       expect(plan.durationUs, expected['durationUs']);
-      const fields = ['layer', 'clipId', 'startUs', 'endUs', 'sourceInUs', 'sourceOutUs', 'speed', 'crop'];
+      const fields = [
+        'layer',
+        'clipId',
+        'startUs',
+        'endUs',
+        'sourceInUs',
+        'sourceOutUs',
+        'speed',
+        'sourceWidth',
+        'sourceHeight',
+        'crop',
+      ];
       expect([
         for (final v in plan.video)
           {

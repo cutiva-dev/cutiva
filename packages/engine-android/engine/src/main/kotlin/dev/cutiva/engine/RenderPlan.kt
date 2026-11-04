@@ -22,9 +22,16 @@ data class VideoSegment(
     val sourceInUs: Long,
     val sourceOutUs: Long,
     val speed: Double,
-    /** True when the clip is reframed (the plan carries `crop` keys). This engine can't draw crops yet. */
-    val cropped: Boolean = false,
-)
+    /**
+     * When the clip is reframed: crop keys by source time ([cropAt], [layoutAt]), in the pixels of a
+     * [sourceWidth] × [sourceHeight] source. Without them the frame is letterboxed.
+     */
+    val crop: List<CropKey>? = null,
+    val sourceWidth: Int = 0,
+    val sourceHeight: Int = 0,
+) {
+    val cropped: Boolean get() = crop != null
+}
 
 /** One piece of sound on the timeline. Fades are in timeline time. */
 data class AudioSegment(
@@ -82,7 +89,9 @@ data class RenderPlan(
                         sourceInUs = v.getLong("sourceInUs"),
                         sourceOutUs = v.getLong("sourceOutUs"),
                         speed = v.getDouble("speed"),
-                        cropped = v.has("crop"),
+                        crop = v.optJSONArray("crop")?.let { keys -> List(keys.length()) { k -> parseCropKey(keys.getJSONObject(k)) } },
+                        sourceWidth = v.optInt("sourceWidth", 0),
+                        sourceHeight = v.optInt("sourceHeight", 0),
                     )
                 },
                 audio = List(audio.length()) { i ->

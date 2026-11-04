@@ -23,6 +23,10 @@ class VideoSegment {
   /// When the clip is reframed: crop rectangles by source time. At a source time `s` the engine shows
   /// `cropAt(crop, s)`, scaled to fill the output frame. Without it, the frame is letterboxed.
   final List<CropKey>? crop;
+
+  /// With [crop]: the asset's size, the pixels the crop rectangles are in (display orientation).
+  final int? sourceWidth;
+  final int? sourceHeight;
   const VideoSegment({
     required this.layer,
     required this.trackId,
@@ -35,6 +39,8 @@ class VideoSegment {
     required this.sourceOutUs,
     required this.speed,
     this.crop,
+    this.sourceWidth,
+    this.sourceHeight,
   });
 
   Map<String, Object?> toJson() => {
@@ -48,6 +54,8 @@ class VideoSegment {
     'sourceInUs': sourceInUs,
     'sourceOutUs': sourceOutUs,
     'speed': jsonNumber(speed),
+    if (crop != null) 'sourceWidth': sourceWidth,
+    if (crop != null) 'sourceHeight': sourceHeight,
     if (crop != null) 'crop': [for (final k in crop!) k.toJson()],
   };
 }
@@ -96,7 +104,8 @@ RenderPlan renderPlan(Project project) {
     for (final clip in track.clips) {
       final uri = uris[clip.assetId];
       if (uri == null) continue;
-      final keys = clipCropKeys(clip, assets[clip.assetId]!, project.settings);
+      final asset = assets[clip.assetId]!;
+      final keys = clipCropKeys(clip, asset, project.settings);
       video.add(
         VideoSegment(
           layer: layer,
@@ -110,6 +119,8 @@ RenderPlan renderPlan(Project project) {
           sourceOutUs: clip.sourceOutUs,
           speed: clip.speed,
           crop: keys == null ? null : cropKeysInRange(keys, clip.sourceInUs, clip.sourceOutUs),
+          sourceWidth: keys == null ? null : asset.width,
+          sourceHeight: keys == null ? null : asset.height,
         ),
       );
     }

@@ -24,12 +24,12 @@
   ],
   "audioSegments": 0,
   "videoSegments": [
-    { "layer": 0, "clipId": "c1", "startUs": 0, "endUs": 4000000, "sourceInUs": 0, "sourceOutUs": 4000000, "speed": 1, "crop": [
+    { "layer": 0, "clipId": "c1", "startUs": 0, "endUs": 4000000, "sourceInUs": 0, "sourceOutUs": 4000000, "speed": 1, "sourceWidth": 1920, "sourceHeight": 1080, "crop": [
       { "atUs": 0, "rect": { "x": 176, "y": 0, "w": 608, "h": 1080 }, "cut": false },
       { "atUs": 2000000, "rect": { "x": 1136, "y": 0, "w": 608, "h": 1080 }, "cut": true },
       { "atUs": 3000000, "rect": { "x": 1616, "y": 270, "w": 304, "h": 540 }, "cut": false }
     ]},
-    { "layer": 0, "clipId": "c2", "startUs": 4000000, "endUs": 5000000, "sourceInUs": 6000000, "sourceOutUs": 8000000, "speed": 2, "crop": [
+    { "layer": 0, "clipId": "c2", "startUs": 4000000, "endUs": 5000000, "sourceInUs": 6000000, "sourceOutUs": 8000000, "speed": 2, "sourceWidth": 1920, "sourceHeight": 1080, "crop": [
       { "atUs": 0, "rect": { "x": 0, "y": 0, "w": 608, "h": 1080 }, "cut": false },
       { "atUs": 7000000, "rect": { "x": 656, "y": 0, "w": 608, "h": 1080 }, "cut": false },
       { "atUs": 9000000, "rect": { "x": 1312, "y": 0, "w": 608, "h": 1080 }, "cut": true }

@@ -172,6 +172,6 @@ Reports are how auto-reframe improves: each one attached to an issue replays thr
 - With tiles, analysis runs at about the clip's real time (a 3-minute clip takes about 3 minutes).
 - A person in two shots counts as two people (merge them in People).
 - The source monitor's window shows the single fallback window on split and wide segments, not the two regions or the whole picture.
-- Native engines (Android) still refuse reframed clips.
+- The Android engine draws reframed clips and its `reframe` module analyses videos on the device (on the emulator; [ADR 0007](https://github.com/cutiva-dev/cutiva/blob/main/docs/adr/0007-mobile-reframe-first.md)). The Expo module that brings it to React Native apps and the iOS engine are in progress.
 - Changing the project's format reshapes the windows but doesn't re-plan the layouts; call `engine.reframe(clipId)` again, which re-plans from the cached analysis.
 - Cuts are found at the analysis rate (every 200 ms), so a framing change can land up to one sample late.

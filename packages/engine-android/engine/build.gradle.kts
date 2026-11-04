@@ -28,6 +28,8 @@ dependencies {
 
     // Test only, never shipped. JUnit 4 is EPL-1.0; the Android test runner requires it.
     testImplementation("junit:junit:4.13.2")
+    // The real org.json for JVM tests (android.jar only has stubs); public domain.
+    testImplementation("org.json:json:20250517")
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
 }

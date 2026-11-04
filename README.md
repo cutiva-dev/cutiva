@@ -26,7 +26,7 @@ Cutiva lets you add trimming, splitting, audio, auto-reframe to vertical and MP4
 | [`apps/playground`](apps/playground) | Working in Chrome, Edge, Firefox and WebKit (E2E in CI on macOS, Windows, Linux); real Safari and mobile need testing | A small editor built on the three packages, served by the website at `/play`. |
 | [`apps/website`](apps/website) | Deployed at [cutiva.ngstudios.co](https://cutiva.ngstudios.co) | The landing at `/`, docs at `/docs` (Next.js + Fumadocs), the playground at `/play`, and the waitlist endpoint. |
 | [`cutiva_core`](packages/flutter/cutiva_core) (Dart) | Working, tested (98.9% line coverage, same conformance and auto-reframe fixtures); not on pub.dev | The core ported to Dart for Flutter: project format, commands, undo/redo, timeline resolution, crop keys and the auto-reframe planner. |
-| [`engine-android`](packages/engine-android) | Export working on the Android emulator (one video layer); real devices need testing; preview planned | Renders the core's render plan with Media3: MP4 export with speed, gaps, mixing, volume and fades, audio within 5 ms of the picture. |
+| [`engine-android`](packages/engine-android) | Export and reframe analysis working on the Android emulator (one video layer); real devices need testing; preview planned | Renders the core's render plan with Media3: MP4 export with speed, gaps, mixing, volume and fades, audio within 5 ms of the picture, and reframed clips (single, split, wide + blur). Its `reframe` module finds faces with MediaPipe and measures speech, for auto-reframe on the device. |
 | Flutter preview and export, React Native | Planned | One native engine per OS ([ADR 0004](docs/adr/0004-mobile-engine-render-plan.md)). See the [roadmap](ROADMAP.md). |
 
 ## Quick look

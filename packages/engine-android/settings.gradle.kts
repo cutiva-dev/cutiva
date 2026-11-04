@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "cutiva-engine-android"
 include(":engine")
+include(":reframe")
