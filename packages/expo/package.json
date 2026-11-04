@@ -1,7 +1,7 @@
 {
   "name": "@cutiva/expo",
   "version": "0.1.0",
-  "description": "Cutiva for Expo and React Native: auto-reframe a video to 9:16 on the device.",
+  "description": "Cutiva for Expo and React Native: auto-reframe a video to 9:16 on the device (iOS and Android).",
   "license": "Apache-2.0",
   "author": "Cutiva contributors",
   "contributors": [
@@ -39,6 +39,9 @@
     "android/build.gradle",
     "android/src",
     "android/engine",
+    "ios/*.swift",
+    "ios/*.podspec",
+    "ios/Engine",
     "expo-module.config.json",
     "NOTICE",
     "CHANGELOG.md"
@@ -48,7 +51,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "prepack": "npm run build && node scripts/copy-engine.mjs"
+    "prepack": "npm run build && node scripts/copy-engine.mjs",
+    "postpack": "node scripts/copy-engine.mjs --restore"
   },
   "dependencies": {
     "@cutiva/core": "0.1.0"

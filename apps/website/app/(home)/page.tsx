@@ -3,7 +3,7 @@ import { WaitlistForm } from "./waitlist-form";
 
 const platforms = [
   { pkg: "@cutiva/react", name: "React web", text: "WebCodecs and Mediabunny decode and export MP4 in the browser. Hooks plus a drop-in timeline.", tags: ["Pilot · first", "WebCodecs"] },
-  { pkg: "@cutiva/expo", name: "React Native", text: "The same TypeScript core on a native engine built with AVFoundation and Media3, shipped as an Expo Module. Auto-reframe works on Android today (beta).", tags: ["Pilot", "Expo Module"] },
+  { pkg: "@cutiva/expo", name: "React Native", text: "The same TypeScript core on a native engine built with AVFoundation and Media3, shipped as an Expo Module. Auto-reframe works on iOS and Android today (beta).", tags: ["Pilot", "Expo Module"] },
   { pkg: "cutiva_flutter", name: "Flutter", text: "A federated plugin over the same native engine, with the same API shape in Dart for iOS and Android.", tags: ["Pilot", "pub.dev"] },
 ];
 const faq = [
@@ -107,9 +107,9 @@ editor.undo();
               <article className="card card--wide">
                 <div>
                   <h3>Auto-reframe to 9:16 <span className="tag" style={{ verticalAlign: "middle" }}>Beta</span></h3>
-                  <p className="muted">Turn a landscape podcast or interview into vertical video that follows whoever is talking. Faces are found on the device, and any shot can be fixed with a click: pick a face, a split for two people or the wide shot. Every change is undoable and saved in the project. In the browser with <code>@cutiva/web</code>, and in Expo apps on Android with one call: <code>reframeVideo(uri)</code>.</p>
+                  <p className="muted">Turn a landscape podcast or interview into vertical video that follows whoever is talking. Faces are found on the device, and any shot can be fixed with a click: pick a face, a split for two people or the wide shot. Every change is undoable and saved in the project. In the browser with <code>@cutiva/web</code>, and in Expo apps on iOS and Android with one call: <code>reframeVideo(uri)</code>.</p>
                 </div>
-                <div className="tags"><span className="chip">Speaker detection</span><span className="chip">Split and wide</span><span className="chip">Same in preview and export</span><span className="chip">Web and Android</span></div>
+                <div className="tags"><span className="chip">Speaker detection</span><span className="chip">Split and wide</span><span className="chip">Same in preview and export</span><span className="chip">Web, iOS and Android</span></div>
               </article>
             </div>
           </div>

@@ -15,6 +15,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test -w @cutiva/core && npm run test -w @cutiva/web && npm run test -w @cutiva/expo",
     "test:dart": "cd packages/flutter/cutiva_core && dart pub get && dart analyze --fatal-infos && dart format --line-length 120 --output none --set-exit-if-changed lib test tool example && dart run coverage:test_with_coverage && dart run tool/check_coverage.dart",
+    "test:ios": "cd packages/engine-ios && swift test",
     "e2e": "npm run e2e -w @cutiva/playground",
     "test:android": "cd packages/engine-android && ./gradlew :engine:testDebugUnitTest :reframe:testDebugUnitTest :engine:connectedDebugAndroidTest :reframe:connectedDebugAndroidTest --console=plain",
     "dev": "npm run dev -w @cutiva/playground",

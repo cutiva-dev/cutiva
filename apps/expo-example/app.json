@@ -7,6 +7,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0E0F12",
+    "ios": {
+      "bundleIdentifier": "dev.cutiva.example",
+      "supportsTablet": false
+    },
     "android": {
       "package": "dev.cutiva.example",
       "adaptiveIcon": {
