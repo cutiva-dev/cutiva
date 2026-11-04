@@ -184,15 +184,24 @@ describe("planReframe rules", () => {
     expect(brief(r.track.segments)).toEqual([[0, 2_000_000, "p1", "single", "lips+voice"]]);
   });
 
-  it("someone who leaves for over a second comes back as a new person", () => {
+  it("a face unseen for over a second in the same place is the same person, held in place", () => {
+    // Spec "Personas": tracks in the same zone of the frame are one person; "Detecciones perdidas":
+    // after 1 s of interpolation the last position is held. Before, the gap made a wide no-face
+    // stretch and a new person p2. A face turned away while talking is the common case.
     const fs = frames(30, (i) => ({ voice: 0.5, faces: i >= 10 && i < 17 ? [] : [face(A, talk(i))] }));
     const r = planReframe(input(fs));
+    expect(r.track.people.map((p) => p.id)).toEqual(["p1"]);
+    expect(brief(r.track.segments)).toEqual([[0, 6_000_000, "p1", "single", "lips+voice"]]);
+  });
+
+  it("a small face that leans breaks the box overlap but stays the same person", () => {
+    // 40 px faces: a 30 px step leaves IoU under 0.3 and opens a new track; re-linking joins it
+    // (30 px <= 1.5 x 40 px). Someone in another seat (B, 900 px away) never joins.
+    const small = (x: number, mouth: number): PlanFace => ({ x, y: 300, w: 60, h: 60, mouth });
+    const fs = frames(20, (i) => ({ voice: 0.5, faces: [small(i < 10 ? 400 : 445, talk(i)), small(1300, 0.1)] }));
+    const r = planReframe(input(fs));
     expect(r.track.people.map((p) => p.id)).toEqual(["p1", "p2"]);
-    expect(brief(r.track.segments)).toEqual([
-      [0, 2_000_000, "p1", "single", "lips+voice"],
-      [2_000_000, 3_400_000, "", "wide", "no-face"],
-      [3_400_000, 6_000_000, "p2", "single", "lips+voice"],
-    ]);
+    expect(r.sightings.filter((s) => s.personId === "p1")).toHaveLength(20);
   });
 
   it("fills a missed detection up to a second by interpolating the face", () => {
@@ -256,10 +265,16 @@ describe("planReframe rules", () => {
     expect(brief(short.track.segments)).toEqual([[0, 1_400_000, "p2", "single", "lips+voice"]]);
   });
 
-  it("a split that needs too much upscaling goes wide", () => {
+  it("a split that needs too much upscaling frames whoever held the frame; wide only if single is too blurry too", () => {
     const fs = frames(10, (i) => ({ voice: 0.5, faces: [face(A, talk(i), { w: 60, h: 60 }), face(B, talk(i), { w: 60, h: 60 })] }));
-    // Region h = round(60 / 0.35) = 171; 960 / 171 = 5.6x.
-    expect(brief(planReframe(input(fs)).track.segments)).toEqual([[0, 2_000_000, "p1+p2", "wide", "low-quality"]]);
+    // Region h = round(60 / 0.35) = 171; 960 / 171 = 5.6x. A single window (1080 px for 1920) is fine.
+    // Before, this went wide; on real footage the person already framed reads better than a far shot.
+    expect(brief(planReframe(input(fs)).track.segments)).toEqual([[0, 2_000_000, "p1+p2", "single", "overlap"]]);
+    expect(planReframe(input(fs)).keys[0]).toMatchObject({ x: 430, cut: true });
+    expect(planReframe(input(fs)).keys.some((k) => k.layout)).toBe(false);
+    // With a 200% limit a 720p single (1920 / 720 = 2.7x) is too blurry as well: wide.
+    const small = frames(10, (i) => ({ voice: 0.5, faces: [face(200, talk(i), { w: 60, h: 60 }), face(900, talk(i), { w: 60, h: 60 })] }));
+    expect(brief(planReframe(input(small, { sourceWidth: 1280, sourceHeight: 720 })).track.segments)).toEqual([[0, 2_000_000, "p1+p2", "wide", "low-quality"]]);
   });
 
   it("close people in a low-resolution source go wide too", () => {

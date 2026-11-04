@@ -299,18 +299,28 @@ void main() {
     expect(_plan(crowd).track.people.map((p) => p.id), ['p1', 'p2', 'p3', 'p4']);
   });
 
-  test('people who leave come back new; missed detections interpolate', () {
+  test('a face unseen in the same place is the same person, held; missed detections interpolate', () {
     final away = _frames(
       30,
       (i) => (voice: 0.5, pan: null, faces: i >= 10 && i < 17 ? <PlanFace>[] : [_face(_a, _talk(i))]),
     );
     final r = _plan(away);
-    expect(r.track.people.map((p) => p.id), ['p1', 'p2']);
+    expect(r.track.people.map((p) => p.id), ['p1']);
     expect(_brief(r.track.segments), [
-      [0, 2000000, 'p1', 'single', 'lips+voice'],
-      [2000000, 3400000, '', 'wide', 'no-face'],
-      [3400000, 6000000, 'p2', 'single', 'lips+voice'],
+      [0, 6000000, 'p1', 'single', 'lips+voice'],
     ]);
+    // A small face that leans 45 px (IoU under 0.3) stays the same person; B in another seat never joins.
+    final lean = _frames(
+      20,
+      (i) => (
+        voice: 0.5,
+        pan: null,
+        faces: [_face(i < 10 ? 400 : 445, _talk(i), w: 60, h: 60), _face(1300, 0.1, w: 60, h: 60)],
+      ),
+    );
+    final l = _plan(lean);
+    expect(l.track.people.map((p) => p.id), ['p1', 'p2']);
+    expect(l.sightings.where((s) => s.personId == 'p1'), hasLength(20));
     final gap = _frames(
       15,
       (i) => (
@@ -379,7 +389,18 @@ void main() {
       10,
       (i) => (voice: 0.5, pan: null, faces: [_face(_a, _talk(i), w: 60, h: 60), _face(_b, _talk(i), w: 60, h: 60)]),
     );
-    expect(_brief(_plan(tiny).track.segments), [
+    // A split this blurry frames whoever held the frame; wide only if a single is too blurry as well.
+    final t = _plan(tiny);
+    expect(_brief(t.track.segments), [
+      [0, 2000000, 'p1+p2', 'single', 'overlap'],
+    ]);
+    expect(t.keys.first.x, 430);
+    expect(t.keys.any((k) => k.layout != null), isFalse);
+    final tiny720 = _frames(
+      10,
+      (i) => (voice: 0.5, pan: null, faces: [_face(200, _talk(i), w: 60, h: 60), _face(900, _talk(i), w: 60, h: 60)]),
+    );
+    expect(_brief(_plan(tiny720, srcW: 1280, srcH: 720).track.segments), [
       [0, 2000000, 'p1+p2', 'wide', 'low-quality'],
     ]);
     final closeSmall = _frames(

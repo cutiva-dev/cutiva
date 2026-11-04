@@ -95,6 +95,12 @@ const MAX_CANDIDATES = 4;
 const MIN_IOU = 0.3;
 /** A track that isn't seen for longer than this ends; a later face starts a new person. */
 const MAX_GAP_US = 1_000_000;
+/**
+ * A track that starts after another one ended, with its first face this many face widths or less
+ * from the other's last face, continues it: a small face that leans or a missed detection breaks
+ * the box overlap, but the person is still in the same seat.
+ */
+const RELINK_WIDTHS = 1.5;
 /** Tracks seen in fewer than this share of a shot's frames are dropped as noise. */
 const MIN_TRACK_SHARE = 0.2;
 const VOICE_LEVEL = 0.1;
@@ -315,9 +321,36 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
         if (!usedFace.has(j)) shotTracks.push({ shot, seen: [{ fi, face }], person: -1 });
       });
     }
+    // Re-link broken tracks: in order of first sighting, a track joins the nearest earlier track that
+    // ended before it started, if close enough. Joined tracks are removed.
+    const joined = new Set<FaceTrack>();
+    for (const b of shotTracks) {
+      const first = b.seen[0]!;
+      let best: FaceTrack | null = null;
+      let bestD = Infinity;
+      for (const a of shotTracks) {
+        if (a === b) break;
+        if (joined.has(a)) continue;
+        const last = a.seen[a.seen.length - 1]!;
+        if (last.fi >= first.fi) continue;
+        const dx = last.face.x + last.face.w / 2 - (first.face.x + first.face.w / 2);
+        const dy = last.face.y + last.face.h / 2 - (first.face.y + first.face.h / 2);
+        const d = dx * dx + dy * dy;
+        const reach = RELINK_WIDTHS * Math.max(last.face.w, first.face.w);
+        if (d <= reach * reach && d < bestD) {
+          best = a;
+          bestD = d;
+        }
+      }
+      if (best) {
+        best.seen.push(...b.seen);
+        joined.add(b);
+      }
+    }
+    const linked = shotTracks.filter((t) => !joined.has(t));
     const min = Math.max(2, Math.ceil(MIN_TRACK_SHARE * fis.length));
-    let good = shotTracks.filter((t) => t.seen.length >= min);
-    if (good.length === 0 && shotTracks.length > 0) good = [shotTracks.reduce((best, t) => (t.seen.length > best.seen.length ? t : best))];
+    let good = linked.filter((t) => t.seen.length >= min);
+    if (good.length === 0 && linked.length > 0) good = [linked.reduce((best, t) => (t.seen.length > best.seen.length ? t : best))];
     good = good
       .map((t, k) => ({ t, k }))
       .sort((a, b) => b.t.seen.length - a.t.seen.length || a.t.seen[0]!.fi - b.t.seen[0]!.fi || a.k - b.k)
@@ -327,7 +360,7 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
     tracks.push(...good);
   });
 
-  /** A track's box at a frame: a sighting, a straight line between two sightings, or the last sighting held after it. */
+  /** A track's box at a frame: a sighting, a straight line between two sightings up to 1 s apart, the last sighting held through a longer gap, or held after the track ends. */
   const boxAt = (t: FaceTrack, fi: number, holdAfter: boolean): PlanFace | null => {
     if (frameShot[fi] !== t.shot || fi < t.seen[0]!.fi) return null;
     let k = 0;
@@ -336,6 +369,9 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
     if (a.fi === fi) return a.face;
     const b = t.seen[k + 1];
     if (!b) return holdAfter ? a.face : null;
+    // Spec "Detecciones perdidas": interpolate gaps up to MAX_GAP_US, then hold the last position
+    // (a longer gap only happens inside a re-linked track: the person is still in that seat).
+    if (at(b.fi) - at(a.fi) > MAX_GAP_US) return a.face;
     const u = (at(fi) - at(a.fi)) / (at(b.fi) - at(a.fi));
     return { x: a.face.x + (b.face.x - a.face.x) * u, y: a.face.y + (b.face.y - a.face.y) * u, w: a.face.w + (b.face.w - a.face.w) * u, h: a.face.h + (b.face.h - a.face.h) * u, mouth: null };
   };
@@ -820,8 +856,16 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
       } else {
         const key = splitKey(s.startUs, a, b);
         if (key.regions!.some((r) => outH * 100 > maxUpscalePct * 2 * r.h)) {
-          segments.push({ ...base, id: "", speakers, resolved: "wide", reason: "low-quality" });
-          pushKey(wideKey(s.startUs));
+          if (lowQualitySingle) {
+            segments.push({ ...base, id: "", speakers, resolved: "wide", reason: "low-quality" });
+            pushKey(wideKey(s.startUs));
+          } else {
+            // A split would be too blurry: frame whoever held the frame most of this stretch.
+            const held = (i: number) => fis.filter((fi) => speakerOf[fi] === i).length;
+            const who = held(lab.b) > held(lab.a) ? lab.b : lab.a;
+            segments.push({ ...base, id: "", speakers, resolved: "single", reason: "overlap" });
+            follow(s, (fi) => personBox(who, fi, true));
+          }
         } else {
           segments.push({ ...base, id: "", speakers, resolved: "split", reason: "overlap" });
           pushKey(key);
