@@ -23,6 +23,9 @@ export interface VideoSegment {
    * (split or wide). Without it, the frame is letterboxed.
    */
   crop?: CropKey[];
+  /** With `crop`: the asset's size, the pixels the crop rectangles are in (display orientation). */
+  sourceWidth?: number;
+  sourceHeight?: number;
 }
 
 export interface PlanAudioSegment extends AudioSegment {
@@ -54,7 +57,8 @@ export function renderPlan(project: Project): RenderPlan {
     for (const clip of track.clips) {
       const uri = uris.get(clip.assetId);
       if (uri === undefined) continue;
-      const keys = clipCropKeys(clip, assets.get(clip.assetId)!, project.settings);
+      const asset = assets.get(clip.assetId)!;
+      const keys = clipCropKeys(clip, asset, project.settings);
       video.push({
         layer,
         trackId: track.id,
@@ -66,7 +70,7 @@ export function renderPlan(project: Project): RenderPlan {
         sourceInUs: clip.sourceInUs,
         sourceOutUs: clip.sourceOutUs,
         speed: clip.speed,
-        ...(keys ? { crop: cropKeysInRange(keys, clip.sourceInUs, clip.sourceOutUs) } : {}),
+        ...(keys ? { sourceWidth: asset.width!, sourceHeight: asset.height!, crop: cropKeysInRange(keys, clip.sourceInUs, clip.sourceOutUs) } : {}),
       });
     }
     layer++;

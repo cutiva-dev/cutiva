@@ -30,7 +30,7 @@ interface Expected {
   /** Optional: every audio segment in order, field by field. */
   audio?: { clipId: string; startUs: number; sourceInUs: number; sourceOutUs: number; speed: number; volume: number; fadeInUs: number; fadeOutUs: number }[];
   /** The render plan's video segments, bottom layer first. */
-  videoSegments: { layer: number; clipId: string; startUs: number; endUs: number; sourceInUs: number; sourceOutUs: number; speed: number; crop?: CropKey[] }[];
+  videoSegments: { layer: number; clipId: string; startUs: number; endUs: number; sourceInUs: number; sourceOutUs: number; speed: number; sourceWidth?: number; sourceHeight?: number; crop?: CropKey[] }[];
 }
 
 const dir = join(__dirname, "../../../conformance/fixtures");
@@ -54,7 +54,7 @@ describe("conformance fixtures", () => {
       const plan = renderPlan(project);
       expect(plan.durationUs).toBe(expected.durationUs);
       expect(
-        plan.video.map(({ layer, clipId, startUs, endUs, sourceInUs, sourceOutUs, speed, crop }) => ({
+        plan.video.map(({ layer, clipId, startUs, endUs, sourceInUs, sourceOutUs, speed, crop, sourceWidth, sourceHeight }) => ({
           layer,
           clipId,
           startUs,
@@ -62,7 +62,7 @@ describe("conformance fixtures", () => {
           sourceInUs,
           sourceOutUs,
           speed,
-          ...(crop ? { crop } : {}),
+          ...(crop ? { sourceWidth, sourceHeight, crop } : {}),
         })),
       ).toEqual(
         expected.videoSegments,

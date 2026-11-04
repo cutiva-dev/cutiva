@@ -31,7 +31,8 @@ jobs:
       - run: npm run test:dart
 
   android:
-    # The Android engine: JVM unit tests, then exports on an emulator checked for sync, gaps, speed and mixing.
+    # The Android engine: JVM unit tests, then exports on an emulator checked for sync, gaps, speed,
+    # mixing and reframed crops, and the reframe analyzer (the MediaPipe test downloads the model).
     runs-on: ubuntu-latest
     timeout-minutes: 40
     defaults:
@@ -48,7 +49,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - run: ./gradlew :engine:testDebugUnitTest --console=plain
+      - run: ./gradlew :engine:testDebugUnitTest :reframe:testDebugUnitTest --console=plain
       - uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -56,12 +57,14 @@ jobs:
           target: default
           working-directory: packages/engine-android
           emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
-          script: ./gradlew :engine:connectedDebugAndroidTest --console=plain
+          script: ./gradlew :engine:connectedDebugAndroidTest :reframe:connectedDebugAndroidTest --console=plain
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: android-test-results
-          path: packages/engine-android/engine/build/reports/androidTests
+          path: |
+            packages/engine-android/engine/build/reports/androidTests
+            packages/engine-android/reframe/build/reports/androidTests
 
   e2e:
     # macOS: Google Chrome there has the platform H.264 and AAC encoders that export needs.
