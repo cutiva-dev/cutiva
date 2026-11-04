@@ -4,7 +4,7 @@
     "Both faces span 600 to 1060 = 460 px. They fit the 608 px window, but over 60% of its width (364.8 px), so they would sit on its edges.",
     "Each region wants max(round(100 / 0.35) = 286, ceil(1080 / 2) = 540) = 540 px: half a single window, so the split is as sharp as a single (960 / 540 = 1920 / 1080 = 1.78x).",
     "Keeping the other face out allows 2 * 360 - 100 = 620 px of width, floor(620 * 1920 / 2160) = 551 px of height: 540 fits.",
-    "So a split, reason overlap. Region width round(540 * 2160 / 1920) = 608; x = face centre (650 and 1010, inside [304, 1616]); y = 300 + 0.38 * 540 = 505.2 -> 505, inside [270, 810].",
+    "So a split, reason overlap. Region width round(540 * 2160 / 1920) = 608; x = face centre (650 and 1010, inside [304, 1616]); y = face centre 300 + 100 / 2 = 350, inside [270, 810] (split regions centre the face; before, the face top sat 12% down: 505).",
     "Before the sharp-split rule this was a single window on both, with the faces on its edges.",
     "The split key carries the area's centre (960, 540) and h 1080 for renderers that don't draw layouts."
   ],
@@ -58,12 +58,12 @@
       "regions": [
         {
           "x": 650,
-          "y": 505,
+          "y": 350,
           "h": 540
         },
         {
           "x": 1010,
-          "y": 505,
+          "y": 350,
           "h": 540
         }
       ]

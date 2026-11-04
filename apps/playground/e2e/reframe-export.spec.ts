@@ -35,19 +35,19 @@ function installMeasure() {
     const points: Record<string, string> = {};
     for (const [name, fx, fy] of [
       ["centre30", 0.5, 0.3],
-      // A split region is sized so the face is 35% of its height, 12% below its top: in a 9:16 frame
-      // the faces sit around 15% (top half) and 65% (bottom half) of the height.
-      ["top", 0.5, 0.15],
-      ["bottom", 0.5, 0.65],
+      // A split region is sized so the face is 35% of its height, centred in it: in a 9:16 frame the
+      // faces' centres sit at 25% (top half) and 75% (bottom half) of the height.
+      ["top", 0.5, 0.25],
+      ["bottom", 0.5, 0.75],
       ["corner", 0.05, 0.05],
       ["wideRed", 300 / 1080, 900 / 1920],
     ] as const)
       points[name] = at(Math.floor(w * fx), Math.floor(h * fy));
     const edges: Record<string, { red: number; blue: number }> = {};
     for (const [name, fy] of [
-      ["row15", 0.15],
+      ["row25", 0.25],
       ["row30", 0.3],
-      ["row65", 0.65],
+      ["row75", 0.75],
       ["rowWide", 900 / 1920],
     ] as const) {
       const y = Math.floor(h * fy);
@@ -98,7 +98,8 @@ test("split and wide + blur draw in the preview, and the exported MP4 matches it
 
   // The preview at three instants, once it has drawn the expected layout.
   const samples = [
-    { t: 0.75, ready: (m: Measure) => m.points.centre30 === "red" },
+    // A split's top face also covers 30% height, so the single is ready once no blue shows anywhere.
+    { t: 0.75, ready: (m: Measure) => m.points.centre30 === "red" && Object.values(m.edges).every((e) => e.blue < 0) },
     { t: 2.4, ready: (m: Measure) => m.points.corner === "dim" && m.points.wideRed === "red" },
     { t: 4.6, ready: (m: Measure) => new Set([m.points.top, m.points.bottom]).size === 2 && [m.points.top, m.points.bottom].every((c) => c === "red" || c === "blue") },
   ];

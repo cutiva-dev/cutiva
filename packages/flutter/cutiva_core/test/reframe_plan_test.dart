@@ -395,10 +395,18 @@ void main() {
       [0, 2000000, 'p1+p2', 'split', 'overlap'],
     ]);
     expect(t.keys.first.regions!.map((g) => [g.x, g.y, g.h]).toList(), [
-      [430, 505, 540],
-      [1330, 505, 540],
+      [430, 330, 540],
+      [1330, 330, 540],
     ]);
     expect(_plan(both).keys.first.regions!.map((g) => g.h).toList(), [571, 571]);
+    // Split regions centre the face (300 + 200 / 2 = 400), not the single window's 12% headroom (517),
+    // and stay inside the frame: a face at y 20 centres at 120, clamped to 571 / 2 = 285.5, rounded half up to 286.
+    expect(_plan(both).keys.first.regions!.map((g) => g.y).toList(), [400, 400]);
+    final high = _frames(
+      10,
+      (i) => (voice: 0.5, pan: null, faces: [_face(_a, _talk(i), y: 20), _face(_b, _talk(i), y: 20)]),
+    );
+    expect(_plan(high).keys.first.regions!.map((g) => g.y).toList(), [286, 286]);
     // Faces 360 apart fill 76% of one window: a split as sharp as a single instead.
     List<PlanFrame> pair(double bx) => _frames(
       10,

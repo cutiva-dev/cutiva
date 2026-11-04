@@ -903,7 +903,8 @@ ReframePlanResult planReframe({
     final rw = _clampInt(_divRound(rh * 2 * outW, outH), 1, area.w);
     return ReframeWindow(
       x: _half(_clamp(box.x + box.w / 2, area.x + rw / 2, area.x + area.w - rw / 2)),
-      y: _half(_clamp(box.y + (0.5 - _headroom) * rh, area.y + rh / 2, area.y + area.h - rh / 2)),
+      // Each half is short, so the face sits in its middle; the single window's headroom would fill it with table.
+      y: _half(_clamp(box.y + box.h / 2, area.y + rh / 2, area.y + area.h - rh / 2)),
       h: rh,
     );
   }
