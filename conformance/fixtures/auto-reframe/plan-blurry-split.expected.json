@@ -1,0 +1,59 @@
+{
+  "_notes": [
+    "10 frames at 200 ms, voice 0.5. Faces of 60 px at x 400 (A, centre 430) and x 1300 (B, centre 1330), both mouths alternating 0.1/0.3.",
+    "Both have lips 1 on every frame (each 500 ms window holds 0.1 and 0.3) and score (0.6 + continuity) / 0.65 > 0.5: an overlap on all 10 frames (2 s >= 1.5 s), so it stays an overlap.",
+    "Frame 0: equal scores, no priority, so the lower id, p1, becomes the current speaker; B never beats A by 0.15, so p1 holds the frame on every frame.",
+    "Both faces don't fit one 608 px window (they span 400 to 1360), so a split. Each split region is round(60 / 0.35) = 171 px tall for a 960 px half: 5.6x, over the 200% limit.",
+    "A single window is 1080 px tall for 1920: 1.78x, within the limit. So the segment is single on whoever held the frame, p1, reason overlap. Before this rule it went wide (low-quality).",
+    "One cut key on A's centre: x 430, y 540, h 1080, no layout."
+  ],
+  "track": {
+    "version": 1,
+    "style": 50,
+    "maxUpscalePct": 200,
+    "zoomPct": 100,
+    "safeZone": "none",
+    "people": [
+      {
+        "id": "p1",
+        "label": "Speaker A",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      },
+      {
+        "id": "p2",
+        "label": "Speaker B",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      }
+    ],
+    "segments": [
+      {
+        "id": "s1",
+        "startUs": 0,
+        "endUs": 2000000,
+        "speakers": [
+          "p1",
+          "p2"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "single",
+        "locked": false,
+        "reason": "overlap"
+      }
+    ]
+  },
+  "keys": [
+    {
+      "atUs": 0,
+      "x": 430,
+      "y": 540,
+      "h": 1080,
+      "cut": true
+    }
+  ],
+  "passthrough": false
+}

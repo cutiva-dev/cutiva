@@ -116,6 +116,9 @@ const _minFaceShare = 0.04;
 const _maxCandidates = 4;
 const _minIou = 0.3;
 const _maxGapUs = 1000000;
+
+/// A track that starts after another ended, this many face widths or less from its last face, continues it.
+const _relinkWidths = 1.5;
 const _minTrackShare = 0.2;
 const _voiceLevel = 0.1;
 const _voiceMinUs = 250000;
@@ -397,17 +400,47 @@ ReframePlanResult planReframe({
         if (!usedFace.contains(j)) shotTracks.add(_FaceTrack(shot, [_Sighting(fi, faces[j])]));
       }
     }
+    // Re-link broken tracks: in order of first sighting, a track joins the nearest earlier track that
+    // ended before it started, if close enough. Joined tracks are removed.
+    final joined = <_FaceTrack>{};
+    for (final b in shotTracks) {
+      final first = b.seen[0];
+      _FaceTrack? best;
+      var bestD = double.infinity;
+      for (final a in shotTracks) {
+        if (identical(a, b)) break;
+        if (joined.contains(a)) continue;
+        final last = a.seen[a.seen.length - 1];
+        if (last.fi >= first.fi) continue;
+        final dx = last.face.x + last.face.w / 2 - (first.face.x + first.face.w / 2);
+        final dy = last.face.y + last.face.h / 2 - (first.face.y + first.face.h / 2);
+        final d = dx * dx + dy * dy;
+        final reach = _relinkWidths * math.max(last.face.w, first.face.w);
+        if (d <= reach * reach && d < bestD) {
+          best = a;
+          bestD = d;
+        }
+      }
+      if (best != null) {
+        best.seen.addAll(b.seen);
+        joined.add(b);
+      }
+    }
+    final linked = [
+      for (final t in shotTracks)
+        if (!joined.contains(t)) t,
+    ];
     final min = math.max(2, (_minTrackShare * fis.length).ceil());
     var good = [
-      for (var k = 0; k < shotTracks.length; k++)
-        if (shotTracks[k].seen.length >= min) (shotTracks[k], k),
+      for (var k = 0; k < linked.length; k++)
+        if (linked[k].seen.length >= min) (linked[k], k),
     ];
-    if (good.isEmpty && shotTracks.isNotEmpty) {
+    if (good.isEmpty && linked.isNotEmpty) {
       var best = 0;
-      for (var k = 1; k < shotTracks.length; k++) {
-        if (shotTracks[k].seen.length > shotTracks[best].seen.length) best = k;
+      for (var k = 1; k < linked.length; k++) {
+        if (linked[k].seen.length > linked[best].seen.length) best = k;
       }
-      good = [(shotTracks[best], 0)];
+      good = [(linked[best], 0)];
     }
     good.sort((a, b) {
       final c = b.$1.seen.length.compareTo(a.$1.seen.length);
@@ -437,6 +470,8 @@ ReframePlanResult planReframe({
     if (a.fi == fi) return a.face;
     if (k + 1 >= t.seen.length) return holdAfter ? a.face : null;
     final b = t.seen[k + 1];
+    // Interpolate gaps up to _maxGapUs, then hold the last position (only inside a re-linked track).
+    if (at(b.fi) - at(a.fi) > _maxGapUs) return a.face;
     final u = (at(fi) - at(a.fi)) / (at(b.fi) - at(a.fi));
     return PlanFace(
       x: a.face.x + (b.face.x - a.face.x) * u,
@@ -1072,8 +1107,16 @@ ReframePlanResult planReframe({
         } else {
           final key = splitKey(s.startUs, a, b);
           if (key.regions!.any((r) => outH * 100 > maxUpscalePct * 2 * r.h)) {
-            segments.add(auto(s, speakers, 'wide', 'low-quality'));
-            pushKey(wideKey(s.startUs));
+            if (lowQualitySingle) {
+              segments.add(auto(s, speakers, 'wide', 'low-quality'));
+              pushKey(wideKey(s.startUs));
+            } else {
+              // A split would be too blurry: frame whoever held the frame most of this stretch.
+              int held(int i) => fis.where((fi) => speakerOf[fi] == i).length;
+              final who = held(lab.b) > held(lab.a) ? lab.b : lab.a;
+              segments.add(auto(s, speakers, 'single', 'overlap'));
+              follow(s.startUs, s.endUs, (fi) => personBox(who, fi, true));
+            }
           } else {
             segments.add(auto(s, speakers, 'split', 'overlap'));
             pushKey(key);

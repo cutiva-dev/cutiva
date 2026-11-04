@@ -1,0 +1,51 @@
+{
+  "_notes": [
+    "30 frames at 200 ms, voice 0.5. One face at x 400 (centre 500), mouth alternating 0.1/0.3, missing on frames 10-16 (2.0-3.2 s).",
+    "Tracking: frame 17 is 1.6 s after frame 9, over the 1 s gap, so it opens a second track. Re-linking: it starts after the first ended and its centre is 0 px from the first's last face (<= 1.5 x 200), so it continues the first track: one person, p1.",
+    "Boxes: the gap between frames 9 and 17 is over 1 s, so the last position (frame 9) is held instead of interpolated. p1 is present on every frame.",
+    "Lips: on frames 12-14 no real sighting lies within 500 ms, so there is no lip signal (null), which still makes p1 a candidate. Every frame is voiced: p1 speaks throughout.",
+    "Before this rule: a wide no-face stretch from 2.0 to 3.4 s and a new person p2 after it.",
+    "One segment p1 [0, 6 s). The face never moves: one cut key at its centre, x 500; the 9:16 window is the full 1080 height, so y 540."
+  ],
+  "track": {
+    "version": 1,
+    "style": 50,
+    "maxUpscalePct": 200,
+    "zoomPct": 100,
+    "safeZone": "none",
+    "people": [
+      {
+        "id": "p1",
+        "label": "Speaker A",
+        "kind": "face",
+        "priority": false,
+        "neverFocus": false
+      }
+    ],
+    "segments": [
+      {
+        "id": "s1",
+        "startUs": 0,
+        "endUs": 6000000,
+        "speakers": [
+          "p1"
+        ],
+        "layout": "auto",
+        "focus": [],
+        "resolved": "single",
+        "locked": false,
+        "reason": "lips+voice"
+      }
+    ]
+  },
+  "keys": [
+    {
+      "atUs": 0,
+      "x": 500,
+      "y": 540,
+      "h": 1080,
+      "cut": true
+    }
+  ],
+  "passthrough": false
+}
