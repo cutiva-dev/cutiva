@@ -271,11 +271,21 @@ describe("planReframe rules", () => {
     // ceil(1080 / 2) = 540 px (960 / 540 = 1.78x, like the single's 1920 / 1080).
     const r = planReframe(input(fs));
     expect(brief(r.track.segments)).toEqual([[0, 2_000_000, "p1+p2", "split", "overlap"]]);
-    // y = 300 + 0.38 * 540 = 505.2.
-    expect(r.keys[0]!.regions).toEqual([{ x: 430, y: 505, h: 540 }, { x: 1330, y: 505, h: 540 }]);
+    // y = face centre 300 + 60 / 2 = 330.
+    expect(r.keys[0]!.regions).toEqual([{ x: 430, y: 330, h: 540 }, { x: 1330, y: 330, h: 540 }]);
     // Big faces keep the face share: round(200 / 0.35) = 571.
     const big = frames(10, (i) => ({ voice: 0.5, faces: [face(A, talk(i)), face(B, talk(i))] }));
     expect(planReframe(input(big)).keys[0]!.regions!.map((g) => g.h)).toEqual([571, 571]);
+  });
+
+  it("split regions centre the face, inside the active area", () => {
+    // A single window puts the face top 12% down; a half is short, so that would fill it with what's below the face.
+    // Faces of 200 at y 300: centre 400, not 300 + 0.38 * 571 = 517.
+    const fs = frames(10, (i) => ({ voice: 0.5, faces: [face(A, talk(i)), face(B, talk(i))] }));
+    expect(planReframe(input(fs)).keys[0]!.regions!.map((g) => g.y)).toEqual([400, 400]);
+    // A face near the top: centre 20 + 100 = 120, clamped so the 571 px region stays in the frame: 571 / 2 = 285.5, rounded half up to 286.
+    const high = frames(10, (i) => ({ voice: 0.5, faces: [face(A, talk(i), { y: 20 }), face(B, talk(i), { y: 20 })] }));
+    expect(planReframe(input(high)).keys[0]!.regions!.map((g) => g.y)).toEqual([286, 286]);
   });
 
   it("a region never reaches the other face", () => {

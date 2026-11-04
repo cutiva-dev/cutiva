@@ -129,7 +129,7 @@ const OVERLAP_MIN_US = 1_500_000;
 const VOICE_ONLY_MIN_US = 1_000_000;
 /** Segment edges closer than this to a camera cut move onto it. */
 const SNAP_US = 400_000;
-/** The top of the face sits this share of the window height below the window's top. */
+/** The top of the face sits this share of the window height below the window's top (single windows; split regions centre the face). */
 const HEADROOM = 0.12;
 /**
  * In a split, a face fills at most this share of its region's height. Small faces get a larger
@@ -704,7 +704,8 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
     const rw = clamp(divRound(rh * 2 * outW, outH), 1, area.w);
     return {
       x: half(clamp(box.x + box.w / 2, area.x + rw / 2, area.x + area.w - rw / 2)),
-      y: half(clamp(box.y + (0.5 - HEADROOM) * rh, area.y + rh / 2, area.y + area.h - rh / 2)),
+      // Each half is short, so the face sits in its middle; the single window's headroom would fill it with table.
+      y: half(clamp(box.y + box.h / 2, area.y + rh / 2, area.y + area.h - rh / 2)),
       h: rh,
     };
   };
