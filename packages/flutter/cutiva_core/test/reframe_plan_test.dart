@@ -9,8 +9,15 @@ import 'helpers.dart';
 
 const _step = 200000;
 double _talk(int i) => i.isOdd ? 0.3 : 0.1;
-PlanFace _face(double x, double? mouth, {double y = 300, double w = 200, double h = 200, double? conf}) =>
-    PlanFace(x: x, y: y, w: w, h: h, mouth: mouth, conf: conf);
+PlanFace _face(
+  double x,
+  double? mouth, {
+  double y = 300,
+  double w = 200,
+  double h = 200,
+  double? conf,
+  double? speaking,
+}) => PlanFace(x: x, y: y, w: w, h: h, mouth: mouth, conf: conf, speaking: speaking);
 List<PlanFrame> _frames(int count, ({List<PlanFace> faces, double? voice, double? pan}) Function(int i) make) => [
   for (var i = 0; i < count; i++)
     PlanFrame(atUs: i * _step, faces: make(i).faces, voice: make(i).voice, pan: make(i).pan),
@@ -115,6 +122,14 @@ void main() {
     expect(codeOf(() => _plan(ok, cuts: [-1])), 'INVALID_RANGE');
     expect(codeOf(() => _plan(ok, area: const CropRect(1000, 0, 1000, 1080))), 'INVALID_RANGE');
     expect(codeOf(() => _plan(ok, minShotUs: -1)), 'INVALID_RANGE');
+    expect(
+      codeOf(
+        () => _plan([
+          PlanFrame(atUs: 0, faces: [_face(0, 0, speaking: 1.5)]),
+        ]),
+      ),
+      'INVALID_RANGE',
+    );
     final none = _plan([], durationUs: 1000000);
     expect(_brief(none.track.segments), [
       [0, 1000000, '', 'wide', 'no-face'],
@@ -178,6 +193,38 @@ void main() {
       ),
     );
     expect([for (final s in _brief(_plan(fs).track.segments)) s[2]], ['p1', 'p2']);
+  });
+
+  test('an active-speaker score replaces lip activity', () {
+    // Lips say A talks the whole time; the speaker model says B. The model wins.
+    final fs = _frames(
+      20,
+      (i) => (voice: 0.5, pan: null, faces: [_face(_a, _talk(i), speaking: 0.1), _face(_b, 0.1, speaking: 0.9)]),
+    );
+    expect(_brief(_plan(fs).track.segments), [
+      [0, 4000000, 'p2', 'single', 'lips+voice'],
+    ]);
+    // Still mouths and no model: nobody is a candidate, so the voice goes wide.
+    final still = _frames(10, (_) => (voice: 0.5, pan: null, faces: [_face(_a, 0.1), _face(_b, 0.1)]));
+    expect(
+      [for (final s in _brief(_plan(still).track.segments)) s.sublist(3)],
+      [
+        ['wide', 'voice-only'],
+      ],
+    );
+  });
+
+  test('a person without speaker scores falls back to their lips; two scores over 0.5 are an overlap', () {
+    final mixed = _frames(
+      20,
+      (i) => (voice: 0.5, pan: null, faces: [_face(_a, _talk(i)), _face(_b, 0.1, speaking: 0.2)]),
+    );
+    expect([for (final s in _brief(_plan(mixed).track.segments)) s[2]], ['p1']);
+    final both = _frames(
+      10,
+      (_) => (voice: 0.5, pan: null, faces: [_face(_a, 0.1, speaking: 0.9), _face(_b, 0.1, speaking: 0.9)]),
+    );
+    expect([for (final s in _brief(_plan(both).track.segments)) s[2]], ['p1+p2']);
   });
 
   test('without audio, lips decide; with nothing to go on, the most visible person holds', () {

@@ -20,6 +20,12 @@ export interface PlanFace {
   mouth: number | null;
   /** Detector confidence, 0 to 1. Faces under 0.6 are ignored. Omit when the detector gives none. */
   conf?: number;
+  /**
+   * How likely this face is talking right now, 0 to 1, from an active-speaker model that watches the
+   * face and listens to the audio together (for example Light-ASD). When a person's faces carry it,
+   * it replaces their lip activity. Omit when there is no such model.
+   */
+  speaking?: number;
 }
 
 /** What the detectors saw at one source time. */
@@ -103,6 +109,8 @@ const LIPS_WINDOW_US = 500_000;
 const LIPS_FULL = 0.05;
 /** A visible face with lip activity under this isn't a candidate speaker. */
 const LIPS_CANDIDATE = 0.3;
+/** With an active-speaker score, a face averaging under this within the lips window isn't a candidate speaker. */
+const SPEAKING_CANDIDATE = 0.5;
 const W_LIPS = 0.6;
 const W_PAN = 0.25;
 /** Small: a hold time and a switch margin already keep the camera steady; more let a quiet speaker keep the frame. */
@@ -208,6 +216,7 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
       check([face.x, face.y, face.w, face.h].every(isNum) && face.w > 0 && face.h > 0, "Faces need finite x, y and positive w, h.");
       check(face.mouth === null || (isNum(face.mouth) && face.mouth >= 0 && face.mouth <= 1), "mouth must be null or between 0 and 1.");
       check(face.conf === undefined || (isNum(face.conf) && face.conf >= 0 && face.conf <= 1), "conf must be between 0 and 1.");
+      check(face.speaking === undefined || (isNum(face.speaking) && face.speaking >= 0 && face.speaking <= 1), "speaking must be between 0 and 1.");
     }
   });
   for (const c of input.cuts ?? []) check(Number.isInteger(c) && c >= 0, "Cuts must be non-negative integers.");
@@ -389,8 +398,33 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
     variance /= values.length;
     return Math.min(1, Math.sqrt(variance) / LIPS_FULL);
   };
-  const score = (i: number, fi: number, current: number | null): number => {
+  /** The mean active-speaker score of the person's real sightings within the lips window, or null without one. */
+  const speakingAt = (i: number, fi: number): number | null => {
+    const values: number[] = [];
+    for (const t of tracks) {
+      if (t.person !== i || t.shot !== frameShot[fi]) continue;
+      for (const s of t.seen) if (Math.abs(at(s.fi) - at(fi)) <= LIPS_WINDOW_US && s.face.speaking !== undefined) values.push(s.face.speaking);
+      if (values.length > 0) break;
+    }
+    if (values.length === 0) return null;
+    let sum = 0;
+    for (const v of values) sum += v;
+    return sum / values.length;
+  };
+  /** Talking activity: the active-speaker score when there is one, else lip activity; and whether it counts as talking. */
+  const activity = (i: number, fi: number): number | null => speakingAt(i, fi) ?? lips(i, fi);
+  const talking = (i: number, fi: number): boolean => {
+    const sp = speakingAt(i, fi);
+    return sp !== null ? sp >= SPEAKING_CANDIDATE : (lips(i, fi) ?? 0) >= LIPS_CANDIDATE;
+  };
+  const candidate = (i: number, fi: number): boolean => {
+    const sp = speakingAt(i, fi);
+    if (sp !== null) return sp >= SPEAKING_CANDIDATE;
     const l = lips(i, fi);
+    return l === null || l >= LIPS_CANDIDATE;
+  };
+  const score = (i: number, fi: number, current: number | null): number => {
+    const l = activity(i, fi);
     const pan = noAudio ? undefined : frames[fi]!.pan;
     let sum = W_CONTINUITY * (i === current ? 1 : 0);
     let weight = W_CONTINUITY;
@@ -429,13 +463,10 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
       continue;
     }
     const focusable = visible.filter((i) => !flag(i, "neverFocus"));
-    const candidates = focusable.filter((i) => {
-      const l = lips(i, fi);
-      return l === null || l >= LIPS_CANDIDATE;
-    });
+    const candidates = focusable.filter((i) => candidate(i, fi));
     if (candidates.length === 0) {
-      const talking = visible.filter((i) => flag(i, "neverFocus") && (lips(i, fi) ?? 0) >= LIPS_CANDIDATE);
-      labels.push(talking.length > 0 ? { kind: "never", person: talking[0]! } : { kind: "voice" });
+      const hidden = visible.filter((i) => flag(i, "neverFocus") && talking(i, fi));
+      labels.push(hidden.length > 0 ? { kind: "never", person: hidden[0]! } : { kind: "voice" });
       speakerOf.push(current);
       // A pause in someone's lip movement doesn't end their claim to the frame.
       continue;
@@ -467,8 +498,8 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
         }
       } else challenger = null;
     }
-    // Talking at once needs moving lips on both: pan and continuity alone can't tell two voices apart.
-    const over = ranked.filter((i) => scores.get(i)! > OVERLAP_SCORE && (lips(i, fi) ?? 0) >= LIPS_CANDIDATE);
+    // Talking at once needs moving lips (or the speaker model) on both: pan and continuity alone can't tell two voices apart.
+    const over = ranked.filter((i) => scores.get(i)! > OVERLAP_SCORE && talking(i, fi));
     speakerOf.push(current);
     labels.push(over.length >= 2 ? { kind: "over", a: Math.min(over[0]!, over[1]!), b: Math.max(over[0]!, over[1]!) } : { kind: "speak", person: current });
   }
