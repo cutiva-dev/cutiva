@@ -47,7 +47,12 @@ export default function App() {
   }
 
   async function pick() {
-    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"], quality: 1 });
+    const picked = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["videos"],
+      quality: 1,
+      // iOS: hand over the original file (HEVC included) instead of transcoding it first.
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
+    });
     const uri = picked.assets?.[0]?.uri;
     if (picked.canceled || !uri) return;
     setSource(uri);

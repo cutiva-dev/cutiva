@@ -3,7 +3,7 @@ title: Expo (React Native)
 description: Auto-reframe a video to 9:16 on the phone in an Expo app, with @cutiva/expo.
 ---
 
-**Status: beta, Android only.** Tested on the Android 15 emulator; real phones need testing. iOS is planned.
+**Status: beta, iOS and Android.** Tested on the Android 15 emulator and the iOS simulator (iPhone 16 Pro); real phones need testing.
 
 `@cutiva/expo` turns a landscape video into a vertical one that follows whoever is talking, entirely on the phone: no server, and frames never leave the device. It is a native Expo module ([ADR 0007](https://github.com/cutiva-dev/cutiva/blob/main/docs/adr/0007-mobile-reframe-first.md)).
 
@@ -11,10 +11,12 @@ description: Auto-reframe a video to 9:16 on the phone in an Expo app, with @cut
 
 ```bash
 npx expo install @cutiva/expo
-npx expo run:android
+npx expo run:ios       # or: npx expo run:android
 ```
 
-It needs a **development build** (`npx expo run:android` or EAS Build): Expo Go can't load native modules. Requirements: Expo SDK 58 or later, Android 7 (API 24) or later.
+It needs a **development build** (`npx expo run:ios`, `npx expo run:android` or EAS Build): Expo Go can't load native modules. Requirements: Expo SDK 58 or later, iOS 16.4 or later, Android 7 (API 24) or later. On iOS the module adds MediaPipe Tasks Vision 1.0.0 through CocoaPods.
+
+Pass a `file://` URI. `expo-image-picker` gives one; Photos `ph://` URIs are rejected with `ASSET_NOT_FOUND`.
 
 ## Reframe a video
 
@@ -76,13 +78,15 @@ const { project } = reframedProject(uri, analysis, plan); // a Cutiva project (C
 ## Privacy and permissions
 
 - Frames and audio stay on the phone; the analysis is numbers only (face boxes, mouth movement, loudness).
-- The module adds the `INTERNET` permission, only to download the face model once (MediaPipe Face Landmarker, Apache-2.0, checked against a pinned SHA-256).
+- The face model (MediaPipe Face Landmarker, Apache-2.0) downloads once and is checked against a pinned SHA-256; on Android the module adds the `INTERNET` permission for it.
 - **MediaPipe's Android library sends anonymous usage statistics** to Google (task name, latency, device model). No images or results. Mention it in your privacy policy if it applies to you.
+- MediaPipe's iOS library (1.0.0): a scan of its binaries found no usage-statistics code, but its network traffic hasn't been measured. Google's [MediaPipe privacy notice](https://goo.gle/mediapipe-privacy) applies.
 
 ## Speed and limits
 
-- Analysis is the slow part. On the emulator a 48-second 1080p clip took about 3 minutes; phones should be faster, but this hasn't been measured yet. Keep `result.analysis` so corrections don't analyse again.
-- Android only. iOS is planned.
+- Analysis is the slow part. A 48-second 1080p clip took about 3 minutes on the Android emulator and about 2 minutes on the iOS simulator; phones should be faster, but this hasn't been measured yet. Keep `result.analysis` so corrections don't analyse again.
+- Export on the iOS simulator is slow (about 7 minutes for that clip, drawn on the CPU); a real iPhone uses its GPU and hardware encoder and needs measuring.
+- Sped-up clips: iOS changes the pitch, like the web; Android keeps it.
 - Speech is measured by loudness, so music or noise can look like speech.
 
 ## Example app

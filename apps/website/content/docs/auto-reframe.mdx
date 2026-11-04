@@ -117,9 +117,9 @@ editor.dispatch({
 
 The exact rules (rounding, clamping, gliding) are in the [project format](/docs/project-format#rules-every-sdk-follows).
 
-## Expo and React Native (Android, beta)
+## Expo and React Native (iOS and Android, beta)
 
-`@cutiva/expo` reframes a video on the phone in one call: it analyses the video natively (MediaPipe, the same model, tiles and mouth measure as the web), plans with `planReframe` from `@cutiva/core` in JavaScript, and exports the MP4 with the Cutiva Android engine. It needs a development build (`npx expo run:android`); Expo Go can't load it.
+`@cutiva/expo` reframes a video on the phone in one call: it analyses the video natively (MediaPipe, the same model, tiles and mouth measure as the web), plans with `planReframe` from `@cutiva/core` in JavaScript, and exports the MP4 with the Cutiva engine for the platform (AVFoundation on iOS, Media3 on Android). It needs a development build (`npx expo run:ios` or `npx expo run:android`); Expo Go can't load it.
 
 ```ts
 import { reframeVideo } from "@cutiva/expo";
@@ -135,11 +135,11 @@ const fixed = await reframeVideo(videoUri, {
 });
 ```
 
-**Status: Android only, tested on the Android 15 emulator.** On the real 48 s podcast clip the phone's analysis matches the web's (same speaker turns, edges within 0.2 s, one stretch with an off-camera voice differs); it took about 3 minutes on the emulator, and real phones need measuring. MediaPipe's Android library sends anonymous usage statistics (task name, latency, device model) to Google; no frames, faces or results leave the phone. iOS is planned. See [`packages/expo`](https://github.com/cutiva-dev/cutiva/tree/main/packages/expo) and the [example app](https://github.com/cutiva-dev/cutiva/tree/main/apps/expo-example).
+**Status: beta, tested on the Android 15 emulator and the iOS simulator.** On the real 48 s podcast clip the Android analysis matches the web's (same speaker turns, edges within 0.2 s, one stretch with an off-camera voice differs); it took about 3 minutes on the emulator. On the iOS simulator the same clip analyses in about 2 minutes, with faces in 232 of 242 frames, and exports a 1080 x 1920 H.264 + AAC MP4; its speaker turns haven't been compared with the web's yet. Real phones need testing. MediaPipe's Android library sends anonymous usage statistics (task name, latency, device model) to Google; no frames, faces or results leave the phone. See [`packages/expo`](https://github.com/cutiva-dev/cutiva/tree/main/packages/expo) and the [example app](https://github.com/cutiva-dev/cutiva/tree/main/apps/expo-example).
 
 ## Other platforms
 
-The planning step (`planReframe`, and the older `autoReframe`) is in the core and in the Dart core (`cutiva_core`), so it gives the same keys everywhere. A platform only needs to supply observations: for each sampled frame, its faces (box and mouth openness) and optionally speech loudness, plus camera cuts from `detectCuts`. On Android the engine's `reframe` module measures them; on iOS that can be Apple Vision or MediaPipe. Flutter is [planned](https://github.com/cutiva-dev/cutiva/blob/main/ROADMAP.md).
+The planning step (`planReframe`, and the older `autoReframe`) is in the core and in the Dart core (`cutiva_core`), so it gives the same keys everywhere. A platform only needs to supply observations: for each sampled frame, its faces (box and mouth openness) and optionally speech loudness, plus camera cuts from `detectCuts`. On Android and iOS the engines measure them with MediaPipe, like the web. Flutter is [planned](https://github.com/cutiva-dev/cutiva/blob/main/ROADMAP.md).
 
 ## How it decides
 
@@ -192,6 +192,6 @@ Reports are how auto-reframe improves: each one attached to an issue replays thr
 - With tiles, analysis runs at about the clip's real time (a 3-minute clip takes about 3 minutes).
 - A person in two shots counts as two people (merge them in People).
 - The source monitor's window shows the single fallback window on split and wide segments, not the two regions or the whole picture.
-- On mobile: Android only (`@cutiva/expo`, tested on the emulator); iOS is planned.
+- On mobile: `@cutiva/expo` is tested on the Android emulator and the iOS simulator, not yet on real phones.
 - Changing the project's format reshapes the windows but doesn't re-plan the layouts; call `engine.reframe(clipId)` again, which re-plans from the cached analysis.
 - Cuts are found at the analysis rate (every 200 ms), so a framing change can land up to one sample late.

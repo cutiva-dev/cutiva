@@ -30,6 +30,23 @@ jobs:
           sdk: 3.7.2
       - run: npm run test:dart
 
+  ios:
+    # The iOS engine (Swift package): crop keys against the conformance fixtures, exports checked for
+    # sync, speed, gaps, mixing and reframed crops, and the reframe analyzer. On macOS, then on an
+    # iOS simulator.
+    runs-on: macos-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: packages/engine-ios
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift test
+      - name: Tests on an iOS simulator
+        run: |
+          udid=$(xcrun simctl list devices available -j | jq -r '[.devices[] | .[] | select(.name | startswith("iPhone"))][0].udid')
+          xcodebuild test -scheme CutivaEngine -destination "platform=iOS Simulator,id=$udid" -quiet
+
   android:
     # The Android engine: JVM unit tests, then exports on an emulator checked for sync, gaps, speed,
     # mixing and reframed crops, and the reframe analyzer (the MediaPipe test downloads the model).
