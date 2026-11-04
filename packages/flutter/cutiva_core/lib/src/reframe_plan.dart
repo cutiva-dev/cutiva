@@ -140,7 +140,15 @@ const _overlapMinUs = 1500000;
 const _voiceOnlyMinUs = 1000000;
 const _snapUs = 400000;
 const _headroom = 0.12;
+
+/// In a split, a face fills at most this share of its region's height. Small faces get a larger
+/// region: each half is at least half as tall as a single window, so a split is never blurrier than
+/// a single framing of the same clip.
 const _splitFaceShare = 0.35;
+
+/// Two people share one window only when both faces span at most this share of its width. Wider,
+/// they sit on its edges, and a split as sharp as a single frames each of them better.
+const _sharedWindowShare = 0.6;
 const _passthrough = 0.02;
 const _oneEuroBeta = 1.0;
 const _oneEuroDCutoff = 1.0;
@@ -887,8 +895,11 @@ ReframePlanResult planReframe({
   }
 
   final maxRegionH = math.min(area.h, (area.w * outH) ~/ (2 * outW));
-  ReframeWindow regionFor(PlanFace box) {
-    final rh = _clampInt(_half(box.h / _splitFaceShare), 1, math.max(1, maxRegionH));
+  ReframeWindow regionFor(PlanFace box, PlanFace other) {
+    // Never blurrier than a single window, and never so wide that the other face shows in this half.
+    final target = math.max(_half(box.h / _splitFaceShare), (keyH + 1) ~/ 2);
+    final maxW = (2 * (box.x + box.w / 2 - (other.x + other.w / 2)).abs() - other.w).floor();
+    final rh = _clampInt(math.min(target, ((maxW * outH) / (2 * outW)).floor()), 1, math.max(1, maxRegionH));
     final rw = _clampInt(_divRound(rh * 2 * outW, outH), 1, area.w);
     return ReframeWindow(
       x: _half(_clamp(box.x + box.w / 2, area.x + rw / 2, area.x + area.w - rw / 2)),
@@ -967,7 +978,7 @@ ReframePlanResult planReframe({
       h: keyH,
       cut: true,
       layout: 'split',
-      regions: [regionFor(l), regionFor(r)],
+      regions: [regionFor(l, r), regionFor(r, l)],
     );
   }
 
@@ -1092,7 +1103,13 @@ ReframePlanResult planReframe({
           continue;
         }
         final both = union(a, b);
-        if (both.w <= win.w && both.h <= win.h) {
+        final key = splitKey(s.startUs, a, b);
+        // As sharp as a single window, and within the upscaling limit.
+        final sharpSplit = key.regions!.every((r) => 2 * r.h >= keyH);
+        final blurrySplit = key.regions!.any((r) => outH * 100 > maxUpscalePct * 2 * r.h);
+        final fits = both.w <= win.w && both.h <= win.h;
+        if (fits && (both.w <= _sharedWindowShare * win.w || !sharpSplit || blurrySplit)) {
+          // Side by side: one window holds both.
           if (lowQualitySingle) {
             segments.add(auto(s, speakers, 'wide', 'low-quality'));
             pushKey(wideKey(s.startUs));
@@ -1104,23 +1121,20 @@ ReframePlanResult planReframe({
               return x != null && y != null ? union(x, y) : (x ?? y);
             });
           }
-        } else {
-          final key = splitKey(s.startUs, a, b);
-          if (key.regions!.any((r) => outH * 100 > maxUpscalePct * 2 * r.h)) {
-            if (lowQualitySingle) {
-              segments.add(auto(s, speakers, 'wide', 'low-quality'));
-              pushKey(wideKey(s.startUs));
-            } else {
-              // A split would be too blurry: frame whoever held the frame most of this stretch.
-              int held(int i) => fis.where((fi) => speakerOf[fi] == i).length;
-              final who = held(lab.b) > held(lab.a) ? lab.b : lab.a;
-              segments.add(auto(s, speakers, 'single', 'overlap'));
-              follow(s.startUs, s.endUs, (fi) => personBox(who, fi, true));
-            }
+        } else if (blurrySplit) {
+          if (lowQualitySingle) {
+            segments.add(auto(s, speakers, 'wide', 'low-quality'));
+            pushKey(wideKey(s.startUs));
           } else {
-            segments.add(auto(s, speakers, 'split', 'overlap'));
-            pushKey(key);
+            // A split would be too blurry: frame whoever held the frame most of this stretch.
+            int held(int i) => fis.where((fi) => speakerOf[fi] == i).length;
+            final who = held(lab.b) > held(lab.a) ? lab.b : lab.a;
+            segments.add(auto(s, speakers, 'single', 'overlap'));
+            follow(s.startUs, s.endUs, (fi) => personBox(who, fi, true));
           }
+        } else {
+          segments.add(auto(s, speakers, 'split', 'overlap'));
+          pushKey(key);
         }
     }
   }

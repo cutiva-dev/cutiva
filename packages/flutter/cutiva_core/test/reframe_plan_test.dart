@@ -385,17 +385,57 @@ void main() {
     expect(_brief(_plan(both.sublist(0, 7), durationUs: 1400000, track: ReframeTrack(people: people)).track.segments), [
       [0, 1400000, 'p2', 'single', 'lips+voice'],
     ]);
+    // Split regions grow to half a single window (ceil(1080 / 2) = 540 px), so a split is as sharp as a single.
     final tiny = _frames(
       10,
       (i) => (voice: 0.5, pan: null, faces: [_face(_a, _talk(i), w: 60, h: 60), _face(_b, _talk(i), w: 60, h: 60)]),
     );
-    // A split this blurry frames whoever held the frame; wide only if a single is too blurry as well.
     final t = _plan(tiny);
     expect(_brief(t.track.segments), [
+      [0, 2000000, 'p1+p2', 'split', 'overlap'],
+    ]);
+    expect(t.keys.first.regions!.map((g) => [g.x, g.y, g.h]).toList(), [
+      [430, 505, 540],
+      [1330, 505, 540],
+    ]);
+    expect(_plan(both).keys.first.regions!.map((g) => g.h).toList(), [571, 571]);
+    // Faces 360 apart fill 76% of one window: a split as sharp as a single instead.
+    List<PlanFrame> pair(double bx) => _frames(
+      10,
+      (i) => (
+        voice: 0.5,
+        pan: null,
+        faces: [_face(600, _talk(i), w: 100, h: 100), _face(bx, _talk(i), w: 100, h: 100)],
+      ),
+    );
+    final edges = _plan(pair(960));
+    expect(_brief(edges.track.segments), [
+      [0, 2000000, 'p1+p2', 'split', 'overlap'],
+    ]);
+    expect(edges.keys.first.regions!.map((g) => g.h).toList(), [540, 540]);
+    // Within 60% of the window they keep sharing it; a locked split keeps the other face out (266 px).
+    final close = _plan(pair(800));
+    expect(_brief(close.track.segments), [
       [0, 2000000, 'p1+p2', 'single', 'overlap'],
     ]);
-    expect(t.keys.first.x, 430);
-    expect(t.keys.any((k) => k.layout != null), isFalse);
+    final locked = editReframeTrack(close.track, const SegmentEdit('s1', layout: 'split'));
+    expect(_plan(pair(800), track: locked).keys.first.regions!.map((g) => g.h).toList(), [266, 266]);
+    // A split this blurry (regions capped at 444 px: 2.16x) frames whoever held the frame;
+    // wide only if a single is too blurry as well.
+    final wideFaces = _frames(
+      10,
+      (i) => (
+        voice: 0.5,
+        pan: null,
+        faces: [_face(400, _talk(i), w: 300, h: 300), _face(800, _talk(i), w: 300, h: 300)],
+      ),
+    );
+    final blurry = _plan(wideFaces);
+    expect(_brief(blurry.track.segments), [
+      [0, 2000000, 'p1+p2', 'single', 'overlap'],
+    ]);
+    expect(blurry.keys.first.x, 550);
+    expect(blurry.keys.any((k) => k.layout != null), isFalse);
     final tiny720 = _frames(
       10,
       (i) => (voice: 0.5, pan: null, faces: [_face(200, _talk(i), w: 60, h: 60), _face(900, _talk(i), w: 60, h: 60)]),

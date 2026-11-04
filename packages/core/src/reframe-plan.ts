@@ -131,8 +131,17 @@ const VOICE_ONLY_MIN_US = 1_000_000;
 const SNAP_US = 400_000;
 /** The top of the face sits this share of the window height below the window's top. */
 const HEADROOM = 0.12;
-/** In a split, each face fills about this share of its region's height. */
+/**
+ * In a split, a face fills at most this share of its region's height. Small faces get a larger
+ * region: each half is at least half as tall as a single window, so a split is never blurrier than
+ * a single framing of the same clip.
+ */
 const SPLIT_FACE_SHARE = 0.35;
+/**
+ * Two people share one window only when both faces span at most this share of its width. Wider,
+ * they sit on its edges, and a split as sharp as a single frames each of them better.
+ */
+const SHARED_WINDOW_SHARE = 0.6;
 const PASSTHROUGH = 0.02;
 const ONE_EURO_BETA = 1;
 const ONE_EURO_D_CUTOFF = 1;
@@ -687,8 +696,11 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
     return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y, mouth: null };
   };
   const maxRegionH = Math.min(area.h, Math.floor((area.w * outH) / (2 * outW)));
-  const regionFor = (box: PlanFace): ReframeWindow => {
-    const rh = clamp(half(box.h / SPLIT_FACE_SHARE), 1, Math.max(1, maxRegionH));
+  const regionFor = (box: PlanFace, other: PlanFace): ReframeWindow => {
+    // Never blurrier than a single window, and never so wide that the other face shows in this half.
+    const target = Math.max(half(box.h / SPLIT_FACE_SHARE), Math.ceil(keyH / 2));
+    const maxW = Math.floor(2 * Math.abs(box.x + box.w / 2 - (other.x + other.w / 2)) - other.w);
+    const rh = clamp(Math.min(target, Math.floor((maxW * outH) / (2 * outW))), 1, Math.max(1, maxRegionH));
     const rw = clamp(divRound(rh * 2 * outW, outH), 1, area.w);
     return {
       x: half(clamp(box.x + box.w / 2, area.x + rw / 2, area.x + area.w - rw / 2)),
@@ -734,7 +746,7 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
   const wideKey = (atUs: Us): ReframeKey => ({ atUs, x: areaCentre.x, y: areaCentre.y, h: keyH, cut: true, layout: "wide" });
   const splitKey = (atUs: Us, a: PlanFace, b: PlanFace): ReframeKey => {
     const [l, r] = a.x + a.w / 2 <= b.x + b.w / 2 ? [a, b] : [b, a];
-    return { atUs, x: areaCentre.x, y: areaCentre.y, h: keyH, cut: true, layout: "split", regions: [regionFor(l), regionFor(r)] };
+    return { atUs, x: areaCentre.x, y: areaCentre.y, h: keyH, cut: true, layout: "split", regions: [regionFor(l, r), regionFor(r, l)] };
   };
   const centreFor = (box: PlanFace) => ({
     x: clamp(box.x + box.w / 2, area.x + win.w / 2, area.x + area.w - win.w / 2),
@@ -840,7 +852,12 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
         continue;
       }
       const both = union(a, b);
-      if (both.w <= win.w && both.h <= win.h) {
+      const key = splitKey(s.startUs, a, b);
+      // As sharp as a single window, and within the upscaling limit.
+      const sharpSplit = key.regions!.every((r) => 2 * r.h >= keyH);
+      const blurrySplit = key.regions!.some((r) => outH * 100 > maxUpscalePct * 2 * r.h);
+      const fits = both.w <= win.w && both.h <= win.h;
+      if (fits && (both.w <= SHARED_WINDOW_SHARE * win.w || !sharpSplit || blurrySplit)) {
         // Side by side: one window holds both.
         if (lowQualitySingle) {
           segments.push({ ...base, id: "", speakers, resolved: "wide", reason: "low-quality" });
@@ -853,23 +870,20 @@ export function planReframe(input: ReframePlanInput): ReframePlanResult {
             return x && y ? union(x, y) : (x ?? y);
           });
         }
-      } else {
-        const key = splitKey(s.startUs, a, b);
-        if (key.regions!.some((r) => outH * 100 > maxUpscalePct * 2 * r.h)) {
-          if (lowQualitySingle) {
-            segments.push({ ...base, id: "", speakers, resolved: "wide", reason: "low-quality" });
-            pushKey(wideKey(s.startUs));
-          } else {
-            // A split would be too blurry: frame whoever held the frame most of this stretch.
-            const held = (i: number) => fis.filter((fi) => speakerOf[fi] === i).length;
-            const who = held(lab.b) > held(lab.a) ? lab.b : lab.a;
-            segments.push({ ...base, id: "", speakers, resolved: "single", reason: "overlap" });
-            follow(s, (fi) => personBox(who, fi, true));
-          }
+      } else if (blurrySplit) {
+        if (lowQualitySingle) {
+          segments.push({ ...base, id: "", speakers, resolved: "wide", reason: "low-quality" });
+          pushKey(wideKey(s.startUs));
         } else {
-          segments.push({ ...base, id: "", speakers, resolved: "split", reason: "overlap" });
-          pushKey(key);
+          // A split would be too blurry: frame whoever held the frame most of this stretch.
+          const held = (i: number) => fis.filter((fi) => speakerOf[fi] === i).length;
+          const who = held(lab.b) > held(lab.a) ? lab.b : lab.a;
+          segments.push({ ...base, id: "", speakers, resolved: "single", reason: "overlap" });
+          follow(s, (fi) => personBox(who, fi, true));
         }
+      } else {
+        segments.push({ ...base, id: "", speakers, resolved: "split", reason: "overlap" });
+        pushKey(key);
       }
     }
   }
