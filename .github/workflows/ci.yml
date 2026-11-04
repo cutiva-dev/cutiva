@@ -5,6 +5,41 @@ on:
   pull_request:
 
 jobs:
+  changes:
+    # Which parts a pull request touches, so the slow jobs run only when they test something that
+    # changed. A job skipped by `if:` counts as passed for required checks. Pushes to main, changes
+    # to this file, and a failure of this job run everything.
+    runs-on: ubuntu-latest
+    outputs:
+      dart: ${{ steps.diff.outputs.dart }}
+      web: ${{ steps.diff.outputs.web }}
+      ios: ${{ steps.diff.outputs.ios }}
+      android: ${{ steps.diff.outputs.android }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: diff
+        run: |
+          all=0
+          files=""
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            all=1
+          else
+            # The pull request's merge commit: its first parent is the base branch.
+            files=$(git diff --name-only HEAD^1 HEAD)
+            printf '%s\n' "$files" | grep -qx '.github/workflows/ci.yml' && all=1
+          fi
+          match() {
+            if [ "$all" = 1 ] || printf '%s\n' "$files" | grep -qE "$1"; then echo true; else echo false; fi
+          }
+          {
+            echo "dart=$(match '^(packages/flutter/|conformance/|spec/)')"
+            echo "web=$(match '^(packages/(core|web|react)/|apps/playground/|package(-lock)?\.json$)')"
+            echo "ios=$(match '^(packages/engine-ios/|packages/expo/ios/|conformance/fixtures/(reframe|auto-reframe/signals-))')"
+            echo "android=$(match '^(packages/engine-android/|packages/expo/android/|conformance/fixtures/(reframe|auto-reframe/signals-))')"
+          } | tee -a "$GITHUB_OUTPUT"
+
   check:
     runs-on: ubuntu-latest
     steps:
@@ -22,6 +57,8 @@ jobs:
 
   dart:
     # The Dart core (Flutter SDK): analysis, formatting, unit tests, conformance fixtures, coverage.
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.dart == 'true') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,6 +71,8 @@ jobs:
     # The iOS engine (Swift package): crop keys against the conformance fixtures, exports checked for
     # sync, speed, gaps, mixing and reframed crops, and the reframe analyzer. On macOS, then on an
     # iOS simulator.
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.ios == 'true') }}
     runs-on: macos-latest
     timeout-minutes: 40
     defaults:
@@ -50,6 +89,8 @@ jobs:
   android:
     # The Android engine: JVM unit tests, then exports on an emulator checked for sync, gaps, speed,
     # mixing and reframed crops, and the reframe analyzer (the MediaPipe test downloads the model).
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.android == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     defaults:
@@ -85,6 +126,8 @@ jobs:
 
   e2e:
     # macOS: Google Chrome there has the platform H.264 and AAC encoders that export needs.
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.web == 'true') }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,7 +149,8 @@ jobs:
 
   e2e-platforms:
     # Discovery across operating systems and browsers. Not a required check yet: results feed
-    # the browser support page.
+    # the browser support page. Runs on pushes to main only, not on every pull request.
+    if: github.event_name == 'push'
     name: e2e (${{ matrix.os }}, ${{ matrix.project }})
     strategy:
       fail-fast: false
